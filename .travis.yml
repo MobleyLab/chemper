@@ -19,18 +19,31 @@ before_install:
   - if [ "$TRAVIS_SECURE_ENV_VARS" == false ]; then echo "OpenEye license will not be installed in forks."; fi
 
 install:
-    # creates environment for the given python version
-  - conda create -q -n test python=$TRAVIS_PYTHON_VERSION numpy pytest 
-  - source activate test 
+    # Pull down a miniconda
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
 
-    # Install anything not in conda
-  - conda list
+    # Build out the environment
+  - hash -r
+    # set to always say yes to conda install
+  - conda config --set always_yes yes --set changeps1 no
+    # makes installs a little more quiet so you get less output
+  - conda update -q conda
+  - conda info -a
+    # creates environment for the given python version
+  - conda create -q -n test python=$TRAVIS_PYTHON_VERSION numpy pytest
+  - source activate test
+
     # install openeye
   - pip install -i https://pypi.anaconda.org/openeye/simple openeye-toolkits
   - conda install -c omnia openforcefield=0.0.2
   - conda install networkx=1.11
-  - conda build devtools/conda-recipe
   
+    # install anything not in conda
+  - pip install codecov
+  - pip install pytest-cov
+  - conda list
 
 before_script:
   - python -V
@@ -38,7 +51,7 @@ before_script:
   - pip install -e .
 
 script:
-  - py.test -v -s
+    - py.test -v -s --cov
 
 global:
   - ORGNAME="mobleylab"
