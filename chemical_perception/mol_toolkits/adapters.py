@@ -6,6 +6,7 @@ substructure searches.
 Our chemical perception code is designed to be independent of the users
 cheminformatics packages. For each cheminformatics package we support we
 will provide classes following the structure in these adapters.
+Authors: Caitlin C. Bannan
 """
 
 from abc import ABC, abstractmethod
@@ -27,11 +28,12 @@ class MolAdapter(ABC):
     def get_atom_by_index(self, idx):
         return
 
+    @abstractmethod
     def get_bonds(self):
         return
 
     @abstractmethod
-    def substructure_search(self, search_pattern):
+    def smirks_search(self, smirks):
         return
 
 # =======================================
@@ -103,6 +105,7 @@ def AtomAdapter(ABC):
 class BondAdapter(ABC):
     @abstractmethod
     def __init__(self, bond):
+        return
 
     @abstractmethod
     def get_order(self):

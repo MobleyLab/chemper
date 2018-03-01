@@ -3,6 +3,7 @@ Cheminformatics tools using OpenEye Toolkits
 
 The classes provided here follow the structure in adapters.
 This is a wrapper allowing our actual package to use openeye toolkits
+Authors: Caitlin C. Bannan
 """
 
 from adapters import MolAdapter, AtomAdapter
