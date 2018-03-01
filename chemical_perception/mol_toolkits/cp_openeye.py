@@ -22,7 +22,7 @@ class MolOE(MolAdapter):
         return [AtomOE(a) for a in self.mol.GetAtoms()]
 
     def get_atom_by_index(self, idx):
-        return AtomOE(mol.GetAtom(oechem.OEHasAtomIdx(idx))
+        return AtomOE(mol.GetAtom(oechem.OEHasAtomIdx(idx)))
 
     def smirks_search(self, smirks):
         matches = list()
