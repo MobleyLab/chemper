@@ -6,7 +6,7 @@ This is a wrapper allowing our actual package to use openeye toolkits
 Authors: Caitlin C. Bannan
 """
 
-from adapters import MolAdapter, AtomAdapter
+from chemical_perception.mol_toolkits.adapters import MolAdapter, AtomAdapter
 from openeye import oechem
 
 
