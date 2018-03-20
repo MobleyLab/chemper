@@ -99,3 +99,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# added ignore
+.pytest_cache/
