@@ -102,3 +102,4 @@ ENV/
 
 # added ignore
 .pytest_cache/
+.idea/
