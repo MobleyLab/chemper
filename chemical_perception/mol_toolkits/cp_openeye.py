@@ -43,9 +43,9 @@ class MolOE(MolAdapter):
             d = dict()
             for ma in match.GetAtoms():
                 smirks_idx = ma.pattern.GetMapIdx()
+                # if the map index is 0 then it isn't a "tagged" atom in the SMIRKS
                 if smirks_idx !=0:
-                    d[smirks_idx] = self.mol.get_atom_by_index(
-                        ma.target.GetIdx)
+                    d[smirks_idx] = self.get_atom_by_index(ma.target.GetIdx())
 
             matches.append(d)
 
@@ -61,9 +61,13 @@ class MolOE(MolAdapter):
 
 class AtomOE(AtomAdapter):
     def __init__(self, atom):
+        # TODO: check bond is an OEBond object?
         self.atom = atom
 
     def atomic_number(self):
+        print("getting atomic number")
+        num = self.atom.GetAtomicNum()
+        print(num)
         return self.atom.GetAtomicNum()
 
     def degree(self):
@@ -115,6 +119,7 @@ class BondOE(BondAdapter):
         # TODO: check bond is an OEBond object?
         self.bond = bond
         self.order = self.bond.GetOrder()
+        print('bond order:', self.order)
 
     def get_order(self):
         return self.order
