@@ -16,9 +16,6 @@ from abc import ABC, abstractmethod
 # =======================================
 
 class MolAdapter(ABC):
-    @abstractmethod
-    def __init__(self, mol):
-        return
 
     @abstractmethod
     def get_atoms(self):
@@ -33,17 +30,23 @@ class MolAdapter(ABC):
         return
 
     @abstractmethod
+    def get_bond_by_index(self, idx):
+        return
+
+    @abstractmethod
     def smirks_search(self, smirks):
+        return
+
+    @abstractmethod
+    def get_smiles(self):
         return
 
 # =======================================
 # Atom Class
 # =======================================
 
-def AtomAdapter(ABC):
-    @abstractmethod
-    def __init__(self, atom):
-        return
+
+class AtomAdapter(ABC):
 
     @abstractmethod
     def atomic_number(self):
@@ -97,15 +100,16 @@ def AtomAdapter(ABC):
     def get_bonds(self):
         return
 
+    @abstractmethod
+    def get_molecule(self):
+        return
+
 
 # =======================================
 # Bond Class
 # =======================================
 
 class BondAdapter(ABC):
-    @abstractmethod
-    def __init__(self, bond):
-        return
 
     @abstractmethod
     def get_order(self):
@@ -122,3 +126,20 @@ class BondAdapter(ABC):
     @abstractmethod
     def is_aromatic(self):
         return
+
+    @abstractmethod
+    def is_single(self):
+        return
+
+    @abstractmethod
+    def is_double(self):
+        return
+
+    @abstractmethod
+    def is_triple(self):
+        return
+
+    @abstractmethod
+    def get_molecule(self):
+        return
+
