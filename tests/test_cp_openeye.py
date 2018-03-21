@@ -47,6 +47,9 @@ def test_molecule():
     carbon = mol.get_atom_by_index(0)
     bond = mol.get_bond_by_index(0)
 
+    smiles = mol.get_smiles()
+    assert smiles == "C"
+
 def test_smirks_search():
     """
     test SMIRKS searching
@@ -63,8 +66,6 @@ def test_smirks_search():
         assert 1 in match
         assert 2 in match
 
-    smiles = mol.get_smiles()
-    assert smiles == "C"
 
 def test_atom():
     atom = AtomOE(oe_atom())
