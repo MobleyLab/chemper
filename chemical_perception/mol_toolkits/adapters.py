@@ -143,3 +143,6 @@ class BondAdapter(ABC):
     def get_molecule(self):
         return
 
+    @abstractmethod
+    def get_index(self):
+        return
