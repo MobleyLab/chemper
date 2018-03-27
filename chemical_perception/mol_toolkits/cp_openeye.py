@@ -52,7 +52,8 @@ class MolOE(MolAdapter):
         return matches
 
     def get_smiles(self):
-        return oechem.OEMolToSmiles(self.mol)
+        smiles = oechem.OEMolToSmiles(self.mol)
+        return smiles
 
 # =======================================
 # Atom Class
@@ -65,9 +66,6 @@ class AtomOE(AtomAdapter):
         self.atom = atom
 
     def atomic_number(self):
-        print("getting atomic number")
-        num = self.atom.GetAtomicNum()
-        print(num)
         return self.atom.GetAtomicNum()
 
     def degree(self):
@@ -92,7 +90,7 @@ class AtomOE(AtomAdapter):
         return oechem.OEAtomGetSmallestRingSize(self.atom)
 
     def is_aromatic(self):
-        return a.IsAromatic()
+        return self.atom.IsAromatic()
 
     def get_index(self):
         return self.atom.GetIdx()
@@ -107,7 +105,8 @@ class AtomOE(AtomAdapter):
         return [BondOE(b) for b in self.atom.GetBonds()]
 
     def get_molecule(self):
-        return MolOE(self.atom.GetParent())
+        mol = oechem.OEMol(self.atom.GetParent())
+        return MolOE(mol)
 
 # =======================================
 # Bond Class
@@ -119,13 +118,14 @@ class BondOE(BondAdapter):
         # TODO: check bond is an OEBond object?
         self.bond = bond
         self.order = self.bond.GetOrder()
-        print('bond order:', self.order)
+        self.beginning = AtomOE(self.bond.GetBgn())
+        self.end = AtomOE(self.bond.GetEnd())
 
     def get_order(self):
         return self.order
 
     def get_atoms(self):
-        return [AtomOE(a) for a in self.bond.GetAtoms()]
+        return [self.beginning, self.end]
 
     def is_ring(self):
         return self.bond.IsInRing()
@@ -143,4 +143,8 @@ class BondOE(BondAdapter):
         return self.order == 3
 
     def get_molecule(self):
-        return MolOE(self.bond.GetParent())
+        mol = oechem.OEMol(self.bond.GetParent())
+        return MolOE(mol)
+
+    def get_index(self):
+        return self.bond.GetIdx()
