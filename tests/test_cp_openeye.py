@@ -17,28 +17,6 @@ def oe_mol():
     oechem.OEAddExplicitHydrogens(m)
     return m
 
-def oe_bond():
-    """
-    returns an OEBond from methane
-    """
-    smiles = 'C'
-    m = oechem.OEMol()
-    oechem.OESmilesToMol(m, smiles)
-    oechem.OEAddExplicitHydrogens(m)
-    bond = m.GetBond(oechem.OEHasBondIdx(0))
-    print("Getting bond", bond)
-    return bond
-
-def oe_atom():
-    """
-    returns the carbon OEAtom from methane
-    """
-    mol = oe_mol()
-    a = mol.GetAtom(oechem.OEHasAtomIdx(0))
-    print(a)
-    return a
-
-
 def test_molecule():
     """
     Test MolOE functions
@@ -81,7 +59,8 @@ def test_smirks_search():
 
 
 def test_bond():
-    bond = BondOE(oe_bond())
+    mol = oe_mol()
+    bond = BondOE(mol.GetBond(oechem.OEHasBondIdx(0)))
 
     assert bond.get_order() == 1
 
@@ -104,41 +83,29 @@ def test_bond():
 
 
 def test_atom():
-    a = oe_atom()
-    atom = AtomOE(a)
+    mol = oe_mol()
+    atom = AtomOE(mol.GetAtom(oechem.OEHasAtomIdx(0)))
 
-    print("try atomic number")
-    print(atom.atomic_number())
     assert atom.atomic_number() == 6
 
-    print("try degree ")
     assert atom.degree() == 4
 
-    print("try connectivity")
     assert atom.connectivity() == 4
 
-    print("try valence ")
     assert atom.valence() == 4
 
-    print("try formal charge")
     assert atom.formal_charge() == 0
 
-    print("try hydrogen count")
     assert atom.hydrogen_count() == 4
 
-    print("try ring connectivity")
     assert atom.ring_connectivity() == 0
 
-    print("try minimum ring size")
     assert atom.min_ring_size() == 0
 
-    print("try is aromatic")
     assert not atom.is_aromatic()
 
-    print("try get index")
     assert atom.get_index() == 0
 
-    print("trying to find neighbors ")
     neighbors = atom.get_neighbors()
     assert len(neighbors) == 4
 
