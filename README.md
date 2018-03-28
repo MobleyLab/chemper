@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/MobleyLab/chemical_perception.svg?branch=master)](https://travis-ci.org/MobleyLab/chemical_perception)
 # ChemicalPerception
 Repository for Chemical Perception Sampling Tools
 
