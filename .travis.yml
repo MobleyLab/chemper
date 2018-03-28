@@ -36,9 +36,9 @@ install:
   - source activate test
 
     # install openeye
-  - pip install -i https://pypi.anaconda.org/openeye/simple openeye-toolkits
-  - conda install -c omnia openforcefield=0.0.2
-  - conda install networkx=1.11
+  - conda install -c openeye openeye-toolkits
+    # install rdkit
+  - conda install -c rdkit rdkit
   
     # install anything not in conda
   - pip install codecov
