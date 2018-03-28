@@ -99,7 +99,7 @@ def test_atom():
 
     assert atom.formal_charge() == 0
 
-    #assert atom.hydrogen_count() == 4
+    assert atom.hydrogen_count() == 4
 
     assert atom.ring_connectivity() == 0
 

@@ -82,7 +82,7 @@ class AtomRDK(AtomAdapter):
         return self.atom.GetFormalCharge()
 
     def hydrogen_count(self):
-        return self.atom.GetTotalNumHs()
+        return self.atom.GetTotalNumHs(includeNeighbors=True)
 
     def ring_connectivity(self):
         return len([b for b in self.atom.GetBonds() if b.IsInRing()])
