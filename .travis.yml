@@ -12,7 +12,6 @@ branches:
 
 python: # what python are you supporting?
   - 3.5
-  - 3.6
 
 env:
   - OE=true, RDK=false
@@ -40,6 +39,7 @@ install:
   - source activate test
 
     # install openeye
+  - echo ${OE}
   - if [${OE} == true]; then conda install -c openeye openeye-toolkits; fi
     # install rdkit
   - if [${RDK} == true]; then conda install -c rdkit rdkit; fi
