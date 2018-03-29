@@ -14,8 +14,13 @@ python: # what python are you supporting?
   - 3.5
 
 env:
-  - OE=true, RDK=false
-  - OE=false, RDK=true
+  global:
+      # it will be easier to extend if they are all defined globably
+    - OE=false
+    - RDK=false
+  matrix:
+    - OE=true
+    - RDK=true
 
 before_install:
   - if [ "$TRAVIS_SECURE_ENV_VARS" == true ]; then openssl aes-256-cbc -K $encrypted_18503af1fc27_key -iv $encrypted_18503af1fc27_iv -in oe_license.txt.enc -out oe_license.txt -d; fi
