@@ -1,11 +1,11 @@
 from . import adapters
+try:
+    import from . import cp_openeye as mol_toolkit
+except ImportError:
+    pass
 
-from pkgutil import iter_modules
-modules = (name for _, name, _ in iter_modules())
-
-if 'openeye' in modules:
-    from . import cp_openeye as mol_toolkit
-elif 'rdkit' in modules:
+try:
     from . import cp_rdk as mol_toolkit
-else:
-    print("No cheminformatics package (openeye, rdkit) was found")
+except Exception as e:
+    print(e)
+    print("Warning: No cheminformatics package (openeye, rdkit) was found")
