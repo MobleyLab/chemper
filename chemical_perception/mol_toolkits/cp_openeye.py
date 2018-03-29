@@ -20,16 +20,16 @@ class Mol(MolAdapter):
         self.mol = mol
 
     def get_atoms(self):
-        return [AtomOE(a) for a in self.mol.GetAtoms()]
+        return [Atom(a) for a in self.mol.GetAtoms()]
 
     def get_atom_by_index(self, idx):
-        return AtomOE(self.mol.GetAtom(oechem.OEHasAtomIdx(idx)))
+        return Atom(self.mol.GetAtom(oechem.OEHasAtomIdx(idx)))
 
     def get_bonds(self):
-        return [BondOE(b) for b in self.mol.GetBonds()]
+        return [Bond(b) for b in self.mol.GetBonds()]
 
     def get_bond_by_index(self, idx):
-        return BondOE(self.mol.GetBond(oechem.OEHasBondIdx(idx)))
+        return Bond(self.mol.GetBond(oechem.OEHasBondIdx(idx)))
 
     def smirks_search(self, smirks):
         matches = list()
@@ -54,6 +54,14 @@ class Mol(MolAdapter):
     def get_smiles(self):
         smiles = oechem.OEMolToSmiles(self.mol)
         return smiles
+
+class MolFromSmiles(Mol):
+    def __init__(self, smiles):
+        mol = oechem.OEMol()
+        if not oechem.OESmilesToMol(mol, smiles):
+            raise Exception('Could not parse SMILES %s' % smiles)
+        oechem.OEAddExplicitHydrogens(mol)
+        Mol.__init__(self, mol)
 
 # =======================================
 # Atom Class
@@ -99,14 +107,14 @@ class Atom(AtomAdapter):
         return self.atom.IsConnected(atom2.atom)
 
     def get_neighbors(self):
-        return [AtomOE(a) for a in self.atom.GetAtoms()]
+        return [Atom(a) for a in self.atom.GetAtoms()]
 
     def get_bonds(self):
-        return [BondOE(b) for b in self.atom.GetBonds()]
+        return [Bond(b) for b in self.atom.GetBonds()]
 
     def get_molecule(self):
         mol = oechem.OEMol(self.atom.GetParent())
-        return MolOE(mol)
+        return Mol(mol)
 
 # =======================================
 # Bond Class
@@ -118,8 +126,8 @@ class Bond(BondAdapter):
         # TODO: check bond is an OEBond object?
         self.bond = bond
         self.order = self.bond.GetOrder()
-        self.beginning = AtomOE(self.bond.GetBgn())
-        self.end = AtomOE(self.bond.GetEnd())
+        self.beginning = Atom(self.bond.GetBgn())
+        self.end = Atom(self.bond.GetEnd())
 
     def get_order(self):
         return self.order
@@ -144,7 +152,7 @@ class Bond(BondAdapter):
 
     def get_molecule(self):
         mol = oechem.OEMol(self.bond.GetParent())
-        return MolOE(mol)
+        return Mol(mol)
 
     def get_index(self):
         return self.bond.GetIdx()

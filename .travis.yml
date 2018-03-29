@@ -11,8 +11,12 @@ branches:
     - master
 
 python: # what python are you supporting?
-    - 3.5
-    - 3.6
+  - 3.5
+  - 3.6
+
+env:
+  - OE=true, RDK=false
+  - OE=false, RDK=true
 
 before_install:
   - if [ "$TRAVIS_SECURE_ENV_VARS" == true ]; then openssl aes-256-cbc -K $encrypted_18503af1fc27_key -iv $encrypted_18503af1fc27_iv -in oe_license.txt.enc -out oe_license.txt -d; fi
@@ -36,9 +40,9 @@ install:
   - source activate test
 
     # install openeye
-  - conda install -c openeye openeye-toolkits
+  - if [OE == true]; then conda install -c openeye openeye-toolkits; fi
     # install rdkit
-  - conda install -c rdkit rdkit
+  - if [RDK == true]; then conda install -c rdkit rdkit; fi
   
     # install anything not in conda
   - pip install codecov
