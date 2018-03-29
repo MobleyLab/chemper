@@ -46,9 +46,9 @@ install:
     # install openeye
   - echo $OE
   - echo $RDK
-  - if [$OE == true]; then conda install -c openeye openeye-toolkits; fi
+  - if $OE; then conda install -c openeye openeye-toolkits ; fi
     # install rdkit
-  - if [$RDK == true]; then conda install -c rdkit rdkit; fi
+  - if $RDK; then conda install -c rdkit rdkit ; fi
   
     # install anything not in conda
   - pip install codecov
