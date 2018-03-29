@@ -14,7 +14,7 @@ from rdkit import Chem
 # Molecule Class
 # =======================================
 
-class MolRDK(MolAdapter):
+class Mol(MolAdapter):
     def __init__(self, mol):
         # TODO: add checks that mol is an RDKMol?
         self.mol = mol
@@ -61,7 +61,7 @@ class MolRDK(MolAdapter):
 # =======================================
 
 
-class AtomRDK(AtomAdapter):
+class Atom(AtomAdapter):
     def __init__(self, atom):
         # TODO: check bond is an OEBond object?
         self.atom = atom
@@ -124,7 +124,7 @@ class AtomRDK(AtomAdapter):
 # =======================================
 
 
-class BondRDK(BondAdapter):
+class Bond(BondAdapter):
     def __init__(self, bond):
         # TODO: check bond is an OEBond object?
         self.bond = bond

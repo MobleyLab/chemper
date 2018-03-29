@@ -11,6 +11,7 @@ if __name__ == "__main__":
         url="https://github.com/MobleyLab/chemical_perception",             # add github URL
         license='MIT',      # should match license in your repo
         packages=setuptools.find_packages(),
+        package_data=setuptools.findall(),
         install_requires=[
             'numpy>=1.7',
             # do you need any other libraries?

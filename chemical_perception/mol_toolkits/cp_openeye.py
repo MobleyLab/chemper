@@ -14,7 +14,7 @@ from openeye import oechem
 # Molecule Class
 # =======================================
 
-class MolOE(MolAdapter):
+class Mol(MolAdapter):
     def __init__(self, mol):
         # TODO: add checks that mol is an OEMol?
         self.mol = mol
@@ -60,7 +60,7 @@ class MolOE(MolAdapter):
 # =======================================
 
 
-class AtomOE(AtomAdapter):
+class Atom(AtomAdapter):
     def __init__(self, atom):
         # TODO: check bond is an OEBond object?
         self.atom = atom
@@ -113,7 +113,7 @@ class AtomOE(AtomAdapter):
 # =======================================
 
 
-class BondOE(BondAdapter):
+class Bond(BondAdapter):
     def __init__(self, bond):
         # TODO: check bond is an OEBond object?
         self.bond = bond
