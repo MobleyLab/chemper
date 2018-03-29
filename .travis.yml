@@ -39,6 +39,8 @@ install:
   - source activate test
 
     # install openeye
+  - echo "$OE"
+  - echo "$RDK"
   - if ["$OE" == true]; then conda install -c openeye openeye-toolkits; fi
     # install rdkit
   - if ["$RDK" == true]; then conda install -c rdkit rdkit; fi
