@@ -74,6 +74,7 @@ class Atom(AtomAdapter):
         if type(atom) != oechem.OEAtomBase:
             raise Exception("Expecting an OEAtomBase object instead of %s" % type(atom))
         self.atom = atom
+        self._index = self.atom.GetIdx()
 
     def atomic_number(self):
         return self.atom.GetAtomicNum()
@@ -103,7 +104,7 @@ class Atom(AtomAdapter):
         return self.atom.IsAromatic()
 
     def get_index(self):
-        return self.atom.GetIdx()
+        return self._index
 
     def is_connected_to(self, atom2):
         return self.atom.IsConnected(atom2.atom)
@@ -116,6 +117,7 @@ class Atom(AtomAdapter):
 
     def get_molecule(self):
         mol = oechem.OEMol(self.atom.GetParent())
+        self.atom = mol.GetAtom(oechem.OEHasAtomIdx(self._index))
         return Mol(mol)
 
 # =======================================
@@ -128,17 +130,19 @@ class Bond(BondAdapter):
         if type(bond) != oechem.OEBondBase:
             raise Exception("Expecting an OEBondBase object instead of %s" % type(bond))
         self.bond = bond
-        self.order = self.bond.GetOrder()
+        self._order = self.bond.GetOrder()
         if self.is_aromatic():
-            self.order = 1.5
-        self.beginning = Atom(self.bond.GetBgn())
-        self.end = Atom(self.bond.GetEnd())
+            self._order = 1.5
+
+        self._idx = self.bond.GetIdx()
 
     def get_order(self):
-        return self.order
+        return self._order
 
     def get_atoms(self):
-        return [self.beginning, self.end]
+        beginning = Atom(self.bond.GetBgn())
+        end = Atom(self.bond.GetEnd())
+        return [beginning, end]
 
     def is_ring(self):
         return self.bond.IsInRing()
@@ -147,17 +151,18 @@ class Bond(BondAdapter):
         return self.bond.IsAromatic()
 
     def is_single(self):
-        return self.order == 1
+        return self._order == 1
 
     def is_double(self):
-        return self.order == 2
+        return self._order == 2
 
     def is_triple(self):
-        return self.order == 3
+        return self._order == 3
 
     def get_molecule(self):
         mol = oechem.OEMol(self.bond.GetParent())
+        self.bond = mol.GetBond(oechem.OEHasBondIdx(self._idx))
         return Mol(mol)
 
     def get_index(self):
-        return self.bond.GetIdx()
+        return self._idx

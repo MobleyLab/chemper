@@ -3,6 +3,7 @@ This is a general test for importing the tool for now
 """
 
 from chemical_perception.mol_toolkits import mol_toolkit
+print('testing mol_toolkits %s' % mol_toolkit.__name__)
 import pytest
 
 def test_molecule():
@@ -62,6 +63,7 @@ def test_bad_smiles():
 
 def test_bond():
     mol = mol_toolkit.MolFromSmiles('C')
+    print('made molecule')
     bond = mol.get_bond_by_index(0)
 
     assert bond.get_order() == 1
@@ -83,7 +85,9 @@ def test_bond():
     smiles = mol.get_smiles()
     assert smiles == "C"
 
+    print('trying to get index')
     assert bond.get_index() == 0
+    print('past bond index')
 
 
 def test_atom():
