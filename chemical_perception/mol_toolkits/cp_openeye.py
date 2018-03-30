@@ -16,7 +16,8 @@ from openeye import oechem
 
 class Mol(MolAdapter):
     def __init__(self, mol):
-        # TODO: add checks that mol is an OEMol?
+        if type(mol) != oechem.OEMol:
+            raise Exception("Expecting an OEMol object instead of %s" % type(mol))
         self.mol = mol
 
     def get_atoms(self):
@@ -37,7 +38,7 @@ class Mol(MolAdapter):
         ss = oechem.OESubSearch()
         if not ss.Init(smirks):
             # TODO: write custom exceptions?
-            raise Exception("Error parsing SMIRKS %s" % smirks)
+            raise ValueError("Error parsing SMIRKS %s" % smirks)
 
         for match in ss.Match(self.mol, False):
             d = dict()
@@ -59,7 +60,7 @@ class MolFromSmiles(Mol):
     def __init__(self, smiles):
         mol = oechem.OEMol()
         if not oechem.OESmilesToMol(mol, smiles):
-            raise Exception('Could not parse SMILES %s' % smiles)
+            raise ValueError('Could not parse SMILES %s' % smiles)
         oechem.OEAddExplicitHydrogens(mol)
         Mol.__init__(self, mol)
 
@@ -70,7 +71,8 @@ class MolFromSmiles(Mol):
 
 class Atom(AtomAdapter):
     def __init__(self, atom):
-        # TODO: check bond is an OEBond object?
+        if type(atom) != oechem.OEAtomBase:
+            raise Exception("Expecting an OEAtomBase object instead of %s" % type(atom))
         self.atom = atom
 
     def atomic_number(self):
@@ -123,9 +125,12 @@ class Atom(AtomAdapter):
 
 class Bond(BondAdapter):
     def __init__(self, bond):
-        # TODO: check bond is an OEBond object?
+        if type(bond) != oechem.OEBondBase:
+            raise Exception("Expecting an OEBondBase object instead of %s" % type(bond))
         self.bond = bond
         self.order = self.bond.GetOrder()
+        if self.is_aromatic():
+            self.order = 1.5
         self.beginning = Atom(self.bond.GetBgn())
         self.end = Atom(self.bond.GetEnd())
 

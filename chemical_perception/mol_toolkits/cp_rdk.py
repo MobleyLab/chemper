@@ -17,7 +17,7 @@ from rdkit import Chem
 class Mol(MolAdapter):
     def __init__(self, mol):
         if type(mol) != Chem.rdchem.Mol:
-            raise Exception('Please provide an RDKit molecule %s type was not recognized' % type(mol))
+            raise Exception("Expecting an rdchem.Mol instead of %s" % type(mol))
         self.mol = mol
 
     def get_atoms(self):
@@ -38,7 +38,7 @@ class Mol(MolAdapter):
         ss = Chem.MolFromSmarts(smirks)
         if ss is None:
             # TODO: write custom exceptions?
-            raise Exception("Error parsing SMIRKS %s" % smirks)
+            raise ValueError("Error parsing SMIRKS %s" % smirks)
 
         # get atoms in query mol with smirks index
         maps = dict()
@@ -61,7 +61,7 @@ class MolFromSmiles(Mol):
     def __init__(self, smiles):
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
-            raise Exception('Could not parse SMILES %s' % smiles)
+            raise ValueError('Could not parse SMILES %s' % smiles)
         Mol.__init__(self, Chem.AddHs(mol))
 
 # =======================================
@@ -71,7 +71,8 @@ class MolFromSmiles(Mol):
 
 class Atom(AtomAdapter):
     def __init__(self, atom):
-        # TODO: check bond is an OEBond object?
+        if type(atom) != Chem.rdchem.Atom:
+            raise Exception("Expecting an rdchem.Atom instead of %s" % type(atom))
         self.atom = atom
 
     def atomic_number(self):
@@ -134,7 +135,8 @@ class Atom(AtomAdapter):
 
 class Bond(BondAdapter):
     def __init__(self, bond):
-        # TODO: check bond is an OEBond object?
+        if type(bond) != Chem.rdchem.Mol:
+            raise Exception("Expecting an rdchem.Bond instead of %s" % type(bond))
         self.bond = bond
         self.order = self.bond.GetBondTypeAsDouble()
         self.beginning = Atom(self.bond.GetBeginAtom())

@@ -3,7 +3,7 @@ This is a general test for importing the tool for now
 """
 
 from chemical_perception.mol_toolkits import mol_toolkit
-from unittest import TestCase
+import pytest
 
 def test_molecule():
     """
@@ -45,6 +45,20 @@ def test_smirks_search():
         assert 1 in match
         assert 2 in match
 
+def test_bad_smirks():
+    """
+    Check a ValueError is raised with improper SMIRKS
+    """
+    mol = mol_toolkit.MolFromSmiles('C')
+    with pytest.raises(ValueError):
+        mol.smirks_search(']X[')
+
+def test_bad_smiles():
+    """
+    Check a ValueError is raised with a bad SMILES
+    """
+    with pytest.raises(ValueError):
+        mol = mol_toolkit.MolFromSmiles('ZZZ')
 
 def test_bond():
     mol = mol_toolkit.MolFromSmiles('C')
@@ -68,6 +82,8 @@ def test_bond():
     mol = bond.get_molecule()
     smiles = mol.get_smiles()
     assert smiles == "C"
+
+    assert bond.get_index() == 0
 
 
 def test_atom():
