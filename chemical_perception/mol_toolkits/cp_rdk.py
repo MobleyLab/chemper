@@ -135,7 +135,7 @@ class Atom(AtomAdapter):
 
 class Bond(BondAdapter):
     def __init__(self, bond):
-        if type(bond) != Chem.rdchem.Mol:
+        if type(bond) != Chem.rdchem.Bond:
             raise Exception("Expecting an rdchem.Bond instead of %s" % type(bond))
         self.bond = bond
         self.order = self.bond.GetBondTypeAsDouble()
