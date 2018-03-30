@@ -2,23 +2,15 @@
 This is a general test for importing the tool for now
 """
 
-from chemical_perception.mol_toolkits.cp_rdk import MolRDK, AtomRDK, BondRDK
-from rdkit import Chem
-
-
-def rdk_mol():
-    """
-    Returns an RDKit Mol of methane
-    """
-    smiles = 'C'
-    m = Chem.MolFromSmiles(smiles)
-    return Chem.AddHs(m)
+from chemical_perception.mol_toolkits import mol_toolkit
+print('testing mol_toolkits %s' % mol_toolkit.__name__)
+import pytest
 
 def test_molecule():
     """
-    Test MolRDK functions
+    Test MolOE functions
     """
-    mol = MolRDK(rdk_mol())
+    mol = mol_toolkit.MolFromSmiles('C')
 
     atoms = 0
     for a in mol.get_atoms():
@@ -41,7 +33,7 @@ def test_smirks_search():
     """
     test SMIRKS searching
     """
-    mol = MolRDK(rdk_mol())
+    mol = mol_toolkit.MolFromSmiles('C')
 
     # smirks for C-H bond
     smirks = "[#6:1]-[#1:2]"
@@ -54,13 +46,25 @@ def test_smirks_search():
         assert 1 in match
         assert 2 in match
 
+def test_bad_smirks():
+    """
+    Check a ValueError is raised with improper SMIRKS
+    """
+    mol = mol_toolkit.MolFromSmiles('C')
+    with pytest.raises(ValueError):
+        mol.smirks_search(']X[')
+
+def test_bad_smiles():
+    """
+    Check a ValueError is raised with a bad SMILES
+    """
+    with pytest.raises(ValueError):
+        mol = mol_toolkit.MolFromSmiles('ZZZ')
 
 def test_bond():
-    """
-    Test BondRDK functions
-    """
-    mol = rdk_mol()
-    bond = BondRDK(mol.GetBondWithIdx(0))
+    mol = mol_toolkit.MolFromSmiles('C')
+    print('made molecule')
+    bond = mol.get_bond_by_index(0)
 
     assert bond.get_order() == 1
 
@@ -81,13 +85,14 @@ def test_bond():
     smiles = mol.get_smiles()
     assert smiles == "C"
 
+    print('trying to get index')
+    assert bond.get_index() == 0
+    print('past bond index')
+
 
 def test_atom():
-    """
-    Test AtomRDK functions
-    """
-    mol = rdk_mol()
-    atom = AtomRDK(mol.GetAtomWithIdx(0))
+    mol = mol_toolkit.MolFromSmiles('C')
+    atom = mol.get_atom_by_index(0)
 
     assert atom.atomic_number() == 6
 

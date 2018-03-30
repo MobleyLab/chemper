@@ -14,22 +14,23 @@ from rdkit import Chem
 # Molecule Class
 # =======================================
 
-class MolRDK(MolAdapter):
+class Mol(MolAdapter):
     def __init__(self, mol):
-        # TODO: add checks that mol is an RDKMol?
+        if type(mol) != Chem.rdchem.Mol:
+            raise Exception("Expecting an rdchem.Mol instead of %s" % type(mol))
         self.mol = mol
 
     def get_atoms(self):
-        return [AtomRDK(a) for a in self.mol.GetAtoms()]
+        return [Atom(a) for a in self.mol.GetAtoms()]
 
     def get_atom_by_index(self, idx):
-        return AtomRDK(self.mol.GetAtomWithIdx(idx))
+        return Atom(self.mol.GetAtomWithIdx(idx))
 
     def get_bonds(self):
-        return [BondRDK(b) for b in self.mol.GetBonds()]
+        return [Bond(b) for b in self.mol.GetBonds()]
 
     def get_bond_by_index(self, idx):
-        return BondRDK(self.mol.GetBondWithIdx(idx))
+        return Bond(self.mol.GetBondWithIdx(idx))
 
     def smirks_search(self, smirks):
         matches = list()
@@ -37,7 +38,7 @@ class MolRDK(MolAdapter):
         ss = Chem.MolFromSmarts(smirks)
         if ss is None:
             # TODO: write custom exceptions?
-            raise Exception("Error parsing SMIRKS %s" % smirks)
+            raise ValueError("Error parsing SMIRKS %s" % smirks)
 
         # get atoms in query mol with smirks index
         maps = dict()
@@ -56,14 +57,22 @@ class MolRDK(MolAdapter):
         smiles = Chem.MolToSmiles(Chem.RemoveHs(self.mol))
         return smiles
 
+class MolFromSmiles(Mol):
+    def __init__(self, smiles):
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            raise ValueError('Could not parse SMILES %s' % smiles)
+        Mol.__init__(self, Chem.AddHs(mol))
+
 # =======================================
 # Atom Class
 # =======================================
 
 
-class AtomRDK(AtomAdapter):
+class Atom(AtomAdapter):
     def __init__(self, atom):
-        # TODO: check bond is an OEBond object?
+        if type(atom) != Chem.rdchem.Atom:
+            raise Exception("Expecting an rdchem.Atom instead of %s" % type(atom))
         self.atom = atom
 
     def atomic_number(self):
@@ -110,27 +119,28 @@ class AtomRDK(AtomAdapter):
         return atom2.get_index() in neighbors
 
     def get_neighbors(self):
-        return [AtomRDK(a) for a in self.atom.GetNeighbors()]
+        return [Atom(a) for a in self.atom.GetNeighbors()]
 
     def get_bonds(self):
-        return [BondRDK(b) for b in self.atom.GetBonds()]
+        return [Bond(b) for b in self.atom.GetBonds()]
 
     def get_molecule(self):
         mol = Chem.Mol(self.atom.GetOwningMol())
-        return MolRDK(mol)
+        return Mol(mol)
 
 # =======================================
 # Bond Class
 # =======================================
 
 
-class BondRDK(BondAdapter):
+class Bond(BondAdapter):
     def __init__(self, bond):
-        # TODO: check bond is an OEBond object?
+        if type(bond) != Chem.rdchem.Bond:
+            raise Exception("Expecting an rdchem.Bond instead of %s" % type(bond))
         self.bond = bond
         self.order = self.bond.GetBondTypeAsDouble()
-        self.beginning = AtomRDK(self.bond.GetBeginAtom())
-        self.end = AtomRDK(self.bond.GetEndAtom())
+        self.beginning = Atom(self.bond.GetBeginAtom())
+        self.end = Atom(self.bond.GetEndAtom())
 
     def get_order(self):
         return self.order
@@ -155,7 +165,7 @@ class BondRDK(BondAdapter):
 
     def get_molecule(self):
         mol = Chem.Mol(self.bond.GetOwningMol())
-        return MolRDK(mol)
+        return Mol(mol)
 
     def get_index(self):
         return self.bond.GetIdx()

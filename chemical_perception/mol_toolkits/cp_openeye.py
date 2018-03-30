@@ -14,22 +14,23 @@ from openeye import oechem
 # Molecule Class
 # =======================================
 
-class MolOE(MolAdapter):
+class Mol(MolAdapter):
     def __init__(self, mol):
-        # TODO: add checks that mol is an OEMol?
+        if type(mol) != oechem.OEMol:
+            raise Exception("Expecting an OEMol object instead of %s" % type(mol))
         self.mol = mol
 
     def get_atoms(self):
-        return [AtomOE(a) for a in self.mol.GetAtoms()]
+        return [Atom(a) for a in self.mol.GetAtoms()]
 
     def get_atom_by_index(self, idx):
-        return AtomOE(self.mol.GetAtom(oechem.OEHasAtomIdx(idx)))
+        return Atom(self.mol.GetAtom(oechem.OEHasAtomIdx(idx)))
 
     def get_bonds(self):
-        return [BondOE(b) for b in self.mol.GetBonds()]
+        return [Bond(b) for b in self.mol.GetBonds()]
 
     def get_bond_by_index(self, idx):
-        return BondOE(self.mol.GetBond(oechem.OEHasBondIdx(idx)))
+        return Bond(self.mol.GetBond(oechem.OEHasBondIdx(idx)))
 
     def smirks_search(self, smirks):
         matches = list()
@@ -37,7 +38,7 @@ class MolOE(MolAdapter):
         ss = oechem.OESubSearch()
         if not ss.Init(smirks):
             # TODO: write custom exceptions?
-            raise Exception("Error parsing SMIRKS %s" % smirks)
+            raise ValueError("Error parsing SMIRKS %s" % smirks)
 
         for match in ss.Match(self.mol, False):
             d = dict()
@@ -55,15 +56,25 @@ class MolOE(MolAdapter):
         smiles = oechem.OEMolToSmiles(self.mol)
         return smiles
 
+class MolFromSmiles(Mol):
+    def __init__(self, smiles):
+        mol = oechem.OEMol()
+        if not oechem.OESmilesToMol(mol, smiles):
+            raise ValueError('Could not parse SMILES %s' % smiles)
+        oechem.OEAddExplicitHydrogens(mol)
+        Mol.__init__(self, mol)
+
 # =======================================
 # Atom Class
 # =======================================
 
 
-class AtomOE(AtomAdapter):
+class Atom(AtomAdapter):
     def __init__(self, atom):
-        # TODO: check bond is an OEBond object?
+        if type(atom) != oechem.OEAtomBase:
+            raise Exception("Expecting an OEAtomBase object instead of %s" % type(atom))
         self.atom = atom
+        self._index = self.atom.GetIdx()
 
     def atomic_number(self):
         return self.atom.GetAtomicNum()
@@ -93,39 +104,45 @@ class AtomOE(AtomAdapter):
         return self.atom.IsAromatic()
 
     def get_index(self):
-        return self.atom.GetIdx()
+        return self._index
 
     def is_connected_to(self, atom2):
         return self.atom.IsConnected(atom2.atom)
 
     def get_neighbors(self):
-        return [AtomOE(a) for a in self.atom.GetAtoms()]
+        return [Atom(a) for a in self.atom.GetAtoms()]
 
     def get_bonds(self):
-        return [BondOE(b) for b in self.atom.GetBonds()]
+        return [Bond(b) for b in self.atom.GetBonds()]
 
     def get_molecule(self):
         mol = oechem.OEMol(self.atom.GetParent())
-        return MolOE(mol)
+        self.atom = mol.GetAtom(oechem.OEHasAtomIdx(self._index))
+        return Mol(mol)
 
 # =======================================
 # Bond Class
 # =======================================
 
 
-class BondOE(BondAdapter):
+class Bond(BondAdapter):
     def __init__(self, bond):
-        # TODO: check bond is an OEBond object?
+        if type(bond) != oechem.OEBondBase:
+            raise Exception("Expecting an OEBondBase object instead of %s" % type(bond))
         self.bond = bond
-        self.order = self.bond.GetOrder()
-        self.beginning = AtomOE(self.bond.GetBgn())
-        self.end = AtomOE(self.bond.GetEnd())
+        self._order = self.bond.GetOrder()
+        if self.is_aromatic():
+            self._order = 1.5
+
+        self._idx = self.bond.GetIdx()
 
     def get_order(self):
-        return self.order
+        return self._order
 
     def get_atoms(self):
-        return [self.beginning, self.end]
+        beginning = Atom(self.bond.GetBgn())
+        end = Atom(self.bond.GetEnd())
+        return [beginning, end]
 
     def is_ring(self):
         return self.bond.IsInRing()
@@ -134,17 +151,18 @@ class BondOE(BondAdapter):
         return self.bond.IsAromatic()
 
     def is_single(self):
-        return self.order == 1
+        return self._order == 1
 
     def is_double(self):
-        return self.order == 2
+        return self._order == 2
 
     def is_triple(self):
-        return self.order == 3
+        return self._order == 3
 
     def get_molecule(self):
         mol = oechem.OEMol(self.bond.GetParent())
-        return MolOE(mol)
+        self.bond = mol.GetBond(oechem.OEHasBondIdx(self._idx))
+        return Mol(mol)
 
     def get_index(self):
-        return self.bond.GetIdx()
+        return self._idx
