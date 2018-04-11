@@ -81,7 +81,7 @@ class ChemPerGraph(object):
                                                    self.min_ring_size,
                                                    charge)
 
-            if (self.smirks_index not None) or (self.smirks_index <= 0):
+            if self.smirks_index is None or self.smirks_index <= 0:
                 return '[%s]' % base_smirks
 
             return '[%s:%i]' % (base_smirks, self.smirks_index)
@@ -159,7 +159,7 @@ class ChemPerGraph(object):
             atom_smirks = self._as_smirks(neighbor, new_neighbors)
 
             if idx < len(neighbors) - 1:
-                smirks += '(' bond_smirks + atom_smirks + ')'
+                smirks += '(' + bond_smirks + atom_smirks + ')'
             else:
                 smirks += bond_smirks + atom_smirks
 
@@ -207,7 +207,7 @@ class ChemPerGraph(object):
 
         self._graph.add_node(new_atom_storage)
         new_atom_storage = self.AtomStorage(new_atom, smirks_index=new_smirks_index)
-        if new_smirks_index if not None:
+        if new_smirks_index is not None and new_smirks_index > 0:
             self.atom_by_smirks_index[new_smirks_index] = new_atom_storage
 
         # This is the first atom added to the graph
@@ -235,7 +235,7 @@ class ChemPerGraphFromMol(ChemPerGraph):
         self.atom_by_index = dict()
         self.smirks_atoms = smirks_atoms
         self._add_smirks_atoms()
-        self._add_layers(layers)
+        #self._add_layers(layers)
 
     def _add_smirks_atoms(self):
         # add all smirks atoms to the graph
@@ -253,13 +253,25 @@ class ChemPerGraphFromMol(ChemPerGraph):
                 bond = self.mol.get_bond_by_atoms(atom1, atom2)
 
                 if bond is not None: # Atoms are connected add edge
-                    # TODO: fix bond smirks index, dif will give 1 most of the time, we way max-1?
-                    bond_storage = self.BondStorage(bond, abs(neighbor_key-key))
+                    bond_storage = self.BondStorage(bond, max(neighbor_key, key)-1)
                     self._graph.add_edge(new_atom_storage,
                                          self.atom_by_smirks_index[neighbor_key],
                                          bond=bond_storage)
 
-    # TODO: This is where you stopped you need to figure out the "right" way to do this...
-    def _add_layers(self, layers):
-        min_smirks = min(self.atom_by_smirks_index)
+    # TODO: I could probably do this with a while loop, is that better?
+    def _add_layers(self, atom_storage, add_layer):
+        if add_layer == 0:
+            return
 
+        new_smirks_index = min(1, atom_storage.smirks_index) - 1
+
+        for new_atom in atom_storage.atom.get_neighbors():
+            if new_atom.get_index() in self.atom_by_index:
+                continue
+
+            new_bond = self.mol.get_bond_by_atoms(atom_storage.atom, new_atom)
+            new_storage = self.add_atom(new_atom, new_bond, atom_storage,
+                                        new_smirks_index, new_smirks_index)
+            self.atom_by_index[new_atom.get_index()] = new_storage
+            if add_layer > 1:
+                self._add_layers(new_storage, add_layer-1)
