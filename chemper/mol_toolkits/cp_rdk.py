@@ -11,7 +11,7 @@ AUTHORS:
 Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
-from chemical_perception.mol_toolkits.adapters import MolAdapter, AtomAdapter, BondAdapter
+from chemper.mol_toolkits.adapters import MolAdapter, AtomAdapter, BondAdapter
 from rdkit import Chem
 
 

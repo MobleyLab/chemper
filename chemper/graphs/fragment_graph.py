@@ -11,7 +11,7 @@ Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvi
 """
 
 # TODO: import mol_toolkit?
-from chemical_perception.mol_toolkits import mol_toolkit
+from chemper.mol_toolkits import mol_toolkit
 import networkx as nx
 
 
@@ -21,7 +21,7 @@ import networkx as nx
 class ChemPerGraph(object):
     """
     ChemPerGraphs are a graph based class for storing atom and bond information.
-    They use the chemical_perception.mol_toolkits Atoms, Bonds, and Mols
+    They use the chemper.mol_toolkits Atoms, Bonds, and Mols
     """
     class AtomStorage(object):
         """
@@ -31,7 +31,7 @@ class ChemPerGraph(object):
             """
             Initializes AtomStorage based on a provided atom
 
-            :param atom: chemical_perception atom object
+            :param atom: chemper atom object
             :param smirks_index: integer for labeling this atom in a SMIRKS
             """
             self._atom = atom
@@ -195,8 +195,8 @@ class ChemPerGraph(object):
     def add_atom(self, new_atom, new_bond=None, bond_to_atom=None,
                  new_smirks_index=None, new_bond_index=None):
         """
-        :param new_atom: a chemical_perception mol_toolkit atom object
-        :param new_bond: a chemical_perception mol_toolkit bond object
+        :param new_atom: a chemper mol_toolkit atom object
+        :param new_bond: a chemper mol_toolkit bond object
         :param bond_to_atom: AtomStorage object to connect this bond to
         :param new_smirks_index: integer for SMIRKS indexing the new atom
         :param new_bond_index: integer for 'smirks_index' on bond storage object
@@ -225,7 +225,7 @@ class ChemPerGraphFromMol(ChemPerGraph):
         """
         Initialize a ChemPerGraph from a molecule and a set of indexed atoms
 
-        :param mol: chemical_perception mol
+        :param mol: chemper mol
         :param smirks_atoms: dictionary of the form {smirks_index: atom_index}
         :param layers: how many atoms out from the smirks indexed atoms do you wish save (default=0)
         """

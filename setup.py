@@ -3,12 +3,12 @@ import setuptools
 
 if __name__ == "__main__":
     setuptools.setup(
-        name='chemical_perception',        # Make sure to change to match your library name
+        name='chemper',        # Make sure to change to match your library name
         version="0.0.0",    # you should keep track of versions
         description='A python package for automatically sampling chemical perception',     # add a description
         author='Caitlin C. Bannan',          # add your name to author category
         author_email='bannanc@uci.edu',    # add your e-mail
-        url="https://github.com/MobleyLab/chemical_perception",             # add github URL
+        url="https://github.com/MobleyLab/chemper",             # add github URL
         license='MIT',      # should match license in your repo
         packages=setuptools.find_packages(),
         install_requires=[

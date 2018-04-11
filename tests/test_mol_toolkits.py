@@ -2,7 +2,7 @@
 This is a general test for importing the tool for now
 """
 
-from chemical_perception.mol_toolkits import mol_toolkit
+from chemper.mol_toolkits import mol_toolkit
 print('testing mol_toolkits %s' % mol_toolkit.__name__)
 import pytest
 
