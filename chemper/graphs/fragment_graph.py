@@ -14,9 +14,6 @@ Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvi
 import networkx as nx
 
 
-
-
-
 class ChemPerGraph(object):
     """
     ChemPerGraphs are a graph based class for storing atom and bond information.
@@ -62,7 +59,7 @@ class ChemPerGraph(object):
             :return: smirks pattern for this atom
             """
             if self.atom is None:
-                if self.smirks_index is None:
+                if self.smirks_index is None or self.smirks_index <= 0:
                     return '[*]'
                 return '[*:%i]' % self.smirks_index
 
