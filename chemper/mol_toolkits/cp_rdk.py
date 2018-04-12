@@ -40,7 +40,7 @@ class Mol(MolAdapter):
     def get_bond_by_atoms(self, atom1, atom2):
         if not atom1.is_connected_to(atom2):
             return None
-        return Bond(self.mol.GetAtom(atom1.get_index(), atom2.get_index()))
+        return Bond(self.mol.GetBondBetweenAtoms(atom1.get_index(), atom2.get_index()))
 
     def smirks_search(self, smirks):
         matches = list()
