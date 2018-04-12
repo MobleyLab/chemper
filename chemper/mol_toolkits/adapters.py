@@ -1,12 +1,15 @@
 """
-adapters
+adapters.py
 
 This script contains adapters or the structure for atoms, molecules and
 substructure searches.
 Our chemical perception code is designed to be independent of the users
 cheminformatics packages. For each cheminformatics package we support we
 will provide classes following the structure in these adapters.
-Authors: Caitlin C. Bannan
+
+AUTHORS:
+
+Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
 from abc import ABC, abstractmethod
@@ -31,6 +34,10 @@ class MolAdapter(ABC):
 
     @abstractmethod
     def get_bond_by_index(self, idx):
+        return
+
+    @abstractmethod
+    def get_bond_by_atoms(self, atom1, atom2):
         return
 
     @abstractmethod

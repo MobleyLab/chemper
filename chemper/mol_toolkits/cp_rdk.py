@@ -1,12 +1,17 @@
 """
+cp_rdk.py
+
 Cheminformatics tools using RDKit
 
 The classes provided here follow the structure in adapters.
 This is a wrapper allowing our actual package to use RDKit
-Authors: Caitlin C. Bannan
+
+AUTHORS:
+
+Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
-from chemical_perception.mol_toolkits.adapters import MolAdapter, AtomAdapter, BondAdapter
+from chemper.mol_toolkits.adapters import MolAdapter, AtomAdapter, BondAdapter
 from rdkit import Chem
 
 
@@ -31,6 +36,11 @@ class Mol(MolAdapter):
 
     def get_bond_by_index(self, idx):
         return Bond(self.mol.GetBondWithIdx(idx))
+
+    def get_bond_by_atoms(self, atom1, atom2):
+        if not atom1.is_connected_to(atom2):
+            return None
+        return Bond(self.mol.GetBondBetweenAtoms(atom1.get_index(), atom2.get_index()))
 
     def smirks_search(self, smirks):
         matches = list()
