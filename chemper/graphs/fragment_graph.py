@@ -11,7 +11,6 @@ Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvi
 """
 
 # TODO: import mol_toolkit?
-from chemper.mol_toolkits import mol_toolkit
 import networkx as nx
 
 
@@ -34,7 +33,7 @@ class ChemPerGraph(object):
             :param atom: chemper atom object
             :param smirks_index: integer for labeling this atom in a SMIRKS
             """
-            self._atom = atom
+            self.atom = atom
 
             if atom is None:
                 self.atomic_number = None
@@ -62,7 +61,7 @@ class ChemPerGraph(object):
             """
             :return: smirks pattern for this atom
             """
-            if self._atom is None:
+            if self.atom is None:
                 if self.smirks_index is None:
                     return '[*]'
                 return '[*:%i]' % self.smirks_index
@@ -85,7 +84,6 @@ class ChemPerGraph(object):
                 return '[%s]' % base_smirks
 
             return '[%s:%i]' % (base_smirks, self.smirks_index)
-
 
     class BondStorage(object):
         """
@@ -205,8 +203,8 @@ class ChemPerGraph(object):
         if bond_to_atom is None and len(self.get_atoms()) > 0:
             return None
 
-        self._graph.add_node(new_atom_storage)
         new_atom_storage = self.AtomStorage(new_atom, smirks_index=new_smirks_index)
+        self._graph.add_node(new_atom_storage)
         if new_smirks_index is not None and new_smirks_index > 0:
             self.atom_by_smirks_index[new_smirks_index] = new_atom_storage
 
@@ -228,25 +226,26 @@ class ChemPerGraphFromMol(ChemPerGraph):
         :param mol: chemper mol
         :param smirks_atoms: dictionary of the form {smirks_index: atom_index}
         :param layers: how many atoms out from the smirks indexed atoms do you wish save (default=0)
+                       'all' will lead to all atoms in the molecule being specified (not recommended)
         """
         ChemPerGraph.__init__(self)
 
         self.mol = mol
         self.atom_by_index = dict()
-        self.smirks_atoms = smirks_atoms
-        self._add_smirks_atoms()
-        #self._add_layers(layers)
+        self._add_smirks_atoms(smirks_atoms)
+        for smirks_key, atom_storage in self.atom_by_smirks_index.items():
+            self._add_layers(atom_storage, layers)
 
-    def _add_smirks_atoms(self):
+    def _add_smirks_atoms(self, smirks_atoms):
         # add all smirks atoms to the graph
-        for key, atom_index in self.smirks_atoms.items():
+        for key, atom_index in smirks_atoms.items():
             atom1 = self.mol.get_atom_by_index(atom_index)
             new_atom_storage = self.AtomStorage(atom1, key)
+            self._graph.add_node(new_atom_storage)
             self.atom_by_smirks_index[key] = new_atom_storage
             self.atom_by_index[atom_index] = new_atom_storage
-
             # Check for bonded atoms already in the graph
-            for neighbor_key, neighbor_index in self.smirks_atoms.items():
+            for neighbor_key, neighbor_index in smirks_atoms.items():
                 if not neighbor_key in self.atom_by_smirks_index:
                     continue
                 atom2 = self.mol.get_atom_by_index(neighbor_index)
@@ -273,5 +272,7 @@ class ChemPerGraphFromMol(ChemPerGraph):
             new_storage = self.add_atom(new_atom, new_bond, atom_storage,
                                         new_smirks_index, new_smirks_index)
             self.atom_by_index[new_atom.get_index()] = new_storage
-            if add_layer > 1:
+            if add_layer == 'all':
+                self._add_layers(new_storage, add_layer)
+            elif add_layer > 1:
                 self._add_layers(new_storage, add_layer-1)
