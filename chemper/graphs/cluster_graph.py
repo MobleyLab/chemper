@@ -111,7 +111,7 @@ class ClusterGraph(object):
 
     def __init__(self):
         """
-        Initialize ChemPerGraph
+        Initialize ClusterGraph
         """
         self._graph = nx.Graph()
         self.atom_by_smirks_index = dict() # stores a dictionary of atoms with smirks_index
@@ -174,6 +174,7 @@ class ClusterGraph(object):
         """
         :return: list of all BondStorage objects in graph
         """
+        # TODO, this currently returns edges, not bond objects
         return list(self._graph.edges())
 
     def get_neighbors(self, atom):
@@ -222,7 +223,7 @@ class ClusterGraphFromMols(ClusterGraph):
         :param layers: how many atoms out from the smirks indexed atoms do you wish save (default=0)
                        'all' will lead to all atoms in the molecule being specified (not recommended)
         """
-        ChemPerGraph.__init__(self)
+        ClusterGraph.__init__(self)
 
         self.mol = mol
         self.atom_by_index = dict()
