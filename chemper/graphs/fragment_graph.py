@@ -178,7 +178,7 @@ class ChemPerGraph(object):
         """
         :return: list of all BondStorage objects in graph
         """
-        return list(self._graph.edges())
+        return [data['bond'] for a1, a2, data in self._graph.edges(data=True)]
 
     def get_neighbors(self, atom):
         """
