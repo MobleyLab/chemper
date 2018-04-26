@@ -120,6 +120,7 @@ class ChemPerGraph(object):
         """
         self._graph = nx.Graph()
         self.atom_by_smirks_index = dict() # stores a dictionary of atoms with smirks_index
+        self.bond_by_smirks_index = dict() # stores a dictionary of bonds with smirks_index
 
     def as_smirks(self):
         """
@@ -210,6 +211,7 @@ class ChemPerGraph(object):
             return new_atom_storage
 
         new_bond_storage = self.BondStorage(new_bond, new_bond_index)
+        self.bond_by_smirks_index[new_bond_index] = new_bond_storage
 
         self._graph.add_edge(bond_to_atom, new_atom_storage, bond = new_bond_storage)
         return new_atom_storage
@@ -249,7 +251,9 @@ class ChemPerGraphFromMol(ChemPerGraph):
                 bond = self.mol.get_bond_by_atoms(atom1, atom2)
 
                 if bond is not None: # Atoms are connected add edge
-                    bond_storage = self.BondStorage(bond, max(neighbor_key, key)-1)
+                    bond_index = max(neighbor_key, key)-1
+                    bond_storage = self.BondStorage(bond, bond_index)
+                    self.bond_by_smirks_index[bond_index] = bond_storage
                     self._graph.add_edge(new_atom_storage,
                                          self.atom_by_smirks_index[neighbor_key],
                                          bond=bond_storage)

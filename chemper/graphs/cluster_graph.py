@@ -12,9 +12,10 @@ Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvi
 
 # TODO: import mol_toolkit?
 import networkx as nx
+from chemper.graphs.fragment_graph import ChemPerGraph
 
 
-class ClusterGraph(object):
+class ClusterGraph(ChemPerGraph):
     """
     ChemPerGraphs are a graph based class for storing atom and bond information.
     They use the chemper.mol_toolkits Atoms, Bonds, and Mols
@@ -29,10 +30,10 @@ class ClusterGraph(object):
             self.decorators = set()
             if atoms is not None:
                 for atom in atoms:
-                    self.decorators.add(self._make_atom_decorators(atom))
+                    self.decorators.add(self.make_atom_decorators(atom))
             self.smirks_index = smirks_index
 
-        def _make_atom_decorators(self, atom):
+        def make_atom_decorators(self, atom):
             aromatic = 'a' if atom.is_aromatic() else 'A'
             charge = atom.formal_charge()
             if charge >= 0:
@@ -66,7 +67,7 @@ class ClusterGraph(object):
             return '[%s:%i]' % (base_smirks, self.smirks_index)
 
         def add_atom(self, atom):
-            self.decorators.add(self._make_atom_decorators(atom))
+            self.decorators.add(self.make_atom_decorators(atom))
 
     class BondStorage(object):
         """
@@ -119,9 +120,8 @@ class ClusterGraph(object):
         :param layers: how many atoms out from the smirks indexed atoms do you wish save (default=0)
                        'all' will lead to all atoms in the molecule being specified (not recommended)
         """
-        self._graph = nx.Graph()
-        self.atom_by_smirks_index = dict() # stores a dictionary of atoms with smirks_index
-        self.bond_by_smirks_index = dict()
+        ChemPerGraph.__init__(self)
+
         self.mols = list()
         self.smirks_atoms_list = list()
 
@@ -185,98 +185,3 @@ class ClusterGraph(object):
                 if bond is not None:
                     bond_smirks = max(neighbor_key, key) - 1
                     self.bond_by_smirks_index[bond_smirks].add_bond(bond)
-
-    def as_smirks(self):
-        """
-        :return: a SMIRKS string matching the exact atom and bond information stored
-        """
-
-        # If no atoms have been added
-        if len(self._graph.nodes()) == 0:
-            return None
-
-        if self.atom_by_smirks_index:
-            min_smirks = min(self.atom_by_smirks_index)
-            init_atom = self.atom_by_smirks_index[min_smirks]
-        else:
-            init_atom = self.get_atoms()[0]
-
-        # sort neighboring atoms to keep consist output
-        neighbors = sorted(self.get_neighbors(init_atom), key=lambda a: a.as_smirks())
-        return self._as_smirks(init_atom, neighbors)
-
-    def _as_smirks(self, init_atom, neighbors):
-
-        smirks = init_atom.as_smirks()
-
-        for idx, neighbor in enumerate(neighbors):
-            bond = self.get_connecting_bond(init_atom, neighbor)
-            bond_smirks = bond.as_smirks()
-
-            new_neighbors = self.get_neighbors(neighbor)
-            new_neighbors.remove(init_atom)
-
-            atom_smirks = self._as_smirks(neighbor, new_neighbors)
-
-            if idx < len(neighbors) - 1:
-                smirks += '(' + bond_smirks + atom_smirks + ')'
-            else:
-                smirks += bond_smirks + atom_smirks
-
-        return smirks
-
-    def get_atoms(self):
-        """
-        :return: list of all AtomStorage objects in graph
-        """
-        return list(self._graph.nodes())
-
-    def get_connecting_bond(self, atom1, atom2):
-        """
-        :param atom1: AtomStorage object in this graph
-        :param atom2: AtomStorage object in this graph
-        :return: bond connecting them
-        """
-        return self._graph.get_edge_data(atom1, atom2)['bond']
-
-    def get_bonds(self):
-        """
-        :return: list of all BondStorage objects in graph
-        """
-        # TODO, this currently returns edges, not bond objects
-        return [data['bond'] for a1, a2, data in self._graph.edges(data=True)]
-
-    def get_neighbors(self, atom):
-        """
-        :param atom: an AtomStorage object
-        :return: neighboring AtomStorage objects
-        """
-        return list(self._graph.neighbors(atom))
-
-    def add_atom(self, new_atoms, new_bonds=None, bond_to_atom=None,
-                 new_smirks_index=None, new_bond_index=None):
-        """
-        :param new_atoms: a list of chemper mol_toolkit atom object
-        :param new_bonds: a list of chemper mol_toolkit bond object
-        :param bond_to_atom: AtomStorage object to connect this bond to
-        :param new_smirks_index: integer for SMIRKS indexing the new atom
-        :param new_bond_index: integer for 'smirks_index' on bond storage object
-        :return: new AtomStorage object or None if atom wasn't added
-        """
-        if bond_to_atom is None and len(self.get_atoms()) > 0:
-            return None
-
-        new_atom_storage = self.AtomStorage(new_atoms, smirks_index=new_smirks_index)
-        self._graph.add_node(new_atom_storage)
-        if new_smirks_index is not None:
-            self.atom_by_smirks_index[new_smirks_index] = new_atom_storage
-
-        # This is the first atom added to the graph
-        if bond_to_atom is None:
-            return new_atom_storage
-
-        new_bond_storage = self.BondStorage(new_bonds, new_bond_index)
-        self.bond_by_smirks_index[new_bond_index] = new_bond_storage
-
-        self._graph.add_edge(bond_to_atom, new_atom_storage, bond = new_bond_storage)
-        return new_atom_storage
