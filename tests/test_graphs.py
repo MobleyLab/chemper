@@ -19,41 +19,29 @@ def make_cluster_graph(smiles_list):
     return ClusterGraph(mols_list, smirks_dict_list)
 
 
-fragment_data = [
+graph_data = [
     (make_frag_graph('C', 0), '[#6AH4X4x0r0+0:1]-!@[#1AH0X1x0r0+0:2]'), # no layers
     (make_frag_graph('C#C', 1), # one layer
      '[#6AH1X2x0r0+0:1](-!@[#1AH0X1x0r0+0])#!@[#6AH1X2x0r0+0:2]-!@[#1AH0X1x0r0+0]'),
     (make_frag_graph('CO', 'all'), # infinite layers
      '[#6AH3X4x0r0+0:1](-!@[#1AH0X1x0r0+0])(-!@[#1AH0X1x0r0+0])(-!@[#1AH0X1x0r0+0])'\
      '-!@[#8AH1X2x0r0+0:2]-!@[#1AH0X1x0r0+0]'
-     )
+     ),
+    (make_cluster_graph(['CC']), "[#6AH3X4x0r0+0:1]-;!@[#6AH3X4x0r0+0:2]"),
+    (make_cluster_graph(['CC', 'C=C']),
+     "[#6AH2X3x0r0+0,#6AH3X4x0r0+0:1]-,=;!@[#6AH2X3x0r0+0,#6AH3X4x0r0+0:2]"),
+    (make_cluster_graph(['CC', 'C=C', 'C1CC1']),
+     "[#6AH2X3x0r0+0,#6AH2X4x2r3+0,#6AH3X4x0r0+0:1]-,=[#6AH2X3x0r0+0,#6AH2X4x2r3+0,#6AH3X4x0r0+0:2]")
 ]
 
-cluster_data=[
-    (make_cluster_graph(['CC']), "#6AH3X4x0r0+0", "-;!@"),
-    (make_cluster_graph(['CC', 'C=C']), "#6AH2X3x0r0+0,#6AH3X4x0r0+0", "-,=;!@"),
-    (make_cluster_graph(['CC', 'C=C', 'C1CC1']), "#6AH2X3x0r0+0,#6AH2X4x2r3+0,#6AH3X4x0r0+0", "-,=")
-]
 
-
-@pytest.mark.parametrize('graph,expected', fragment_data)
+@pytest.mark.parametrize('graph,expected', graph_data)
 def test_smirks_frag_graph(graph, expected):
     smirks = graph.as_smirks()
     print(smirks)
     assert smirks == expected
 
-@pytest.mark.parametrize('graph,a_smirks,b_smirks', cluster_data)
-def test_smirks_cluster_graph(graph, a_smirks, b_smirks):
-    # check expected SMIRKS
-    smirks = graph.as_smirks()
-    print(smirks)
-    expected = "[%s:1]%s[%s:2]" % (a_smirks, b_smirks, a_smirks)
-    assert smirks == expected
-
-
-all_graphs = [g for g, e in fragment_data] + [g for g, a, b in cluster_data]
-
-@pytest.mark.parametrize('graph', all_graphs)
+@pytest.mark.parametrize('graph', [g for g,e in graph_data])
 def test_other_cluster_graph(graph):
     bonds = graph.get_bonds()
     atom = graph.get_atoms()[0]
