@@ -59,7 +59,7 @@ class ClusterGraph(object):
                     return '[*]'
                 return '[*:%i]' % self.smirks_index
 
-            base_smirks = ','.join([''.join(l) for l in self.decorators])
+            base_smirks = ','.join([''.join(l) for l in sorted(list(self.decorators))])
             if self.smirks_index is None or self.smirks_index <= 0:
                 return '[%s]' % base_smirks
 
@@ -90,10 +90,10 @@ class ClusterGraph(object):
             if len(self.order) == 0:
                 order = '~'
             else:
-                order = ','.join(self.order)
+                order = ','.join(sorted(list(self.order)))
 
             if len(self.ring) == 1:
-                if self.ring[0]:
+                if list(self.ring)[0]:
                     return order+';@'
                 else:
                     return order+';!@'
@@ -108,14 +108,83 @@ class ClusterGraph(object):
             self.order.add(self.order_dict.get(bond.get_order()))
             self.ring.add(bond.is_ring())
 
-
-    def __init__(self):
+    # Initiate ClusterGraph
+    def __init__(self, mols=None, smirks_atoms_list=None, layers=0):
+        # TODO: figure out layers, currently only supporting layers=0
         """
-        Initialize ClusterGraph
+        Initialize a ChemPerGraph from a molecule and a set of indexed atoms
+
+        :param mols: list of chemper mols
+        :param smirks_atoms_list: sorted by mol list of dictionary of the form {smirks_index: atom_index}
+        :param layers: how many atoms out from the smirks indexed atoms do you wish save (default=0)
+                       'all' will lead to all atoms in the molecule being specified (not recommended)
         """
         self._graph = nx.Graph()
         self.atom_by_smirks_index = dict() # stores a dictionary of atoms with smirks_index
         self.bond_by_smirks_index = dict()
+        self.mols = list()
+        self.smirks_atoms_list = list()
+
+        if mols is not None:
+            if len(mols) != len(smirks_atoms_list):
+                raise Exception('Number of molecules and smirks dictionaries should be equal')
+
+            self._add_first_smirks_atoms(mols[0], smirks_atoms_list[0])
+            for idx, mol in enumerate(mols[1:]):
+                self.add_mol(mol, smirks_atoms_list[idx])
+
+        # TODO: figure out how to extend beyond just "SMIRKS indexed" atoms
+        # self.atom_by_index = dict()
+        #for smirks_key, atom_storage in self.atom_by_smirks_index.items():
+        #    self._add_layers(atom_storage, layers)
+
+    def _add_first_smirks_atoms(self, mol, smirks_atoms):
+        self.mols.append(mol)
+        self.smirks_atoms_list.append(smirks_atoms)
+
+        # add all smirks atoms to the graph
+        for key, atom_index in smirks_atoms.items():
+            atom1 = mol.get_atom_by_index(atom_index)
+            new_atom_storage = self.AtomStorage([atom1], key)
+            self._graph.add_node(new_atom_storage)
+            self.atom_by_smirks_index[key] = new_atom_storage
+            # self.atom_by_index[atom_index] = new_atom_storage
+
+            # Check for bonded atoms already in the graph
+            for neighbor_key, neighbor_index in smirks_atoms.items():
+                if not neighbor_key in self.atom_by_smirks_index:
+                    continue
+                atom2 = mol.get_atom_by_index(neighbor_index)
+                bond = mol.get_bond_by_atoms(atom1, atom2)
+
+                if bond is not None: # Atoms are connected add edge
+                    bond_smirks = max(neighbor_key, key)-1
+                    bond_storage = self.BondStorage([bond], bond_smirks)
+                    self.bond_by_smirks_index[bond_smirks] = bond_storage
+                    self._graph.add_edge(new_atom_storage,
+                                         self.atom_by_smirks_index[neighbor_key],
+                                         bond=bond_storage)
+
+    def add_mol(self, mol, smirks_atoms):
+        """
+        :param mol:
+        :param smirks_atoms:
+        :return:
+        """
+        self.mols.append(mol)
+        self.smirks_atoms_list.append(smirks_atoms)
+
+        for key, atom_index in smirks_atoms.items():
+            atom1 = mol.get_atom_by_index(atom_index)
+            self.atom_by_smirks_index[key].add_atom(atom1)
+
+            for neighbor_key, neighbor_index in smirks_atoms.items():
+                # check for connecting bond
+                atom2 = mol.get_atom_by_index(neighbor_index)
+                bond = mol.get_bond_by_atoms(atom1, atom2)
+                if bond is not None:
+                    bond_smirks = max(neighbor_key, key) - 1
+                    self.bond_by_smirks_index[bond_smirks].add_bond(bond)
 
     def as_smirks(self):
         """
@@ -175,7 +244,7 @@ class ClusterGraph(object):
         :return: list of all BondStorage objects in graph
         """
         # TODO, this currently returns edges, not bond objects
-        return list(self._graph.edges())
+        return [data['bond'] for a1, a2, data in self._graph.edges(data=True)]
 
     def get_neighbors(self, atom):
         """
@@ -211,63 +280,3 @@ class ClusterGraph(object):
 
         self._graph.add_edge(bond_to_atom, new_atom_storage, bond = new_bond_storage)
         return new_atom_storage
-
-
-class ClusterGraphFromMols(ClusterGraph):
-    def __init__(self, mol, smirks_atoms, layers=0):
-        """
-        Initialize a ChemPerGraph from a molecule and a set of indexed atoms
-
-        :param mol: chemper mol
-        :param smirks_atoms: dictionary of the form {smirks_index: atom_index}
-        :param layers: how many atoms out from the smirks indexed atoms do you wish save (default=0)
-                       'all' will lead to all atoms in the molecule being specified (not recommended)
-        """
-        ClusterGraph.__init__(self)
-
-        self.mol = mol
-        self.atom_by_index = dict()
-        self._add_smirks_atoms(smirks_atoms)
-        for smirks_key, atom_storage in self.atom_by_smirks_index.items():
-            self._add_layers(atom_storage, layers)
-
-    def _add_smirks_atoms(self, smirks_atoms):
-        # add all smirks atoms to the graph
-        for key, atom_index in smirks_atoms.items():
-            atom1 = self.mol.get_atom_by_index(atom_index)
-            new_atom_storage = self.AtomStorage(atom1, key)
-            self._graph.add_node(new_atom_storage)
-            self.atom_by_smirks_index[key] = new_atom_storage
-            self.atom_by_index[atom_index] = new_atom_storage
-            # Check for bonded atoms already in the graph
-            for neighbor_key, neighbor_index in smirks_atoms.items():
-                if not neighbor_key in self.atom_by_smirks_index:
-                    continue
-                atom2 = self.mol.get_atom_by_index(neighbor_index)
-                bond = self.mol.get_bond_by_atoms(atom1, atom2)
-
-                if bond is not None: # Atoms are connected add edge
-                    bond_storage = self.BondStorage(bond, max(neighbor_key, key)-1)
-                    self._graph.add_edge(new_atom_storage,
-                                         self.atom_by_smirks_index[neighbor_key],
-                                         bond=bond_storage)
-
-    # TODO: I could probably do this with a while loop, is that better?
-    def _add_layers(self, atom_storage, add_layer):
-        if add_layer == 0:
-            return
-
-        new_smirks_index = min(1, atom_storage.smirks_index) - 1
-
-        for new_atom in atom_storage.atom.get_neighbors():
-            if new_atom.get_index() in self.atom_by_index:
-                continue
-
-            new_bond = self.mol.get_bond_by_atoms(atom_storage.atom, new_atom)
-            new_storage = self.add_atom(new_atom, new_bond, atom_storage,
-                                        new_smirks_index, new_smirks_index)
-            self.atom_by_index[new_atom.get_index()] = new_storage
-            if add_layer == 'all':
-                self._add_layers(new_storage, add_layer)
-            elif add_layer > 1:
-                self._add_layers(new_storage, add_layer-1)
