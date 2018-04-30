@@ -110,78 +110,81 @@ class ClusterGraph(ChemPerGraph):
             self.ring.add(bond.is_ring())
 
     # Initiate ClusterGraph
-    def __init__(self, mols=None, smirks_atoms_list=None, layers=0):
+    def __init__(self, mols=None, smirks_atoms_lists=None, layers=0):
         # TODO: figure out layers, currently only supporting layers=0
         """
         Initialize a ChemPerGraph from a molecule and a set of indexed atoms
 
         :param mols: list of chemper mols
-        :param smirks_atoms_list: sorted by mol list of dictionary of the form {smirks_index: atom_index}
+        :param smirks_atoms_lists: sorted by mol list of lists of dictionary of the form {smirks_index: atom_index}
+        # TODO: figure out the best form for the smirks_atoms_lists
         :param layers: how many atoms out from the smirks indexed atoms do you wish save (default=0)
                        'all' will lead to all atoms in the molecule being specified (not recommended)
         """
         ChemPerGraph.__init__(self)
 
         self.mols = list()
-        self.smirks_atoms_list = list()
+        self.smirks_atoms_lists = list()
 
         if mols is not None:
-            if len(mols) != len(smirks_atoms_list):
+            if len(mols) != len(smirks_atoms_lists):
                 raise Exception('Number of molecules and smirks dictionaries should be equal')
 
-            self._add_first_smirks_atoms(mols[0], smirks_atoms_list[0])
+            self._add_first_smirks_atoms(mols[0], smirks_atoms_lists[0])
             for idx, mol in enumerate(mols[1:]):
-                self.add_mol(mol, smirks_atoms_list[idx])
+                self.add_mol(mol, smirks_atoms_lists[idx])
 
         # TODO: figure out how to extend beyond just "SMIRKS indexed" atoms
         # self.atom_by_index = dict()
         #for smirks_key, atom_storage in self.atom_by_smirks_index.items():
         #    self._add_layers(atom_storage, layers)
 
-    def _add_first_smirks_atoms(self, mol, smirks_atoms):
+    def _add_first_smirks_atoms(self, mol, smirks_atoms_list):
         self.mols.append(mol)
-        self.smirks_atoms_list.append(smirks_atoms)
+        self.smirks_atoms_lists.append(smirks_atoms_list)
 
-        # add all smirks atoms to the graph
-        for key, atom_index in smirks_atoms.items():
-            atom1 = mol.get_atom_by_index(atom_index)
-            new_atom_storage = self.AtomStorage([atom1], key)
-            self._graph.add_node(new_atom_storage)
-            self.atom_by_smirks_index[key] = new_atom_storage
-            # self.atom_by_index[atom_index] = new_atom_storage
+        for smirks_atoms in smirks_atoms_list:
+            # add all smirks atoms to the graph
+            for key, atom_index in smirks_atoms.items():
+                atom1 = mol.get_atom_by_index(atom_index)
+                new_atom_storage = self.AtomStorage([atom1], key)
+                self._graph.add_node(new_atom_storage)
+                self.atom_by_smirks_index[key] = new_atom_storage
+                # self.atom_by_index[atom_index] = new_atom_storage
 
-            # Check for bonded atoms already in the graph
-            for neighbor_key, neighbor_index in smirks_atoms.items():
-                if not neighbor_key in self.atom_by_smirks_index:
-                    continue
-                atom2 = mol.get_atom_by_index(neighbor_index)
-                bond = mol.get_bond_by_atoms(atom1, atom2)
+                # Check for bonded atoms already in the graph
+                for neighbor_key, neighbor_index in smirks_atoms.items():
+                    if not neighbor_key in self.atom_by_smirks_index:
+                        continue
+                    atom2 = mol.get_atom_by_index(neighbor_index)
+                    bond = mol.get_bond_by_atoms(atom1, atom2)
 
-                if bond is not None: # Atoms are connected add edge
-                    bond_smirks = max(neighbor_key, key)-1
-                    bond_storage = self.BondStorage([bond], bond_smirks)
-                    self.bond_by_smirks_index[bond_smirks] = bond_storage
-                    self._graph.add_edge(new_atom_storage,
-                                         self.atom_by_smirks_index[neighbor_key],
-                                         bond=bond_storage)
+                    if bond is not None: # Atoms are connected add edge
+                        bond_smirks = max(neighbor_key, key)-1
+                        bond_storage = self.BondStorage([bond], bond_smirks)
+                        self.bond_by_smirks_index[bond_smirks] = bond_storage
+                        self._graph.add_edge(new_atom_storage,
+                                             self.atom_by_smirks_index[neighbor_key],
+                                             bond=bond_storage)
 
-    def add_mol(self, mol, smirks_atoms):
+    def add_mol(self, mol, smirks_atoms_list):
         """
         :param mol:
         :param smirks_atoms:
         :return:
         """
         self.mols.append(mol)
-        self.smirks_atoms_list.append(smirks_atoms)
+        self.smirks_atoms_lists.append(smirks_atoms_list)
 
-        for key, atom_index in smirks_atoms.items():
-            atom1 = mol.get_atom_by_index(atom_index)
-            self.atom_by_smirks_index[key].add_atom(atom1)
+        for smirks_atoms in smirks_atoms_list:
+            for key, atom_index in smirks_atoms.items():
+                atom1 = mol.get_atom_by_index(atom_index)
+                self.atom_by_smirks_index[key].add_atom(atom1)
 
-            for neighbor_key, neighbor_index in smirks_atoms.items():
-                # check for connecting bond
-                atom2 = mol.get_atom_by_index(neighbor_index)
-                bond = mol.get_bond_by_atoms(atom1, atom2)
-                if bond is not None:
-                    bond_smirks = max(neighbor_key, key) - 1
-                    self.bond_by_smirks_index[bond_smirks].add_bond(bond)
+                for neighbor_key, neighbor_index in smirks_atoms.items():
+                    # check for connecting bond
+                    atom2 = mol.get_atom_by_index(neighbor_index)
+                    bond = mol.get_bond_by_atoms(atom1, atom2)
+                    if bond is not None:
+                        bond_smirks = max(neighbor_key, key) - 1
+                        self.bond_by_smirks_index[bond_smirks].add_bond(bond)
