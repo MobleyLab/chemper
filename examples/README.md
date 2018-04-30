@@ -2,10 +2,12 @@
 
 This is directory stores examples for how to use and work with ChemPer
 
-### SMIRKS from Molecules
+### Using Cluster Graph
 
 This is a starting example for how to use ChemPer's `ClusterGraph` class 
 to create SMIRKS patterns from clusters of molecular graphs. 
+
+The primary file is a jupyter notebook, `SMIRKS_from_molecules.ipynb`. Other files are there for support
 
 Note - for now this notebook has some functions that will probably be moved 
 into the `chemper.utils` script for general use, but part of building this 
