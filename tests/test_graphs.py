@@ -14,7 +14,7 @@ def make_frag_graph(smiles, layers):
     return ChemPerGraphFromMol(mol, smirks_dict, layers)
 
 def make_cluster_graph(smiles_list):
-    smirks_dict_list = [{1:0, 2:1}]*len(smiles_list)
+    smirks_dict_list = [[{1:0, 2:1}]]*len(smiles_list)
     mols_list = [mol_toolkit.MolFromSmiles(smiles) for smiles in smiles_list]
     return ClusterGraph(mols_list, smirks_dict_list)
 
