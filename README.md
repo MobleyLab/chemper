@@ -161,5 +161,5 @@ CCB is funded by a fellowship from [The Molecular Sciences Software Institute](h
 
 ## References
 
-1. D. Mobley et al. bioRxiv 2018, 286542. [doi.org/10.1101/286542](www.doi.org/10.1101/286542)
-2. C. Zanette and C.C. Bannan et al. chemRxiv 2018, [doi.org/10.26434/chemrxiv.6230627.v1](www.doi.org/10.26434/chemrxiv.6230627.v1)
+1. D. Mobley et al. bioRxiv 2018, 286542. [doi.org/10.1101/286542](http://doi.org/10.1101/286542)
+2. C. Zanette and C.C. Bannan et al. chemRxiv 2018, [doi.org/10.26434/chemrxiv.6230627.v1](https://doi.org/10.26434/chemrxiv.6230627.v1)
