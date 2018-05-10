@@ -10,11 +10,7 @@ AUTHORS:
 Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
-# TODO: import mol_toolkit?
 import networkx as nx
-
-
-
 
 
 class ChemPerGraph(object):
@@ -62,7 +58,7 @@ class ChemPerGraph(object):
             :return: smirks pattern for this atom
             """
             if self.atom is None:
-                if self.smirks_index is None:
+                if self.smirks_index is None or self.smirks_index <= 0:
                     return '[*]'
                 return '[*:%i]' % self.smirks_index
 
@@ -123,6 +119,7 @@ class ChemPerGraph(object):
         """
         self._graph = nx.Graph()
         self.atom_by_smirks_index = dict() # stores a dictionary of atoms with smirks_index
+        self.bond_by_smirks_index = dict() # stores a dictionary of bonds with smirks_index
 
     def as_smirks(self):
         """
@@ -173,15 +170,18 @@ class ChemPerGraph(object):
         """
         :param atom1: AtomStorage object in this graph
         :param atom2: AtomStorage object in this graph
-        :return: bond connecting them
+        :return: bond connecting them or None if not connected
         """
-        return self._graph.get_edge_data(atom1, atom2)['bond']
+        bond = self._graph.get_edge_data(atom1, atom2)
+        if bond is not None:
+            return bond['bond']
+        return None
 
     def get_bonds(self):
         """
         :return: list of all BondStorage objects in graph
         """
-        return list(self._graph.edges())
+        return [data['bond'] for a1, a2, data in self._graph.edges(data=True)]
 
     def get_neighbors(self, atom):
         """
@@ -213,6 +213,7 @@ class ChemPerGraph(object):
             return new_atom_storage
 
         new_bond_storage = self.BondStorage(new_bond, new_bond_index)
+        self.bond_by_smirks_index[new_bond_index] = new_bond_storage
 
         self._graph.add_edge(bond_to_atom, new_atom_storage, bond = new_bond_storage)
         return new_atom_storage
@@ -248,11 +249,20 @@ class ChemPerGraphFromMol(ChemPerGraph):
             for neighbor_key, neighbor_index in smirks_atoms.items():
                 if not neighbor_key in self.atom_by_smirks_index:
                     continue
+
+                # check if atoms are already connected on the graph
+                neighbor_storage = self.atom_by_smirks_index[neighbor_key]
+                if nx.has_path(self._graph, new_atom_storage, neighbor_storage):
+                    continue
+
+                # check if atoms are connected in the molecule
                 atom2 = self.mol.get_atom_by_index(neighbor_index)
                 bond = self.mol.get_bond_by_atoms(atom1, atom2)
 
                 if bond is not None: # Atoms are connected add edge
-                    bond_storage = self.BondStorage(bond, max(neighbor_key, key)-1)
+                    bond_index = max(neighbor_key, key)-1
+                    bond_storage = self.BondStorage(bond, bond_index)
+                    self.bond_by_smirks_index[bond_index] = bond_storage
                     self._graph.add_edge(new_atom_storage,
                                          self.atom_by_smirks_index[neighbor_key],
                                          bond=bond_storage)
