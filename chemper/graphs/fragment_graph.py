@@ -170,9 +170,12 @@ class ChemPerGraph(object):
         """
         :param atom1: AtomStorage object in this graph
         :param atom2: AtomStorage object in this graph
-        :return: bond connecting them
+        :return: bond connecting them or None if not connected
         """
-        return self._graph.get_edge_data(atom1, atom2)['bond']
+        bond = self._graph.get_edge_data(atom1, atom2)
+        if bond is not None:
+            return bond['bond']
+        return None
 
     def get_bonds(self):
         """
