@@ -10,7 +10,6 @@ AUTHORS:
 Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
-# TODO: import mol_toolkit?
 import networkx as nx
 
 
@@ -247,6 +246,13 @@ class ChemPerGraphFromMol(ChemPerGraph):
             for neighbor_key, neighbor_index in smirks_atoms.items():
                 if not neighbor_key in self.atom_by_smirks_index:
                     continue
+
+                # check if atoms are already connected on the graph
+                neighbor_storage = self.atom_by_smirks_index[neighbor_key]
+                if nx.has_path(self._graph, new_atom_storage, neighbor_storage):
+                    continue
+
+                # check if atoms are connected in the molecule
                 atom2 = self.mol.get_atom_by_index(neighbor_index)
                 bond = self.mol.get_bond_by_atoms(atom1, atom2)
 
