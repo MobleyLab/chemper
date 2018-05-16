@@ -7,11 +7,11 @@ These are accessed through `chemper.mol_toolks.mol_toolkit` which
 accesses the source code for only the installed cheminformatics package.
 Right now we support OpenEye Toolkits
 
-.. py:module::chemper.mol_toolkits.cp_openeye
+.. toctree::
+    :maxdepth: 1
 
-and RDKit
-
-.. py:module::chemper.mol_toolkits.cp_rdk
+    openeye.rst
+    rdkit.rst
 
 These and any future packge support follow the template laid
 out as adapters.
