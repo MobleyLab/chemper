@@ -54,7 +54,8 @@ before_script:
   - pip install -e .
 
 script:
-    - py.test -v -s --nbval-lax --cov=./ 
+  - "travis_wait 30 sleep 1800 &"
+  - py.test -v -s --nbval-lax --cov=./ 
 
 global:
   - ORGNAME="mobleylab"
