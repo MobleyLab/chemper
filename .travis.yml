@@ -41,6 +41,7 @@ install:
     # install anything not in conda
   - pip install codecov
   - pip install pytest-cov
+  - pip install nbval
   - conda list
 
 before_script:
@@ -53,7 +54,7 @@ before_script:
   - pip install -e .
 
 script:
-    - py.test -v -s --cov
+  - py.test -v -s --nbval-lax --cov=chemper/ 
 
 global:
   - ORGNAME="mobleylab"
