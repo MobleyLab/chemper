@@ -10,7 +10,6 @@ AUTHORS:
 Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
-# TODO: import mol_toolkit?
 import networkx as nx
 from chemper.graphs.fragment_graph import ChemPerGraph
 

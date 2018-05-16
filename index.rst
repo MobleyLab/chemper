@@ -17,4 +17,5 @@ then assigning SMIRKS patterns for each of those clusters.
    :caption: Contents:
 
    docs/installation
+   docs/api/index
    docs/examples
