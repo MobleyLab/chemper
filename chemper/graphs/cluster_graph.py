@@ -25,6 +25,14 @@ class ClusterGraph(ChemPerGraph):
         """
         def __init__(self, atoms=None, smirks_index=None):
             """
+            Parameters
+            ----------
+            atoms: list of chemper Atom objects
+                this is one or more atoms whose information should be stored
+            smirks_index: int
+                SMIRKS index (:n) for writing SMIRKS
+                if the value is less than zero it is used for storage purposes
+                only as SMIRKS can only be written with positive integer indices
             """
             self.decorators = set()
             if atoms is not None:
@@ -33,6 +41,18 @@ class ClusterGraph(ChemPerGraph):
             self.smirks_index = smirks_index
 
         def make_atom_decorators(self, atom):
+            """
+            Extract information from a chemper Atom that would be useful in a SMIRKS
+
+            Parameters
+            ----------
+            atom: chemper Atom object
+
+            Returns
+            -------
+            decorators: tuple of str
+                tuple of all possible decorators for this atom
+            """
             aromatic = 'a' if atom.is_aromatic() else 'A'
             charge = atom.formal_charge()
             if charge >= 0:
@@ -52,7 +72,11 @@ class ClusterGraph(ChemPerGraph):
 
         def as_smirks(self):
             """
-            :return: smirks pattern for this atom
+            Returns
+            -------
+            smirks: str
+                how this atom would be represented in a SMIRKS string
+                with the minimal combination of SMIRKS decorators
             """
             if len(self.decorators) == 0:
                 if self.smirks_index is None or self.smirks_index <= 0:
@@ -66,6 +90,14 @@ class ClusterGraph(ChemPerGraph):
             return '[%s:%i]' % (base_smirks, self.smirks_index)
 
         def add_atom(self, atom):
+            """
+            Expand current AtomStorage by adding information about
+            a new chemper Atom
+
+            Parameters
+            ----------
+            atom: chemper Atom
+            """
             self.decorators.add(self.make_atom_decorators(atom))
 
     class BondStorage(object):
@@ -73,19 +105,31 @@ class ClusterGraph(ChemPerGraph):
         BondStorage tracks information about a bond
         """
         def __init__(self, bonds=None, smirks_index=None):
+            """
+            Parameters
+            ----------
+            bonds: list of chemper Bond objects
+                this is one or more bonds whose information should be stored
+            smirks_index: int or float
+                bonds do not have smirks indices so this is only used for internal storage
+            """
             self.order = set()
             self.ring = set()
             self.order_dict = {1:'-', 1.5:':', 2:'=', 3:'#'}
             if bonds is not None:
                 for bond in bonds:
-                    self.order.add(self.order_dict.get(bond.get_order()))
+                    self.order.add(self.order_dict.get(bond.get_order(), '~'))
                     self.ring.add(bond.is_ring())
 
             self.smirks_index = smirks_index
 
         def as_smirks(self):
             """
-            :return: string of how this bond should appear in a SMIRKS string
+            Returns
+            -------
+            smirks: str
+                how this bond would be represented in a SMIRKS string
+                using only the required number of
             """
             if len(self.order) == 0:
                 order = '~'
@@ -102,8 +146,12 @@ class ClusterGraph(ChemPerGraph):
 
         def add_bond(self, bond):
             """
-            adds decorators for another bond
-            :param bond: chemper mol_toolkit Bond object
+            Expand current BondStorage by adding information about
+            a new chemper Bond
+
+            Parameters
+            ----------
+            bond: chemper Bond
             """
             self.order.add(self.order_dict.get(bond.get_order()))
             self.ring.add(bond.is_ring())
@@ -112,15 +160,28 @@ class ClusterGraph(ChemPerGraph):
     def __init__(self, mols=None, smirks_atoms_lists=None, layers=0):
         # TODO: figure out layers, currently only supporting layers=0
         """
-        Initialize a ChemPerGraph from a molecule and a set of indexed atoms
+        Initialize a ChemPerGraph from a molecule and list of indexed atoms
 
-        :param mols: list of chemper mols
-        :param smirks_atoms_lists: sorted by mol list of lists of dictionary of the form {smirks_index: atom_index}
-        # TODO: figure out the best form for the smirks_atoms_lists
-        :param layers: how many atoms out from the smirks indexed atoms do you wish save (default=0)
-                       'all' will lead to all atoms in the molecule being specified (not recommended)
+        Parameters
+        ----------
+        mols: list of chemper Mols
+            (optional) molecules to initiate ClusterGraph
+        smirks_atoms_lists: list of list of dict
+            (optional) atom indices by smirks index for each molecule
+            required if a list of molecules is provided.
+            This is a list of dictionaries of the form [{smirks_index: atom_index}]
+            for each molecule provided
+        layers: int
+            (optional) currently only 0 is supported
+            how many atoms out from the smirks indexed atoms do you wish save (default=0)
+            'all' will lead to all atoms in the molecule being specified (not recommended)
+            # TODO: figure out the best form for the smirks_atoms_lists
         """
         ChemPerGraph.__init__(self)
+
+        # TODO: make sure to remove this when layers works
+        if layers != 0:
+            raise Exception("Currently we only support 0 layers for ClusterGraphs")
 
         self.mols = list()
         self.smirks_atoms_lists = list()
@@ -139,9 +200,15 @@ class ClusterGraph(ChemPerGraph):
 
     def add_mol(self, mol, smirks_atoms_list):
         """
-        :param mol:
-        :param smirks_atoms_list:
-        :return:
+        Expand the information in this graph by adding a new molecule
+
+        Parameters
+        ----------
+        mol: chemper Mol object
+        smirks_atoms_list: list of dicts
+            This is a list of dictionaries of the form [{smirks_index: atom_index}]
+            each atom (by index) in the dictionary will be added the relevant
+            AtomStorage by smirks index
         """
         if len(self.mols) == 0:
             self._add_first_smirks_atoms(mol, smirks_atoms_list[0])
@@ -153,6 +220,16 @@ class ClusterGraph(ChemPerGraph):
         self.smirks_atoms_lists.append(smirks_atoms_list)
 
     def _add_first_smirks_atoms(self, mol, smirks_atoms):
+        """
+        private function for adding the first molecule to an empty ClusterGraph
+        add_mol calls this if the graph is empty
+
+        Parameters
+        ----------
+        mol: chemper Mol
+        smirks_atoms: dict
+            dictionary for first atoms to add to the graph in the form {smirks_index: atom_index}]
+        """
         sorted_keys = sorted(list(smirks_atoms.keys()))
         for key in sorted_keys:
             atom_index = smirks_atoms[key]
@@ -187,9 +264,17 @@ class ClusterGraph(ChemPerGraph):
 
     def _add_mol(self, mol, smirks_atoms_list):
         """
-        :param mol:
-        :param smirks_atoms_list:
-        :return:
+        private function for adding a new molecule
+        This is used by add_mol if the graph is not empty, allowing the user to
+        not have to track if the graph already has information before adding molecules
+
+        Parameters
+        ----------
+        mol: chemper Mol
+        smirks_atoms_list: list of dicts
+            This is a list of dictionaries of the form [{smirks_index: atom_index}]
+            each atom (by index) in the dictionary will be added the relevant
+            AtomStorage by smirks index
         """
         for smirks_atoms in smirks_atoms_list:
             for key, atom_index in smirks_atoms.items():
