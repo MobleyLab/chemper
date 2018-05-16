@@ -10,8 +10,8 @@ on github so you can try them out yourself.
 .. toctree::
     :maxdepth: 1
 
-    ../examples/using_fragment_graph/single_mol_smirks.ipynb
-    ../examples/using_cluster_graph/SMIRKS_from_molecules.ipynb
+    ../examples/single_mol_smirks.ipynb
+    ../examples/SMIRKS_from_molecules.ipynb
 
 Let us know if you have any problems or suggestions through the ``ChemPer``
 `issue tracker <https://github.com/MobleyLab/chemper/issues>`_.

@@ -1,11 +1,15 @@
-API References
+ChemPer API
 ==============
 
-.. autofunction:: chemper.graphs.cluster_graph.ClusterGraph
+``Chemper`` is open source and all source code is available on `github <https://github.com/MobleyLab/chemper>`_.
+Below are the
 
-.. automodule:: chemper.graphs.cluster_graph
-    :members:
+.. toctree::
+    :maxdepth: 2
 
-.. autofunction:: chemper.mol_toolkits.cp_openeye.Mol
+    mol.rst
+    single_graph.rst
+    cluster_graph.rst
+    everything.rst
 
-.. autofunction:: chemper.mol_toolkits.cp_rdk.Mol
+
