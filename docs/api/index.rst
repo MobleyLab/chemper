@@ -65,11 +65,11 @@ and force constants. However, you could imagine other reasons
 for wanting to store how you clustered groups of atoms.
 
 For more detailed examples and illustration of how this works see
-SMIRKS_from_molecules_ example.
+smirks_from_molecules_ example.
 Below is a brief example showing the SMIRKS for the bond
 between two carbon atoms in propane and pentane.
 
-.. _SMIRKS_from_molecules: ../../examples/smirks_from_molecules.ipynb
+.. _smirks_from_molecules: ../../examples/smirks_from_molecules.ipynb
 
 .. literalinclude:: cluster_example.py
     :language: python
