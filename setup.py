@@ -21,6 +21,7 @@ if __name__ == "__main__":
                 'sphinxcontrib-napoleon',
                 'sphinx_rtd_theme',
                 'numpydoc',
+                'nbsphinx',
             ],
             'tests': [
                 'pytest',
