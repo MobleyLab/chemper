@@ -1,7 +1,7 @@
-ChemPer API
+chemper API
 ==============
 
-``Chemper`` is open source if you have suggestions or concerns
+``chemper`` is open source if you have suggestions or concerns
 please add them to our `issue tracker <https://github.com/MobleyLab/chemper/issues>`_.
 Below is an outline of tools provided in  ``chemper`` see :doc:`examples <../examples>`
 for more details.
@@ -24,10 +24,10 @@ Also included here are SMIRKS pattern searches.
     mol.rst
 
 
-ChemPerGraph
+chemperGraph
 ------------
 
-The goal of :doc:`ChemPerGraph <single_graph>` was to create an example of how you could
+The goal of :doc:`chemperGraph <single_graph>` was to create an example of how you could
 create a SMIRKS pattern from a molecule and set of atom indices.
 While this isn't ultimately useful in sampling chemical
 perception as they only work for a single molecule, however it

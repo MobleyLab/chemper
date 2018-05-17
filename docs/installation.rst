@@ -1,7 +1,7 @@
-Installing ChemPer
+Installing chemper
 ==================
 
-The only way to install ``ChemPer`` right now is to clone or download
+The only way to install ``chemper`` right now is to clone or download
 the `GitHub repo <https://github.com/Mobleylab/chemper/>`_.
 When we're ready to release version 1.0.0 we'll also make it conda installable.
 
