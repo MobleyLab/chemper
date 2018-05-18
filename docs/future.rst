@@ -3,8 +3,7 @@ What's Next?
 
 The ClusterGraph code can accurately create a SMIRKS pattern
 for a group of clustered molecular subgraphes.
-However as you can see in the
-smirks_from_molecules_ example
+However as you can see in the :dod:`examples <../examples>`
 the SMIRKS created by ``ClusterGraph`` are highly specific.
 Our final goal here is to maintain a given set of clustering,
 but to generate relatively general SMIRKS patterns
@@ -13,7 +12,6 @@ This use of relatively generic SMIRKS patterns is part of
 what we believe makes the SMIRNOFF force field format so
 powerful.
 
-.. _smirks_from_molecules: ../examples/SMIRKS_from_molecules.ipynb
 
 One option here would be to go back to the MC sampling used
 in `SMARTY/SMIRKY <https://github.com/openforcefield/smarty>`_.
