@@ -1,0 +1,15 @@
+name: chemper
+channels:
+    - omnia
+    - openeye
+    - rdkit
+dependencies:
+    - python==3.5
+    - numpy
+    - openeye-toolkits
+    - rdkit
+    - networkx
+    - numpydoc
+    - pip
+    - pip:
+        - nbsphinx
