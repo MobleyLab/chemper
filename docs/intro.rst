@@ -37,7 +37,7 @@ molecular subgraphs.
 Currently, ``chemper`` provides modules for generating SMIRKS patterns from molecule objects and specified atoms.
 The final product will be capable of clustering molecular fragments based on reference data and
 then assigning SMIRKS patterns for each of those clusters.
-See :doc:`docs/installation`.
+See :doc:`installation`.
 
 Contributors
 ------------
