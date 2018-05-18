@@ -3,7 +3,7 @@ Introduction
 
 ``chemper`` contains a variety of tools that will be useful in
 automating the process of chemical perception for the new
-SMIRKS Native Open Force Field (`SMIRNOFF <https://github.com/openforcefield/openforcefield.org>`_)
+SMIRKS Native Open Force Field (`SMIRNOFF <https://github.com/openforcefield/openforcefield>`_)
 format as a part of the `Open Force Field Consortium <http://openforcefield.org>`_ :ref:`[1] <refs>`.
 
 This idea originated from the tools `SMARTY and SMIRKY <https://github.com/openforcefield/smarty>`_
@@ -37,7 +37,7 @@ molecular subgraphs.
 Currently, ``chemper`` provides modules for generating SMIRKS patterns from molecule objects and specified atoms.
 The final product will be capable of clustering molecular fragments based on reference data and
 then assigning SMIRKS patterns for each of those clusters.
-See :doc:`docs/installation`.
+See :doc:`installation`.
 
 Contributors
 ------------
