@@ -48,7 +48,7 @@ Installation
 
 Hopefully chemper will be conda installable in the near future, but for now the best option
 is to download or clone from `GitHub <https://github.com/Mobleylab/chemper/>`_
-and then from inside the `chemper` directory install with the command:
+and then from inside the ``chemper`` directory install with the command:
 
 .. code-block:: bash
 
