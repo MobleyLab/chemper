@@ -1,0 +1,12 @@
+name: chemper
+channels:
+    - omnia
+    - openeye
+    - rdkit
+dependencies:
+    - python
+    - numpy
+    - openeye-toolkits
+    - rdkit
+    - networkx
+    - numpydoc
