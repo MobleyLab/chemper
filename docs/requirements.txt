@@ -1,6 +1,3 @@
-sphinx==1.2.3
-sphinxcontrib-napoleon
-sphinx_rtd_theme
-numpydoc
+sphinx>=1.4
 ipykernel
 nbsphinx
