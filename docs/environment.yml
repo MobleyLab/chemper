@@ -10,3 +10,6 @@ dependencies:
     - rdkit
     - networkx
     - numpydoc
+    - pip
+    - pip:
+        - nbsphinx
