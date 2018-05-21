@@ -37,10 +37,9 @@ install:
     # creates environment for the given python version
   - conda create -q -n test python=$TRAVIS_PYTHON_VERSION numpy pytest
   - source activate test
+  - conda install -c conda-forge codecov pytest-cov
 
     # install anything not in conda
-  - pip install codecov
-  - pip install pytest-cov
   - pip install pytest-shutil
   - conda list
 
