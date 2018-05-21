@@ -41,6 +41,7 @@ install:
     # install anything not in conda
   - pip install codecov
   - pip install pytest-cov
+  - pip install pytest-shutil
   - conda list
 
 before_script:
