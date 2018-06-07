@@ -55,7 +55,6 @@ before_script:
   - conda list
 
 script:
-    - python examples/smirks_from_molecules.py
     - py.test -v -s --cov
 
 global:
