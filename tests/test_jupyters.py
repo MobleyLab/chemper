@@ -46,15 +46,15 @@ def exe_scriptified_ipynb(workspace, tdir, ipynb):
     path = workspace.workspace
     workspace.run('jupyter nbconvert --to script ' + script + ' --output-dir=' + path)
     script_py = path + '/' + ipynb + '.py'
-    sed_inplace(script_py,
-                r"""get_ipython\(\).magic\(u?'matplotlib inline'\)""",
-                """# <<<  Jupyter magic  >>>  get_ipython().magic('matplotlib inline')\nimport matplotlib as mpl; mpl.use('Agg')""")
-    sed_inplace(script_py,
-                r"""get_ipython\(\).magic\(u?'matplotlib notebook'\)""",
-                """# <<<  Jupyter magic  >>>  get_ipython().magic('matplotlib notebook')\nimport matplotlib as mpl; mpl.use('Agg')""")
-    sed_inplace(script_py,
-                r"""get_ipython\(\).magic\(u?['"]timeit """,
-                """# <<<  Jupyter magic  >>>""")
+    #sed_inplace(script_py,
+    #            r"""get_ipython\(\).magic\(u?'matplotlib inline'\)""",
+    #            """# <<<  Jupyter magic  >>>  get_ipython().magic('matplotlib inline')\nimport matplotlib as mpl; mpl.use('Agg')""")
+    #sed_inplace(script_py,
+    #            r"""get_ipython\(\).magic\(u?'matplotlib notebook'\)""",
+    #            """# <<<  Jupyter magic  >>>  get_ipython().magic('matplotlib notebook')\nimport matplotlib as mpl; mpl.use('Agg')""")
+    #sed_inplace(script_py,
+    #            r"""get_ipython\(\).magic\(u?['"]timeit """,
+    #            """# <<<  Jupyter magic  >>>""")
     workspace.run('python ' + script_py)
 
 
