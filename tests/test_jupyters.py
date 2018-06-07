@@ -44,8 +44,8 @@ def exe_scriptified_ipynb(workspace, tdir, ipynb):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     script = base_dir + '/' + tdir + '/' + ipynb + '.ipynb'
     path = workspace.workspace
-    workspace.run('jupyter nbconvert --to script ' + script + ' --output-dir=' + path)
-    script_py = path + '/' + ipynb + '.py'
+    workspace.run('jupyter nbconvert --to script ' + script + ' --output-dir=' + base_dir)
+    script_py = base_dir + '/' + ipynb + '.py'
     sed_inplace(script_py,
                 r"""get_ipython\(\).magic\(u?'matplotlib inline'\)""",
                 """# <<<  Jupyter magic  >>>  get_ipython().magic('matplotlib inline')\nimport matplotlib as mpl; mpl.use('Agg')""")
