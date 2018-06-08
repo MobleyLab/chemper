@@ -55,6 +55,9 @@ def exe_scriptified_ipynb(workspace, tdir, ipynb):
     sed_inplace(script_py,
                 r"""get_ipython\(\).magic\(u?['"]timeit """,
                 """# <<<  Jupyter magic  >>>""")
+    print(os.environ['HOME'])
+    if 'OE_LICENSE' in os.environ:
+        print(os.environ['OE_LICENSE'])
     workspace.run('python ' + script_py)
 
 
