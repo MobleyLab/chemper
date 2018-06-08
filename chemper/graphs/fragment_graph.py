@@ -26,8 +26,12 @@ class ChemPerGraph(object):
             """
             Initializes AtomStorage based on a provided atom
 
-            :param atom: chemper atom object
-            :param smirks_index: integer for labeling this atom in a SMIRKS
+            Parameters
+            ----------
+            atom: chemper Atom object
+            smirks_index: int
+                integer for labeling this atom in a SMIRKS
+                or if negative number just used to track the atom locally
             """
             self.atom = atom
 
@@ -55,7 +59,10 @@ class ChemPerGraph(object):
 
         def as_smirks(self):
             """
-            :return: smirks pattern for this atom
+            Returns
+            -------
+            smirks: str
+                how this atom would be represented in a SMIRKS string
             """
             if self.atom is None:
                 if self.smirks_index is None or self.smirks_index <= 0:
@@ -86,6 +93,14 @@ class ChemPerGraph(object):
         BondStorage tracks information about a bond
         """
         def __init__(self, bond=None, smirks_index=None):
+            """
+            Parameters
+            ----------
+            bond: chemper Bond object
+            smirks_index: int or float
+                Bonds don't have SMIRKS indices so this is only used for internal
+                tracking of the object.
+            """
             if bond is None:
                 self.order = None
                 self.ring = None
@@ -100,7 +115,10 @@ class ChemPerGraph(object):
 
         def as_smirks(self):
             """
-            :return: string of how this bond should appear in a SMIRKS string
+            Returns
+            -------
+            SMIRKS: str
+                how this bond should appear in a SMIRKS string
             """
             if self.ring is None:
                 ring = ''
@@ -115,7 +133,7 @@ class ChemPerGraph(object):
 
     def __init__(self):
         """
-        Initialize ChemPerGraph
+        Initialize empty ChemPerGraph
         """
         self._graph = nx.Graph()
         self.atom_by_smirks_index = dict() # stores a dictionary of atoms with smirks_index
@@ -123,7 +141,10 @@ class ChemPerGraph(object):
 
     def as_smirks(self):
         """
-        :return: a SMIRKS string matching the exact atom and bond information stored
+        Returns
+        -------
+        SMIRKS: str
+            a SMIRKS string matching the exact atom and bond information stored
         """
 
         # If no atoms have been added
@@ -141,6 +162,21 @@ class ChemPerGraph(object):
         return self._as_smirks(init_atom, neighbors)
 
     def _as_smirks(self, init_atom, neighbors):
+        """
+        This is an internal/private method used to add all AtomStorage to the SMIRKS pattern
+
+        Parameters
+        ----------
+        init_atom: AtomStorage object
+            current atom
+        neighbors: list of AtomStorage objects
+            list of neighbor atoms you wanted added to the SMIRKS pattern
+
+        Returns
+        -------
+        SMIRKS: str
+            This graph as a SMIRKS string
+        """
 
         smirks = init_atom.as_smirks()
 
@@ -162,15 +198,24 @@ class ChemPerGraph(object):
 
     def get_atoms(self):
         """
-        :return: list of all AtomStorage objects in graph
+        Returns
+        -------
+        atoms: list of AtomStorage objects
+            all atoms stored in the graph
         """
         return list(self._graph.nodes())
 
     def get_connecting_bond(self, atom1, atom2):
         """
-        :param atom1: AtomStorage object in this graph
-        :param atom2: AtomStorage object in this graph
-        :return: bond connecting them or None if not connected
+        Parameters
+        ----------
+        atom1: AtomStorage object
+        atom2: AtomStorage object
+
+        Returns
+        -------
+        bond: BondStorage object
+            bond between the two given atoms or None if not connected
         """
         bond = self._graph.get_edge_data(atom1, atom2)
         if bond is not None:
@@ -179,26 +224,47 @@ class ChemPerGraph(object):
 
     def get_bonds(self):
         """
-        :return: list of all BondStorage objects in graph
+        Returns
+        -------
+        bonds: list of BondStorage objects
+            all bonds stored as edges in this graph
         """
         return [data['bond'] for a1, a2, data in self._graph.edges(data=True)]
 
     def get_neighbors(self, atom):
         """
-        :param atom: an AtomStorage object
-        :return: neighboring AtomStorage objects
+        Parameters
+        ----------
+        atom: an AtomStorage object
+
+        Returns
+        -------
+        atoms: list of AtomStorage objects
+            list of atoms one bond (edge) away from the given atom
         """
         return list(self._graph.neighbors(atom))
 
     def add_atom(self, new_atom, new_bond=None, bond_to_atom=None,
                  new_smirks_index=None, new_bond_index=None):
         """
-        :param new_atom: a chemper mol_toolkit atom object
-        :param new_bond: a chemper mol_toolkit bond object
-        :param bond_to_atom: AtomStorage object to connect this bond to
-        :param new_smirks_index: integer for SMIRKS indexing the new atom
-        :param new_bond_index: integer for 'smirks_index' on bond storage object
-        :return: new AtomStorage object or None if atom wasn't added
+        Expand the graph by adding one new atom including relevant bond
+
+        Parameters
+        ----------
+        new_atom: a chemper Atom object
+        new_bond: a chemper Bond object
+        bond_to_atom: AtomStorage object
+            This is where you want to connect the new atom, required if the graph isn't empty
+        new_smirks_index: int
+            (optional) index for SMIRKS or internal storage if less than zero
+        new_bond_index: int or float
+            (optional) index used to track bond storage
+
+        Returns
+        -------
+        AtomStorage: AtomStorage object or None
+            If the atom was successfully added then the AtomStorage object is returned
+            None is returned if the atom wasn't able to be added
         """
         if bond_to_atom is None and len(self.get_atoms()) > 0:
             return None
@@ -220,14 +286,19 @@ class ChemPerGraph(object):
 
 
 class ChemPerGraphFromMol(ChemPerGraph):
+    """
+    Creates a ChemPerGraph from a chemper Mol object
+    """
     def __init__(self, mol, smirks_atoms, layers=0):
         """
-        Initialize a ChemPerGraph from a molecule and a set of indexed atoms
-
-        :param mol: chemper mol
-        :param smirks_atoms: dictionary of the form {smirks_index: atom_index}
-        :param layers: how many atoms out from the smirks indexed atoms do you wish save (default=0)
-                       'all' will lead to all atoms in the molecule being specified (not recommended)
+        Parameters
+        ----------
+        mol: chemper Mol
+        smirks_atoms: dict
+            dictionary of the form {smirks_index: atom_index}
+        layers: int or 'all'
+            how many atoms out from the smirks indexed atoms do you wish save (default=0)
+            'all' will lead to all atoms in the molecule being specified
         """
         ChemPerGraph.__init__(self)
 
@@ -238,6 +309,14 @@ class ChemPerGraphFromMol(ChemPerGraph):
             self._add_layers(atom_storage, layers)
 
     def _add_smirks_atoms(self, smirks_atoms):
+        """
+        private function for adding atoms to the graph
+
+        Parameters
+        ----------
+        smirks_atoms: dict
+            dictionary of the form {smirks_index: atom_index}
+        """
         # add all smirks atoms to the graph
         for key, atom_index in smirks_atoms.items():
             atom1 = self.mol.get_atom_by_index(atom_index)
@@ -269,6 +348,17 @@ class ChemPerGraphFromMol(ChemPerGraph):
 
     # TODO: I could probably do this with a while loop, is that better?
     def _add_layers(self, atom_storage, add_layer):
+        """
+        private function for expanding beyond the initial SMIRKS atoms.
+        For now this is recursive so the input is:
+
+        Parameters
+        ----------
+        atom_storage: AtomStorage object
+            atom whose's neighbors you currently need to add
+        add_layer: int
+            how many more layers need to be added
+        """
         if add_layer == 0:
             return
 

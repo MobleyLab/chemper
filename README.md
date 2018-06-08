@@ -1,5 +1,6 @@
-[![Build Status](https://travis-ci.org/MobleyLab/chemper.svg?branch=master)](https://travis-ci.org/MobleyLab/chemper) [![codecov](https://codecov.io/gh/MobleyLab/chemical_perception/branch/master/graph/badge.svg)](https://codecov.io/gh/MobleyLab/chemical_perception)
-# ChemPer
+[![Build Status](https://travis-ci.org/MobleyLab/chemper.svg?branch=master)](https://travis-ci.org/MobleyLab/chemper) [![codecov](https://codecov.io/gh/MobleyLab/chemper/branch/master/graph/badge.svg)](https://codecov.io/gh/MobleyLab/chemper) [![Documentation Status](https://readthedocs.org/projects/chemper/badge/?version=latest)](http://chemper.readthedocs.io/en/latest/?badge=latest)
+
+# chemper
 
 This repository contains a variety of tools that will be useful in automating the process
 of chemical perception for the new SMIRKS Native Open Force Field (SMIRNOFF) format
