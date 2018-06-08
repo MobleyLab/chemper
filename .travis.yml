@@ -48,8 +48,7 @@ before_script:
   - python -V
   - python -c 'import numpy; print(numpy.version.version)'
     # install openeye or rdkit based on environment
-  - if $OE; then conda install -c openeye openeye-toolkits ; fi
-  - if $OE; python -c 'import os; print(os.environ["HOME"], os.environ["OE_LICENSE"])' ; fi
+  - if $OE; then conda install -c openeye openeye-toolkits ; python -c 'import os; print(os.environ["HOME"], os.environ["OE_LICENSE"])' ; fi
   - if $RDK; then conda install -c rdkit rdkit ; fi
   - conda install networkx
   - pip install -e .
