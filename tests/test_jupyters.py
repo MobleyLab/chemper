@@ -13,7 +13,7 @@ import os
 import re
 import pytest
 from chemper.mol_toolkits import mol_toolkit
-
+pytest_plugins = ['pytest_shutil']
 
 # from https://stackoverflow.com/a/31499114
 def sed_inplace(filename, pattern, repl):
@@ -57,8 +57,8 @@ def exe_scriptified_ipynb(workspace, tdir, ipynb):
                 r"""get_ipython\(\).magic\(u?['"]timeit """,
                 """# <<<  Jupyter magic  >>>""")
     print(os.environ['HOME'])
-    if 'openeye' in mol_toolkit.__name__:
-        workspace.run('cp %s %s' % (os.environ['OE_LICENSE'], path))
+    #if 'openeye' in mol_toolkit.__name__:
+        #workspace.run('cp %s %s' % (os.environ['OE_LICENSE'], path))
         #from pytest_shutil import env
         #if 'OE_LICENSE' not in os.environ:
         #    os.environ['OE_LICENSE'] = '/home/oe_liceense.txt'
