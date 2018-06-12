@@ -61,7 +61,7 @@ def exe_scriptified_ipynb(workspace, tdir, ipynb):
         from pytest_shutil import env
         if 'OE_LICENSE' not in os.environ:
             os.environ['OE_LICENSE'] = '/home/oe_liceense.txt'
-        else 'OE_LICENSE' in os.environ:
+        else:
             print(os.environ['OE_LICENSE'])
         env.set_env('OE_LICENSE', os.environ['OE_LICENSE'])
     workspace.run('python ' + script_py)
