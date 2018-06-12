@@ -58,12 +58,13 @@ def exe_scriptified_ipynb(workspace, tdir, ipynb):
                 """# <<<  Jupyter magic  >>>""")
     print(os.environ['HOME'])
     if 'openeye' in mol_toolkit.__name__:
-        from pytest_shutil import env
-        if 'OE_LICENSE' not in os.environ:
-            os.environ['OE_LICENSE'] = '/home/oe_liceense.txt'
-        else:
-            print(os.environ['OE_LICENSE'])
-        env.set_env('OE_LICENSE', os.environ['OE_LICENSE'])
+        workspace.run('cp %s %s' % (os.environ['OE_LICENSE'], path))
+        #from pytest_shutil import env
+        #if 'OE_LICENSE' not in os.environ:
+        #    os.environ['OE_LICENSE'] = '/home/oe_liceense.txt'
+        #else:
+        #    print(os.environ['OE_LICENSE'])
+        #env.set_env('OE_LICENSE', os.environ['OE_LICENSE'])
     workspace.run('python ' + script_py)
 
 
