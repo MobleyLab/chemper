@@ -55,7 +55,7 @@ before_script:
   - conda list
 
 script:
-  - echo pwd
+  - pwd
   - py.test -v -s --cov
 
 global:
