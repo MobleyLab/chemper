@@ -13,7 +13,6 @@ import os
 import re
 import pytest
 from chemper.mol_toolkits import mol_toolkit
-pytest_plugins = ['pytest_shutil']
 
 # from https://stackoverflow.com/a/31499114
 def sed_inplace(filename, pattern, repl):
@@ -42,15 +41,6 @@ def sed_inplace(filename, pattern, repl):
 
 
 def exe_scriptified_ipynb(workspace, tdir, ipynb):
-    print(os.environ['HOME'])
-    if 'openeye' in mol_toolkit.__name__:
-        if os.environ['HOME'] == '/home/travis':
-            oe_f = '/home/travis/oe_license.txt'
-            if os.path.isfile(oe_f):
-                from shutil import copyfile
-                copyfile(oe_f, path+'/oe_license.txt')
-                print("found ", oe_f)
-
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     script = base_dir + '/' + tdir + '/' + ipynb + '.ipynb'
     path = workspace.workspace
@@ -78,4 +68,13 @@ def exe_scriptified_ipynb(workspace, tdir, ipynb):
 notebooks = ['single_mol_smirks', 'smirks_from_molecules']
 @pytest.mark.parametrize('notebook_name', notebooks)
 def test_example_notebooks(workspace, notebook_name):
+    print(os.environ['HOME'])
+    if 'openeye' in mol_toolkit.__name__:
+        if os.environ['HOME'] == '/home/travis':
+            oe_f = '/home/travis/oe_license.txt'
+            if os.path.isfile(oe_f):
+                from shutil import copyfile
+                copyfile(oe_f, path+'/oe_license.txt')
+                print("found ", oe_f)
+
     exe_scriptified_ipynb(workspace, 'examples', notebook_name)
