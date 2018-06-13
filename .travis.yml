@@ -61,7 +61,7 @@ script:
 global:
   - ORGNAME="mobleylab"
   - PACKAGENAME="chemical_perception"
-  - OE_LICENSE=pwd"/oe_license.txt"
+  - OE_LICENSE="$HOME/oe_license.txt"
 
 notifications:
   email: false

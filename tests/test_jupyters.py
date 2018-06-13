@@ -55,6 +55,15 @@ def exe_scriptified_ipynb(workspace, tdir, ipynb):
     sed_inplace(script_py,
                 r"""get_ipython\(\).magic\(u?['"]timeit """,
                 """# <<<  Jupyter magic  >>>""")
+    if 'openeye' in mol_toolkit.__name__:
+        if 'travis' in os.environ['HOME']:
+            oe_f = '/home/travis/build/MobleyLab/chemper/oe_license.txt'
+            if os.path.isfile(oe_f):
+                from shutil import copyfile
+                copyfile(oe_f, workspace.workspace+'/oe_license.txt')
+                print("found ", oe_f)
+            else:
+                print("could not find ", oe_f)
         #workspace.run('cp %s %s' % (os.environ['OE_LICENSE'], path))
         #from pytest_shutil import env
         #if 'OE_LICENSE' not in os.environ:
@@ -69,12 +78,5 @@ notebooks = ['single_mol_smirks', 'smirks_from_molecules']
 @pytest.mark.parametrize('notebook_name', notebooks)
 def test_example_notebooks(workspace, notebook_name):
     print(os.environ['HOME'])
-    #if 'openeye' in mol_toolkit.__name__:
-    #    if os.environ['HOME'] == '/home/travis':
-    #        oe_f = '/home/travis/oe_license.txt'
-    #        if os.path.isfile(oe_f):
-    #            from shutil import copyfile
-    #            copyfile(oe_f, workspace.workspace+'/oe_license.txt')
-    #            print("found ", oe_f)
 
     exe_scriptified_ipynb(workspace, 'examples', notebook_name)
