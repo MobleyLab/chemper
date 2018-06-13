@@ -61,16 +61,4 @@ def exe_scriptified_ipynb(workspace, tdir, ipynb):
 notebooks = ['single_mol_smirks', 'smirks_from_molecules']
 @pytest.mark.parametrize('notebook_name', notebooks)
 def test_example_notebooks(workspace, notebook_name):
-    #if 'openeye' in mol_toolkit.__name__:
-    #    if 'OE_LICENSE' not in  os.environ:
-    #        cwd = os.getcwd()
-    #        oe_f = "%s/oe_license.txt" % cwd
-    #        if os.path.isfile(oe_f):
-    #            from shutil import copyfile
-    #            copyfile(oe_f, workspace.workspace+'/oe_license.txt')
-    #            print("found ", oe_f)
-    #        else:
-    #            print("could not find ", oe_f)
-    #            raise Exception("Could not fine OE_LICENSE global variable or file %s" % oe_f)
-    #
     exe_scriptified_ipynb(workspace, 'examples', notebook_name)
