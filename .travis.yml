@@ -14,8 +14,14 @@ python: # what python are you supporting?
   - 3.5
 
 env:
-  - OE=false RDK=true
-  - OE=true RDK=false
+  matrix:
+    - OE=false RDK=true
+    - OE=true RDK=false
+
+  global:
+    - ORGNAME="mobleylab"
+    - PACKAGENAME="chemical_perception"
+    - OE_LICENSE="$HOME/oe_license.txt"
 
 before_install:
   - if [ "$TRAVIS_SECURE_ENV_VARS" == true ]; then openssl aes-256-cbc -K $encrypted_85d5f49520f7_key -iv $encrypted_85d5f49520f7_iv -in oe_license.txt.enc -out oe_license.txt -d; fi
@@ -57,11 +63,6 @@ before_script:
 script:
   - pwd
   - py.test -v -s --cov
-
-global:
-  - ORGNAME="mobleylab"
-  - PACKAGENAME="chemical_perception"
-  - OE_LICENSE="$HOME/oe_license.txt"
 
 notifications:
   email: false
