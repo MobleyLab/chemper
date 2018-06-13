@@ -69,12 +69,12 @@ notebooks = ['single_mol_smirks', 'smirks_from_molecules']
 @pytest.mark.parametrize('notebook_name', notebooks)
 def test_example_notebooks(workspace, notebook_name):
     print(os.environ['HOME'])
-    if 'openeye' in mol_toolkit.__name__:
-        if os.environ['HOME'] == '/home/travis':
-            oe_f = '/home/travis/oe_license.txt'
-            if os.path.isfile(oe_f):
-                from shutil import copyfile
-                copyfile(oe_f, path+'/oe_license.txt')
-                print("found ", oe_f)
+    #if 'openeye' in mol_toolkit.__name__:
+    #    if os.environ['HOME'] == '/home/travis':
+    #        oe_f = '/home/travis/oe_license.txt'
+    #        if os.path.isfile(oe_f):
+    #            from shutil import copyfile
+    #            copyfile(oe_f, workspace.workspace+'/oe_license.txt')
+    #            print("found ", oe_f)
 
     exe_scriptified_ipynb(workspace, 'examples', notebook_name)
