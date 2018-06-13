@@ -42,6 +42,15 @@ def sed_inplace(filename, pattern, repl):
 
 
 def exe_scriptified_ipynb(workspace, tdir, ipynb):
+    print(os.environ['HOME'])
+    if 'openeye' in mol_toolkit.__name__:
+        if os.environ['HOME'] == '/home/travis':
+            oe_f = '/home/travis/oe_license.txt'
+            if os.path.isfile(oe_f):
+                from shutil import copyfile
+                copyfile(oe_f, path+'/oe_license.txt')
+                print("found ", oe_f)
+
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     script = base_dir + '/' + tdir + '/' + ipynb + '.ipynb'
     path = workspace.workspace
@@ -56,15 +65,6 @@ def exe_scriptified_ipynb(workspace, tdir, ipynb):
     sed_inplace(script_py,
                 r"""get_ipython\(\).magic\(u?['"]timeit """,
                 """# <<<  Jupyter magic  >>>""")
-    print(os.environ['HOME'])
-    if 'openeye' in mol_toolkit.__name__:
-        if os.environ['HOME'] == '/home/travis':
-            oe_f = '/home/travis/oe_license.txt'
-            if os.path.isfile(oe_f):
-                from shutil import copyfile
-                copyfile(oe_f, path+'/oe_license.txt')
-                print("found ", oe_f)
-
         #workspace.run('cp %s %s' % (os.environ['OE_LICENSE'], path))
         #from pytest_shutil import env
         #if 'OE_LICENSE' not in os.environ:

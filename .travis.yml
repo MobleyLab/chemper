@@ -55,7 +55,8 @@ before_script:
   - conda list
 
 script:
-    - py.test -v -s --cov
+  - echo pwd
+  - py.test -v -s --cov
 
 global:
   - ORGNAME="mobleylab"
