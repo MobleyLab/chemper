@@ -13,11 +13,6 @@ def test_molecule():
     """
     Test MolOE functions
     """
-    #### TEMPORARY
-    if 'openeye' in mol_toolkit.__name__:
-        import os
-        print(os.environ['OE_LICENSE'])
-    #####
     mol = mol_toolkit.MolFromSmiles('C')
 
     atoms = 0
