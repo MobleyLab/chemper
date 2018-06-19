@@ -13,12 +13,14 @@ def make_frag_graph(smiles, layers):
     smirks_dict = {1:0, 2:1}
     return ChemPerGraphFromMol(mol, smirks_dict, layers)
 
-def make_cluster_graph(smiles_list):
+def make_cluster_graph(smiles_list, layers=0):
     smirks_dict_list = [[{1:0, 2:1}]]*len(smiles_list)
     mols_list = [mol_toolkit.MolFromSmiles(smiles) for smiles in smiles_list]
-    return ClusterGraph(mols_list, smirks_dict_list)
+    return ClusterGraph(mols_list, smirks_dict_list, layers=layers)
 
 
+insideH = "(-;!@[#1AH0X1x0r0+0])(-;!@[#1AH0X1x0r0+0])(-;!@[#1AH0X1x0r0+0])"
+outsideH = "(-;!@[#1AH0X1x0r0+0])(-;!@[#1AH0X1x0r0+0])-;!@[#1AH0X1x0r0+0]"
 graph_data = [
     (make_frag_graph('C', 0), '[#6AH4X4x0r0+0:1]-!@[#1AH0X1x0r0+0:2]'), # no layers
     (make_frag_graph('C#C', 1), # one layer
@@ -31,7 +33,11 @@ graph_data = [
     (make_cluster_graph(['CC', 'C=C']),
      "[#6AH2X3x0r0+0,#6AH3X4x0r0+0:1]-,=;!@[#6AH2X3x0r0+0,#6AH3X4x0r0+0:2]"),
     (make_cluster_graph(['CC', 'C=C', 'C1CC1']),
-     "[#6AH2X3x0r0+0,#6AH2X4x2r3+0,#6AH3X4x0r0+0:1]-,=[#6AH2X3x0r0+0,#6AH2X4x2r3+0,#6AH3X4x0r0+0:2]")
+     "[#6AH2X3x0r0+0,#6AH2X4x2r3+0,#6AH3X4x0r0+0:1]-,=[#6AH2X3x0r0+0,#6AH2X4x2r3+0,#6AH3X4x0r0+0:2]"),
+    (make_cluster_graph(['CC'], layers=1),
+     "[#6AH3X4x0r0+0:1]%s-;!@[#6AH3X4x0r0+0:2]%s" % (insideH, outsideH) ),
+    (make_cluster_graph(['CC'], layers='all'),
+     "[#6AH3X4x0r0+0:1]%s-;!@[#6AH3X4x0r0+0:2]%s" % (insideH, outsideH) )
 ]
 
 
