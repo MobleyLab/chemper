@@ -330,6 +330,7 @@ class ClusterGraph(ChemPerGraph):
             pairs = self.find_pairs(atom_neighbors, storage_neighbors)
 
         else:
+            print("ZZZ no storage neighbors found for", storage.as_smirks(), mol.get_smiles())
             min_smirks = storage.smirks_index * 10
             if min_smirks > 0:
                 min_smirks = min_smirks * -1
@@ -349,6 +350,7 @@ class ClusterGraph(ChemPerGraph):
                 self.atom_by_smirks_index[min_smirks] = adding_new_storage
                 min_smirks -= 1
                 new_pairs.append((new_atom, adding_new_storage))
+                print("creating new storage %s for storage %s mol %s" % (adding_new_storage.as_smirks(), storage.as_smirks(), mol.get_smiles()))
 
             else:
                 new_storage.add_atom(new_atom)
@@ -383,76 +385,42 @@ class ClusterGraph(ChemPerGraph):
         pairs = list()
 
         g = nx.Graph()
-        for a in atoms:
-            g.add_node(a, bipartite=0)
-        for s in storages:
-            g.add_node(s, bipartite=1)
 
-        for a in atoms:
-            for s in storages:
+        atom_dict = dict()
+        storage_dict = dict()
+
+        for idx, a in enumerate(atoms):
+            g.add_node(idx+1, bipartite=0)
+            atom_dict[idx+1] = a
+        for idx, s in enumerate(storages):
+            g.add_node((idx*-1)-1, bipartite=1)
+            storage_dict[(idx*-1)-1] = s
+
+        for a_idx, a in atom_dict.items():
+            for s_idx, s in storage_dict.items():
                 # TODO: scores only consider one atom and storage, should it look at neighbors?
                 score = s.compare_atom(a)
-                g.add_edge(a,s,weight=score)
+                g.add_edge(a_idx,s_idx,weight=score+1)
 
         matching = nx.algorithms.max_weight_matching(g,maxcardinality=False)
+        pair_set = set()
 
-        for a in atoms:
-            if a in matching:
-                s = matching[a]
-                pairs.append((a,s))
+        for idx_1, idx_2 in matching:
+            if idx_1 in atom_dict:
+                a = atom_dict[idx_1]
+                s = storage_dict[idx_2]
+                pair_set.add(idx_1)
             else:
-                # All atoms need to be in final pairs, if not in matching then pair with None
+                a = atom_dict[idx_2]
+                s = storage_dict[idx_1]
+                pair_set.add(idx_2)
+            pairs.append((a,s))
+
+        for a_idx, a in atom_dict.items():
+            if a_idx not in pair_set:
                 pairs.append((a,None))
 
         return pairs
-
-    def _add_first_layers(self, mol, atom, storage, layers, idx_dict):
-        """
-
-        Parameters
-        ----------
-        mol: chemper Mol
-            molecule atom is coming from (allows easier access to neighbors)
-        atom: chemper Atom
-        storage: AtomStorage
-            corresponding to the chemper Atom
-        layers: int or 'all'
-            number of layers left to add (or all)
-        idx_dict: dict
-            form {atom_index: smirks_index in current graph}
-        """
-        if layers == 0:
-            return
-
-        top_smirks_idx = storage.smirks_index * 10
-        if top_smirks_idx > 0:
-            top_smirks_idx = -1 * top_smirks_idx
-
-        atom_neighbors = [a for a in atom.get_neighbors() if a.get_index() not in idx_dict]
-
-        for idx, new_atom in enumerate(atom_neighbors):
-            new_bond = mol.get_bond_by_atoms(atom, new_atom)
-            new_smirks_index = top_smirks_idx - idx - 1
-            new_bond_smirks = (storage.smirks_index, new_smirks_index)
-            new_storage = self.add_atom(new_atom,new_bond,storage,
-                                        new_smirks_index,new_bond_smirks)
-
-            idx_dict[new_atom.get_index()] = new_smirks_index
-            self.atom_by_smirks_index[new_smirks_index] = new_storage
-
-        go_again = False
-        if layers == 'all':
-            new_layers = 'all'
-            go_again = True
-        elif layers > 1:
-            new_layers = layers - 1
-            go_again = True
-
-        if go_again:
-            for new_atom in atom_neighbors:
-                new_smirks_index = idx_dict[new_atom.get_index()]
-                new_storage = self.atom_by_smirks_index[new_smirks_index]
-                self._add_first_layers(mol, new_atom, new_storage, layers, idx_dict)
 
     def _add_mol(self, mol, smirks_atoms_list):
         """
@@ -469,7 +437,9 @@ class ClusterGraph(ChemPerGraph):
             AtomStorage by smirks index
         """
         for smirks_atoms in smirks_atoms_list:
+            atom_dict = dict()
             for key, atom_index in smirks_atoms.items():
+                atom_dict[atom_index] = key
                 atom1 = mol.get_atom_by_index(atom_index)
                 self.atom_by_smirks_index[key].add_atom(atom1)
 
@@ -480,3 +450,9 @@ class ClusterGraph(ChemPerGraph):
                     if bond is not None and (neighbor_key, key) in self.bond_by_smirks_index:
                         bond_smirks = (neighbor_key, key)
                         self.bond_by_smirks_index[bond_smirks].add_bond(bond)
+
+            for smirks_index, atom_index in smirks_atoms.items():
+                atom = mol.get_atom_by_index(atom_index)
+                storage = self.atom_by_smirks_index[smirks_index]
+                self._add_layers(mol, atom, storage, self.layers, atom_dict)
+
