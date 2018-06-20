@@ -330,7 +330,6 @@ class ClusterGraph(ChemPerGraph):
             pairs = self.find_pairs(atom_neighbors, storage_neighbors)
 
         else:
-            print("ZZZ no storage neighbors found for", storage.as_smirks(), mol.get_smiles())
             min_smirks = storage.smirks_index * 10
             if min_smirks > 0:
                 min_smirks = min_smirks * -1
@@ -350,7 +349,6 @@ class ClusterGraph(ChemPerGraph):
                 self.atom_by_smirks_index[min_smirks] = adding_new_storage
                 min_smirks -= 1
                 new_pairs.append((new_atom, adding_new_storage))
-                print("creating new storage %s for storage %s mol %s" % (adding_new_storage.as_smirks(), storage.as_smirks(), mol.get_smiles()))
 
             else:
                 new_storage.add_atom(new_atom)

@@ -38,6 +38,14 @@ graph_data = [
      "[#6AH3X4x0r0+0:1]%s-;!@[#6AH3X4x0r0+0:2]%s" % (insideH, outsideH) ),
     (make_cluster_graph(['CC'], layers='all'),
      "[#6AH3X4x0r0+0:1]%s-;!@[#6AH3X4x0r0+0:2]%s" % (insideH, outsideH) ),
+    (make_cluster_graph(['C#C'], 1), # one layer
+     '[#6AH1X2x0r0+0:1](-;!@[#1AH0X1x0r0+0])#;!@[#6AH1X2x0r0+0:2]-;!@[#1AH0X1x0r0+0]'),
+    (make_cluster_graph(['CO'], 'all'), # infinite layers
+     '[#6AH3X4x0r0+0:1](-;!@[#1AH0X1x0r0+0])(-;!@[#1AH0X1x0r0+0])(-;!@[#1AH0X1x0r0+0])' \
+     '-;!@[#8AH1X2x0r0+0:2]-;!@[#1AH0X1x0r0+0]'
+     ),
+    (make_cluster_graph(['C#CC'], 3), # one layer
+     '[#6AH1X2x0r0+0:1](-;!@[#1AH0X1x0r0+0])#;!@[#6AH0X2x0r0+0:2]-;!@[#6AH3X4x0r0+0]%s' % outsideH),
 ]
 
 
@@ -65,10 +73,22 @@ cluster_graphs = [
         "[#6AH3X4x0r0+0:1]%s-;!@[#6AH2X4x0r0+0,#6AH3X4x0r0+0:2]%s" % (insideH, outsideHC1),
         "[#6AH3X4x0r0+0:1]%s-;!@[#6AH2X4x0r0+0,#6AH3X4x0r0+0:2]%s" % (insideH, outsideHC2),
         "[#6AH3X4x0r0+0:1]%s-;!@[#6AH2X4x0r0+0,#6AH3X4x0r0+0:2]%s" % (insideH, outsideHC3),
-    ])
+    ]),
 ]
 @pytest.mark.parametrize('graph,expected', cluster_graphs)
 def test_layered_clusters(graph, expected):
     smirks = graph.as_smirks()
     print(smirks)
     assert smirks in expected
+
+
+# make sure corner cases can at least be built without failing
+smiles = [['C', 'c1ccccc1'], ['C1CC1F', 'OC(=O)CC'], ['c1ccccc1', 'Oc1ccccc1']]
+layers_options = [1,2,3,4,5,'all']
+combos = [(s,l) for s in smiles for l in layers_options]
+
+@pytest.mark.parametrize('smiles_list,layers', combos)
+def test_no_failing(smiles_list, layers):
+    smirks_dict_list = [[{1: 0, 2: 1}, {1:1, 2:2}]] * len(smiles_list)
+    mols_list = [mol_toolkit.MolFromSmiles(s) for s in smiles_list]
+    ClusterGraph(mols_list, smirks_dict_list, layers=layers)
