@@ -37,7 +37,7 @@ graph_data = [
     (make_cluster_graph(['CC'], layers=1),
      "[#6AH3X4x0r0+0:1]%s-;!@[#6AH3X4x0r0+0:2]%s" % (insideH, outsideH) ),
     (make_cluster_graph(['CC'], layers='all'),
-     "[#6AH3X4x0r0+0:1]%s-;!@[#6AH3X4x0r0+0:2]%s" % (insideH, outsideH) )
+     "[#6AH3X4x0r0+0:1]%s-;!@[#6AH3X4x0r0+0:2]%s" % (insideH, outsideH) ),
 ]
 
 
@@ -54,3 +54,21 @@ def test_other_cluster_graph(graph):
     neighbor = graph.get_neighbors(atom)[0]
     bond = graph.get_connecting_bond(atom, neighbor)
     assert bond is not None
+
+
+# test layered cluster graphs where order isn't determined
+outsideHC1 = "(-;!@[#1AH0X1x0r0+0])(-;!@[#1AH0X1x0r0+0,#6AH3X4x0r0+0])-;!@[#1AH0X1x0r0+0]"
+outsideHC2 = "(-;!@[#1AH0X1x0r0+0,#6AH3X4x0r0+0])(-;!@[#1AH0X1x0r0+0])-;!@[#1AH0X1x0r0+0]"
+outsideHC3 = "(-;!@[#1AH0X1x0r0+0])(-;!@[#1AH0X1x0r0+0])-;!@[#1AH0X1x0r0+0,#6AH3X4x0r0+0]"
+cluster_graphs = [
+    (make_cluster_graph(['CC', 'CCC'], layers=1), [
+        "[#6AH3X4x0r0+0:1]%s-;!@[#6AH2X4x0r0+0,#6AH3X4x0r0+0:2]%s" % (insideH, outsideHC1),
+        "[#6AH3X4x0r0+0:1]%s-;!@[#6AH2X4x0r0+0,#6AH3X4x0r0+0:2]%s" % (insideH, outsideHC2),
+        "[#6AH3X4x0r0+0:1]%s-;!@[#6AH2X4x0r0+0,#6AH3X4x0r0+0:2]%s" % (insideH, outsideHC3),
+    ])
+]
+@pytest.mark.parametrize('graph,expected', cluster_graphs)
+def test_layered_clusters(graph, expected):
+    smirks = graph.as_smirks()
+    print(smirks)
+    assert smirks in expected
