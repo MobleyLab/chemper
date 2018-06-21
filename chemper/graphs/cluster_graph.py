@@ -346,7 +346,6 @@ class ClusterGraph(ChemPerGraph):
                                             min_smirks, new_bond_smirks)
 
                 idx_dict[new_atom.get_index()] = min_smirks
-                self.atom_by_smirks_index[min_smirks] = adding_new_storage
                 min_smirks -= 1
                 new_pairs.append((new_atom, adding_new_storage))
 

@@ -273,7 +273,7 @@ class ChemPerGraph(object):
 
         new_atom_storage = self.AtomStorage(new_atom, smirks_index=new_smirks_index)
         self._graph.add_node(new_atom_storage)
-        if new_smirks_index is not None and new_smirks_index > 0:
+        if new_smirks_index is not None:
             self.atom_by_smirks_index[new_smirks_index] = new_atom_storage
 
         # This is the first atom added to the graph
@@ -307,7 +307,9 @@ class ChemPerGraphFromMol(ChemPerGraph):
         self.mol = mol
         self.atom_by_index = dict()
         self._add_smirks_atoms(smirks_atoms)
-        for smirks_key, atom_storage in self.atom_by_smirks_index.items():
+        keys = list(self.atom_by_smirks_index.keys())
+        for smirks_key in keys:
+            atom_storage = self.atom_by_smirks_index[smirks_key]
             self._add_layers(atom_storage, layers)
 
     def _add_smirks_atoms(self, smirks_atoms):
