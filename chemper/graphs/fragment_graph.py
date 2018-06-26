@@ -152,15 +152,13 @@ class ChemPerGraph(object):
             return None
 
         if self.atom_by_smirks_index:
-            # sometimes we use negative numbers for internal indexing
-            # the first atom in a smirks pattern should be based on actual smirks indices (positive)
-            min_smirks = min([k for k in self.atom_by_smirks_index.keys() if k > 0])
+            min_smirks = min(self.atom_by_smirks_index)
             init_atom = self.atom_by_smirks_index[min_smirks]
         else:
             init_atom = self.get_atoms()[0]
 
         # sort neighboring atoms to keep consist output
-        neighbors = sorted(self.get_neighbors(init_atom), key=lambda a: a.smirks_index)
+        neighbors = sorted(self.get_neighbors(init_atom), key=lambda a: a.as_smirks())
         return self._as_smirks(init_atom, neighbors)
 
     def _as_smirks(self, init_atom, neighbors):
@@ -186,7 +184,7 @@ class ChemPerGraph(object):
             bond = self.get_connecting_bond(init_atom, neighbor)
             bond_smirks = bond.as_smirks()
 
-            new_neighbors = sorted(self.get_neighbors(neighbor), key=lambda a: a.smirks_index)
+            new_neighbors = self.get_neighbors(neighbor)
             new_neighbors.remove(init_atom)
 
             atom_smirks = self._as_smirks(neighbor, new_neighbors)
