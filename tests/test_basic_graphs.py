@@ -1,5 +1,6 @@
 """
-This test is created to check how a single molecule SMIRKS graph works
+This is a rather straight forward set of tests intended to make sure classes in
+cluster_graph.py and fragment_graph.py run without failures.
 """
 
 from chemper.graphs.cluster_graph import ClusterGraph
@@ -27,7 +28,7 @@ def test_empty_graph(graph_method):
     assert c.as_smirks() == '[*:1]'
 
 
-# make sure corner cases can at least be built without failing
+# Make sure tests run without failures for a variety of simple molecules
 smiles_set = ['C', 'c1ccccc1', 'C1CC1F', 'OC(=O)CC', 'c1ccccc1', '[O-1]c1ccccc1']
 layers_options = [1,3,'all']
 

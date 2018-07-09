@@ -57,6 +57,49 @@ class ChemPerGraph(object):
 
             self.smirks_index = smirks_index
 
+        def __lt__(self, other):
+            """
+            This method was primarily written for making SMIRKS patterns predictable.
+            If atoms are sortable, then the SMIRKS patterns are always the same making
+            tests easier to write. However, the specific sorting was created to also make SMIRKS
+            output as human readable as possible, that is to at least make it easier for a
+            human to see how the indexed atoms are related to each other.
+            It is typically easier for humans to read SMILES/SMARTS/SMIRKS with less branching (indicated with ()).
+
+            For example in:
+            [C:1]([H])([H])~[N:2]([C])~[O:3]
+            it is easier to see that the atoms C~N~O are connected in a "line" instead of:
+            [C:1]([N:2]([O:3])[C])([H])[H]
+            which is equivalent, but with all the () it is hard for a human to read the branching
+
+            Parameters
+            ----------
+            other: AtomStorage
+
+            Returns
+            -------
+            is_less_than: boolean
+                self is less than other
+            """
+            # if either smirks index is None, then you can't directly compare
+            # make a temporary index that is negative if it was None
+            self_index = self.smirks_index if self.smirks_index is not None else -1000
+            other_index = other.smirks_index if other.smirks_index is not None else -1000
+            # if either index is greater than 0, the one that is largest should go at the end of the list
+            if self_index > 0 or other_index > 0:
+                return self_index < other_index
+
+            # Both SMIRKS indices are not positive or None so compare the SMIRKS patterns instead
+            return self.as_smirks() < other.as_smirks()
+
+        def __str__(self):
+            """
+            Returns
+            -------
+            returns a string of this atom storage as a SMIRKS
+            """
+            return self.as_smirks()
+
         def as_smirks(self):
             """
             Returns
@@ -113,6 +156,14 @@ class ChemPerGraph(object):
             self._bond = bond
             self.smirks_index = smirks_index
 
+        def __str__(self):
+            """
+            Returns
+            -------
+            returns a string of this atom storage as a SMIRKS
+            """
+            return self.as_smirks()
+
         def as_smirks(self):
             """
             Returns
@@ -139,6 +190,14 @@ class ChemPerGraph(object):
         self.atom_by_smirks_index = dict() # stores a dictionary of atoms with smirks_index
         self.bond_by_smirks_index = dict() # stores a dictionary of bonds with smirks_index
 
+    def __str__(self):
+        """
+        Returns
+        -------
+        returns a string of this atom storage as a SMIRKS
+        """
+        return self.as_smirks()
+
     def as_smirks(self):
         """
         Returns
@@ -154,13 +213,17 @@ class ChemPerGraph(object):
         if self.atom_by_smirks_index:
             # sometimes we use negative numbers for internal indexing
             # the first atom in a smirks pattern should be based on actual smirks indices (positive)
-            min_smirks = min([k for k in self.atom_by_smirks_index.keys() if k > 0])
+            smirks_indices = [k for k in self.atom_by_smirks_index.keys() if k > 0]
+            if len(smirks_indices) != 0:
+                min_smirks = min(smirks_indices)
+            else:
+                min_smirks = min( [k for k in self.atom_by_smirks_index.keys()] )
             init_atom = self.atom_by_smirks_index[min_smirks]
         else:
             init_atom = self.get_atoms()[0]
 
         # sort neighboring atoms to keep consist output
-        neighbors = sorted(self.get_neighbors(init_atom), key=lambda a: a.smirks_index)
+        neighbors = sorted(self.get_neighbors(init_atom))
         return self._as_smirks(init_atom, neighbors)
 
     def _as_smirks(self, init_atom, neighbors):
@@ -186,7 +249,7 @@ class ChemPerGraph(object):
             bond = self.get_connecting_bond(init_atom, neighbor)
             bond_smirks = bond.as_smirks()
 
-            new_neighbors = sorted(self.get_neighbors(neighbor), key=lambda a: a.smirks_index)
+            new_neighbors = sorted(self.get_neighbors(neighbor))
             new_neighbors.remove(init_atom)
 
             atom_smirks = self._as_smirks(neighbor, new_neighbors)
