@@ -59,6 +59,7 @@ class ChemPerGraph(object):
 
         def __lt__(self, other):
             """
+            Overrides the default implementation
             This method was primarily written for making SMIRKS patterns predictable.
             If atoms are sortable, then the SMIRKS patterns are always the same making
             tests easier to write. However, the specific sorting was created to also make SMIRKS
@@ -94,6 +95,7 @@ class ChemPerGraph(object):
 
         def __str__(self):
             """
+            Overrides the default implementation
             Returns
             -------
             returns a string of this atom storage as a SMIRKS
@@ -158,11 +160,28 @@ class ChemPerGraph(object):
 
         def __str__(self):
             """
+            Overrides the default implementation
             Returns
             -------
             returns a string of this atom storage as a SMIRKS
             """
             return self.as_smirks()
+
+        def __lt__(self, other):
+            """
+            Overrides the default implementation
+            Used for sorting, while I don't know why you would want to sort Bond Storage
+            it seemed like a good idea to add this one when I added the sorting for Atom Storage
+            Parameters
+            ----------
+            other: BondStorage object
+
+            Returns
+            -------
+            is_less_than: boolean
+                self is less than other
+            """
+            return self.as_smirks() < other.as_smirks()
 
         def as_smirks(self):
             """
@@ -192,11 +211,29 @@ class ChemPerGraph(object):
 
     def __str__(self):
         """
+        Overrides the default implementation
         Returns
         -------
         returns a string of this atom storage as a SMIRKS
         """
         return self.as_smirks()
+
+    def __lt__(self, other):
+        """
+        Overrides the default implementation
+        Used for sorting, while I don't have a use case for sorting these yet, but
+        it seemed like a good idea to add this one when I added the sorting for Atom Storage
+
+        Parameters
+        ----------
+        other: BondStorage object
+
+        Returns
+        -------
+        is_less_than: boolean
+            self is less than other
+        """
+        return self.as_smirks() < other.as_smirks()
 
     def as_smirks(self):
         """

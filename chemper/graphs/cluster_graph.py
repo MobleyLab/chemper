@@ -47,14 +47,14 @@ class ClusterGraph(ChemPerGraph):
 
         def __str__(self):
             """
-            Returns
-            -------
+            Overrides the default implementation
             returns a string of this atom storage as a SMIRKS
             """
             return self.as_smirks()
 
         def __lt__(self, other):
             """
+            Overrides the default implementation
             This method was primarily written for making SMIRKS patterns predictable.
             If atoms are sortable, then the SMIRKS patterns are always the same making
             tests easier to write. However, the specific sorting was created to also make SMIRKS
@@ -206,18 +206,33 @@ class ClusterGraph(ChemPerGraph):
                 if 'Bond' in str(type(bonds)):
                     bonds = [bonds]
                 for bond in bonds:
-                    self.order.add(self.order_dict.get(bond.get_order(), '~'))
+                    self.order.add(bond.get_order())
                     self.ring.add(bond.is_ring())
 
             self.smirks_index = smirks_index
 
         def __str__(self):
             """
-            Returns
-            -------
+            Overrides the default implementation
             returns a string of this bond storage as a SMIRKS
             """
             return self.as_smirks()
+
+        def __lt__(self, other):
+            """
+            Overrides the default implementation
+            Used for sorting, while I don't know why you would want to sort Bond Storage
+            it seemed like a good idea to add this one when I added the sorting for Atom Storage
+            Parameters
+            ----------
+            other: BondStorage object
+
+            Returns
+            -------
+            is_less_than: boolean
+                self is less than other
+            """
+            return self.as_smirks() < other.as_smirks()
 
         def as_smirks(self):
             """
@@ -230,8 +245,10 @@ class ClusterGraph(ChemPerGraph):
             if len(self.order) == 0:
                 order = '~'
             else:
-                order = ','.join(sorted(list(self.order)))
+                order = ','.join([self.order_dict.get(o, '~') for o in sorted(list(self.order))])
 
+            # the ring set has booleans, if the length of the set is 1 then only ring (@) or non-ring (!@)
+            # bonds haven been added to this storage and we AND that decorator to the end of the bond
             if len(self.ring) == 1:
                 if list(self.ring)[0]:
                     return order+';@'
@@ -249,8 +266,33 @@ class ClusterGraph(ChemPerGraph):
             ----------
             bond: chemper Bond
             """
-            self.order.add(self.order_dict.get(bond.get_order()))
+            self.order.add(bond.get_order())
             self.ring.add(bond.is_ring())
+
+        def compare_bond(self, bond):
+            """
+
+            Parameters
+            ----------
+            bond: chemper Bond
+                bond you want to compare to the current storage
+
+            Returns
+            -------
+            score: int (0,1,2)
+                1 for if the bond order is in storage plus
+                1 base on if this is a ring bond
+            """
+            score = 0
+            if bond.get_order() in self.order:
+                score += 1
+
+            # the ring set has booleans, if the length of the set is 1 then only ring or non-ring
+            # bonds haven been added to this storage. That is the only time the ring contributes to the score
+            if len(self.ring) == 1 and self.ring[0] == bond.is_ring():
+                score += 1
+
+            return score
 
     # Initiate ClusterGraph
     def __init__(self, mols=None, smirks_atoms_lists=None, layers=0):
