@@ -57,6 +57,67 @@ class ChemPerGraph(object):
 
             self.smirks_index = smirks_index
 
+        def __lt__(self, other):
+            """
+            Overrides the default implementation
+            This method was primarily written for making SMIRKS patterns predictable.
+            If atoms are sortable, then the SMIRKS patterns are always the same making
+            tests easier to write. However, the specific sorting was created to also make SMIRKS
+            output as human readable as possible, that is to at least make it easier for a
+            human to see how the indexed atoms are related to each other.
+            It is typically easier for humans to read SMILES/SMARTS/SMIRKS with less branching (indicated with ()).
+
+            For example in:
+            [C:1]([H])([H])~[N:2]([C])~[O:3]
+            it is easier to see that the atoms C~N~O are connected in a "line" instead of:
+            [C:1]([N:2]([O:3])[C])([H])[H]
+            which is equivalent, but with all the () it is hard for a human to read the branching
+
+            Parameters
+            ----------
+            other: AtomStorage
+
+            Returns
+            -------
+            is_less_than: boolean
+                self is less than other
+            """
+            # if either smirks index is None, then you can't directly compare
+            # make a temporary index that is negative if it was None
+            self_index = self.smirks_index if self.smirks_index is not None else -1000
+            other_index = other.smirks_index if other.smirks_index is not None else -1000
+            # if either index is greater than 0, the one that is largest should go at the end of the list
+            if self_index > 0 or other_index > 0:
+                return self_index < other_index
+
+            # Both SMIRKS indices are not positive or None so compare the SMIRKS patterns instead
+            return self.as_smirks() < other.as_smirks()
+
+        def __str__(self):
+            """
+            Overrides the default implementation
+            Returns
+            -------
+            returns a string of this atom storage as a SMIRKS
+            """
+            return self.as_smirks()
+
+        def __eq__(self, other):
+            """
+            Overrides the default implementation
+            Parameters
+            ----------
+            other: AtomStorage
+
+            Returns
+            -------
+            is_equal_to: boolean
+                self equal to other
+            """
+            if isinstance(other, self.__class__):
+                return self.as_smirks() == other.as_smirks()
+            return False
+
         def as_smirks(self):
             """
             Returns
@@ -113,6 +174,47 @@ class ChemPerGraph(object):
             self._bond = bond
             self.smirks_index = smirks_index
 
+        def __str__(self):
+            """
+            Overrides the default implementation
+            Returns
+            -------
+            returns a string of this atom storage as a SMIRKS
+            """
+            return self.as_smirks()
+
+        def __lt__(self, other):
+            """
+            Overrides the default implementation
+            Used for sorting, while I don't know why you would want to sort Bond Storage
+            it seemed like a good idea to add this one when I added the sorting for Atom Storage
+            Parameters
+            ----------
+            other: BondStorage object
+
+            Returns
+            -------
+            is_less_than: boolean
+                self is less than other
+            """
+            return self.as_smirks() < other.as_smirks()
+
+        def __eq__(self, other):
+            """
+            Overrides the default implementation
+            Parameters
+            ----------
+            other: BondStorage
+
+            Returns
+            -------
+            is_equal_to: boolean
+                self equal to other
+            """
+            if isinstance(other, self.__class__):
+                return self.as_smirks() == other.as_smirks()
+            return False
+
         def as_smirks(self):
             """
             Returns
@@ -139,6 +241,48 @@ class ChemPerGraph(object):
         self.atom_by_smirks_index = dict() # stores a dictionary of atoms with smirks_index
         self.bond_by_smirks_index = dict() # stores a dictionary of bonds with smirks_index
 
+    def __str__(self):
+        """
+        Overrides the default implementation
+        Returns
+        -------
+        returns a string of this atom storage as a SMIRKS
+        """
+        return self.as_smirks()
+
+    def __lt__(self, other):
+        """
+        Overrides the default implementation
+        Used for sorting, while I don't have a use case for sorting these yet, but
+        it seemed like a good idea to add this one when I added the sorting for Atom Storage
+
+        Parameters
+        ----------
+        other: BondStorage object
+
+        Returns
+        -------
+        is_less_than: boolean
+            self is less than other
+        """
+        return self.as_smirks() < other.as_smirks()
+
+    def __eq__(self, other):
+        """
+        Overrides the default implementation
+        Parameters
+        ----------
+        other: ChemPerGraph
+
+        Returns
+        -------
+        is_equal_to: boolean
+            self equal to other
+        """
+        if isinstance(other, self.__class__):
+            return self.as_smirks() == other.as_smirks()
+        return False
+
     def as_smirks(self):
         """
         Returns
@@ -152,13 +296,19 @@ class ChemPerGraph(object):
             return None
 
         if self.atom_by_smirks_index:
-            min_smirks = min(self.atom_by_smirks_index)
+            # sometimes we use negative numbers for internal indexing
+            # the first atom in a smirks pattern should be based on actual smirks indices (positive)
+            smirks_indices = [k for k in self.atom_by_smirks_index.keys() if k > 0]
+            if len(smirks_indices) != 0:
+                min_smirks = min(smirks_indices)
+            else:
+                min_smirks = min( [k for k in self.atom_by_smirks_index.keys()] )
             init_atom = self.atom_by_smirks_index[min_smirks]
         else:
             init_atom = self.get_atoms()[0]
 
         # sort neighboring atoms to keep consist output
-        neighbors = sorted(self.get_neighbors(init_atom), key=lambda a: a.as_smirks())
+        neighbors = sorted(self.get_neighbors(init_atom))
         return self._as_smirks(init_atom, neighbors)
 
     def _as_smirks(self, init_atom, neighbors):
@@ -184,7 +334,7 @@ class ChemPerGraph(object):
             bond = self.get_connecting_bond(init_atom, neighbor)
             bond_smirks = bond.as_smirks()
 
-            new_neighbors = self.get_neighbors(neighbor)
+            new_neighbors = sorted(self.get_neighbors(neighbor))
             new_neighbors.remove(init_atom)
 
             atom_smirks = self._as_smirks(neighbor, new_neighbors)
@@ -271,7 +421,7 @@ class ChemPerGraph(object):
 
         new_atom_storage = self.AtomStorage(new_atom, smirks_index=new_smirks_index)
         self._graph.add_node(new_atom_storage)
-        if new_smirks_index is not None and new_smirks_index > 0:
+        if new_smirks_index is not None:
             self.atom_by_smirks_index[new_smirks_index] = new_atom_storage
 
         # This is the first atom added to the graph
@@ -305,7 +455,9 @@ class ChemPerGraphFromMol(ChemPerGraph):
         self.mol = mol
         self.atom_by_index = dict()
         self._add_smirks_atoms(smirks_atoms)
-        for smirks_key, atom_storage in self.atom_by_smirks_index.items():
+        keys = list(self.atom_by_smirks_index.keys())
+        for smirks_key in keys:
+            atom_storage = self.atom_by_smirks_index[smirks_key]
             self._add_layers(atom_storage, layers)
 
     def _add_smirks_atoms(self, smirks_atoms):
