@@ -235,6 +235,23 @@ class ChemPerGraph(object):
         """
         return self.as_smirks() < other.as_smirks()
 
+
+    def __eq__(self, other):
+        """
+        Overrides the default implementation
+        Parameters
+        ----------
+        other: ChemPerGraph
+
+        Returns
+        -------
+        is_equal_to: boolean
+            self equal to other
+        """
+        if isinstance(other, self.__class__):
+            return self.as_smirks() == other.as_smirks()
+        return False
+
     def as_smirks(self):
         """
         Returns
