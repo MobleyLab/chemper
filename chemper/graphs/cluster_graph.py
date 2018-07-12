@@ -88,6 +88,22 @@ class ClusterGraph(ChemPerGraph):
             # Both SMIRKS indices are not positive or None so compare the SMIRKS patterns instead
             return self.as_smirks() < other.as_smirks()
 
+        def __eq__(self, other):
+            """
+            Overrides the default implementation
+            Parameters
+            ----------
+            other: AtomStorage
+
+            Returns
+            -------
+            is_equal_to: boolean
+                self equal to other
+            """
+            if isinstance(other, self.__class__):
+                return self.as_smirks() == other.as_smirks()
+            return False
+
         def make_atom_decorators(self, atom):
             """
             extract information from a chemper atom that would be useful in a smirks
@@ -233,6 +249,22 @@ class ClusterGraph(ChemPerGraph):
                 self is less than other
             """
             return self.as_smirks() < other.as_smirks()
+
+        def __eq__(self, other):
+            """
+            Overrides the default implementation
+            Parameters
+            ----------
+            other: BondStorage
+
+            Returns
+            -------
+            is_equal_to: boolean
+                self equal to other
+            """
+            if isinstance(other, self.__class__):
+                return self.as_smirks() == other.as_smirks()
+            return False
 
         def as_smirks(self):
             """

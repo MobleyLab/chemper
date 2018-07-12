@@ -102,6 +102,22 @@ class ChemPerGraph(object):
             """
             return self.as_smirks()
 
+        def __eq__(self, other):
+            """
+            Overrides the default implementation
+            Parameters
+            ----------
+            other: AtomStorage
+
+            Returns
+            -------
+            is_equal_to: boolean
+                self equal to other
+            """
+            if isinstance(other, self.__class__):
+                return self.as_smirks() == other.as_smirks()
+            return False
+
         def as_smirks(self):
             """
             Returns
@@ -183,6 +199,22 @@ class ChemPerGraph(object):
             """
             return self.as_smirks() < other.as_smirks()
 
+        def __eq__(self, other):
+            """
+            Overrides the default implementation
+            Parameters
+            ----------
+            other: BondStorage
+
+            Returns
+            -------
+            is_equal_to: boolean
+                self equal to other
+            """
+            if isinstance(other, self.__class__):
+                return self.as_smirks() == other.as_smirks()
+            return False
+
         def as_smirks(self):
             """
             Returns
@@ -234,7 +266,6 @@ class ChemPerGraph(object):
             self is less than other
         """
         return self.as_smirks() < other.as_smirks()
-
 
     def __eq__(self, other):
         """
