@@ -23,7 +23,9 @@ def make_frag_graph(smiles, layers):
     """
     mol = mol_toolkit.MolFromSmiles(smiles)
     smirks_dict = {1:0, 2:1}
-    return ChemPerGraphFromMol(mol, smirks_dict, layers)
+    c1 = ChemPerGraphFromMol(mol, smirks_dict, layers)
+    c2 = ChemPerGraphFromMol(mol, smirks_dict, layers)
+    return c1, c2
 
 def make_cluster_graph(smiles_list, layers=0):
     """
@@ -38,7 +40,9 @@ def make_cluster_graph(smiles_list, layers=0):
     """
     smirks_dict_list = [[{1:0, 2:1}]]*len(smiles_list)
     mols_list = [mol_toolkit.MolFromSmiles(smiles) for smiles in smiles_list]
-    return ClusterGraph(mols_list, smirks_dict_list, layers=layers)
+    c1 = ClusterGraph(mols_list, smirks_dict_list, layers=layers)
+    c2 = ClusterGraph(mols_list, smirks_dict_list, layers=layers)
+    return c1, c2
 
 
 # Check for expected output
@@ -96,17 +100,19 @@ graph_data = [
 ]
 
 
-@pytest.mark.parametrize('graph,expected', graph_data)
-def test_smirks_frag_graph(graph, expected):
+@pytest.mark.parametrize('graphs,expected', graph_data)
+def test_smirks_frag_graph(graphs, expected):
     """
     Checking the smirks pattern is the easiest way to check that the
     graphs were built correctly and that new changes have not affected the output
     """
+    graph, graph1 = graphs
     smirks = graph.as_smirks()
     print(smirks)
     assert smirks == expected
+    assert graph == graph1
 
-@pytest.mark.parametrize('graph', [g for g,e in graph_data])
+@pytest.mark.parametrize('graph', [g[0] for g,e in graph_data])
 def test_other_cluster_graph(graph):
     """
     Check some other graph functionality

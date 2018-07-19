@@ -284,12 +284,12 @@ class ClusterGraph(ChemPerGraph):
                 1 base on if this is a ring bond
             """
             score = 0
-            if bond.get_order() in self.order:
+            if bond.get_order() in self.order or len(self.order) == 0:
                 score += 1
 
             # the ring set has booleans, if the length of the set is 1 then only ring or non-ring
             # bonds haven been added to this storage. That is the only time the ring contributes to the score
-            if len(self.ring) == 1 and self.ring[0] == bond.is_ring():
+            if len(self.ring) == 1 and list(self.ring)[0] == bond.is_ring():
                 score += 1
 
             return score
@@ -420,53 +420,49 @@ class ClusterGraph(ChemPerGraph):
             return
 
         # find atom neighbors that are not already included in SMIRKS indexed atoms
-        atom_neighbors = [a for a in atom.get_neighbors() if a.get_index() not in idx_dict]
+        atom_neighbors = [(a, mol.get_bond_by_atoms(a,atom)) for a in atom.get_neighbors() \
+                          if a.get_index() not in idx_dict]
 
         # get the smirks indices already added to the storage
         # This includes all previous layers since the idx_dict is updated as you go
         smirks = [e for k,e in idx_dict.items()]
 
         # similar to atoms find neighbors already in the graph that haven't already been used
-        storage_neighbors = [s for s in self.get_neighbors(storage) if s.smirks_index not in smirks]
+        storage_neighbors = [(s, self.get_connecting_bond(s, storage)) for s in self.get_neighbors(storage) \
+                             if s.smirks_index not in smirks]
 
-        # If the storage neighbors isn't empty
-        if storage_neighbors:
-            # min_smirks in this case will be used for any new storages created
-            # for example, if the current graph has 2 neighbors, but the new atom has 3
-            min_smirks = min([s.smirks_index for s in storage_neighbors]) - 1
-            # pair up the atoms with their storage
-            pairs = self.find_pairs(atom_neighbors, storage_neighbors)
-
-        # storage doesn't have any neighbors
-        else:
+        new_pairs = list()
+        # If the storage doesn't have any neighbors, add storage
+        # Make new storages for all neighbors
+        if len(storage_neighbors) == 0:
             min_smirks = storage.smirks_index * 10
             if min_smirks > 0:
                 min_smirks = min_smirks * -1
-            pairs = [(a, None) for a in atom_neighbors]
 
-        new_pairs = list()
-
-        for new_atom, new_storage in pairs:
-            new_bond = mol.get_bond_by_atoms(atom, new_atom)
-            if new_storage is None:
+            for a, b in atom_neighbors:
                 new_bond_smirks = (storage.smirks_index, min_smirks)
 
-                adding_new_storage = self.add_atom(new_atom,new_bond,storage,
+                adding_new_storage = self.add_atom(a,b,storage,
                                                    min_smirks, new_bond_smirks)
 
-                idx_dict[new_atom.get_index()] = min_smirks
+                idx_dict[a.get_index()] = min_smirks
                 self.atom_by_smirks_index[min_smirks] = adding_new_storage
                 min_smirks -= 1
-                new_pairs.append((new_atom, adding_new_storage))
+                new_pairs.append((a, adding_new_storage))
 
-            else:
-                new_storage.add_atom(new_atom)
+        else:
+            # pair up the atoms with their storage
+            pairs = self.find_pairs(atom_neighbors, storage_neighbors)
+            for new_atom, new_bond, new_storage_atom, new_storage_bond in pairs:
+                if new_storage_atom is None:
+                    continue
+                # add atom and bond information to the storage
+                new_storage_atom.add_atom(new_atom)
+                new_storage_bond.add_bond(new_bond)
+                new_pairs.append((new_atom, new_storage_atom))
+                idx_dict[new_atom.get_index()] = new_storage_atom.smirks_index
 
-                bond_smirks = (storage.smirks_index, new_storage.smirks_index)
-                self.bond_by_smirks_index[bond_smirks].add_bond(new_bond)
-                new_pairs.append((new_atom, new_storage))
-                idx_dict[new_atom.get_index()] = new_storage.smirks_index
-
+        # Repeat for the extra layers
         if layers == 'all':
             new_layers = 'all'
         else:
@@ -477,19 +473,28 @@ class ClusterGraph(ChemPerGraph):
         for new_atom, new_storage in new_pairs:
             self._add_layers(mol, new_atom, new_storage, new_layers, idx_dict)
 
-    def find_pairs(self, atoms, storages):
+    def find_pairs(self, atoms_and_bonds, storages):
         """
-        Determines the best pairing of atoms to an existing set of AtomStorages
+        Find pairs is used to determine which current AtomStorage from storages
+        atoms should be paired with.
+        This function takes advantage of the maximum scoring function in networkx
+        to find the pairing with the highest "score".
+        Scores are determined using functions in the atom and bond storage objects
+        that compare those storages to the new atom or bond.
+
+        If there are less atoms than storages then the atoms with the lowest pair are
+        assigned a None pairing.
 
         Parameters
         ----------
-        atoms: list of chemper Atoms
-        storages: list of AtomStorage
+        atoms_and_bonds: list of tuples in form (chemper Atom, chemper Bond)
+        storages: list of tuples in form (AtomStorage, BondStorage)
 
         Returns
         -------
         pairs: list of tuples
-            pairs of atoms and storage objects that are most similar
+            pairs of atoms and storage objects that are most similar,
+            note these are only the Atom and AtomStorage objects since the bonds and
         """
         pairs = list()
 
@@ -498,36 +503,43 @@ class ClusterGraph(ChemPerGraph):
         atom_dict = dict()
         storage_dict = dict()
 
-        for idx, a in enumerate(atoms):
+        # create a bipartite graph with atoms/bonds on one side
+        for idx, (a, b) in enumerate(atoms_and_bonds):
             g.add_node(idx+1, bipartite=0)
-            atom_dict[idx+1] = a
-        for idx, s in enumerate(storages):
+            atom_dict[idx+1] = (a,b)
+        # and atom/bond storage objects on the other
+        for idx, (s,sb) in enumerate(storages):
             g.add_node((idx*-1)-1, bipartite=1)
-            storage_dict[(idx*-1)-1] = s
+            storage_dict[(idx*-1)-1] = (s,sb)
 
-        for a_idx, a in atom_dict.items():
-            for s_idx, s in storage_dict.items():
-                # TODO: scores only consider one atom and storage, should it look at neighbors?
-                score = s.compare_atom(a)
+        # Fill in the weight on each edge of the graph using the compare_atom/bond functions
+        for a_idx, (a, b) in atom_dict.items():
+            for s_idx, (sa, sb) in storage_dict.items():
+                score = sa.compare_atom(a)
+                score += sb.compare_bond(b) / 10.
+                print(sa.as_smirks(), sb.as_smirks(), a.atomic_number(), score)
                 g.add_edge(a_idx,s_idx,weight=score+1)
 
+        # calculate maximum matching, that is the pairing of atoms/bonds to
+        # storage objects that leads the the highest overall score
         matching = nx.algorithms.max_weight_matching(g,maxcardinality=False)
+        # track the atoms assigned a paired storage object
         pair_set = set()
 
         for idx_1, idx_2 in matching:
             if idx_1 in atom_dict:
-                a = atom_dict[idx_1]
-                s = storage_dict[idx_2]
+                (a,b) = atom_dict[idx_1]
+                (sa,sb) = storage_dict[idx_2]
                 pair_set.add(idx_1)
             else:
-                a = atom_dict[idx_2]
-                s = storage_dict[idx_1]
+                (a,b) = atom_dict[idx_2]
+                (sa,sb) = storage_dict[idx_1]
                 pair_set.add(idx_2)
-            pairs.append((a,s))
+            pairs.append((a, b, sa, sb))
 
-        for a_idx, a in atom_dict.items():
+        for a_idx, (a,b) in atom_dict.items():
             if a_idx not in pair_set:
-                pairs.append((a,None))
+                pairs.append((a, b, None, None))
 
         return pairs
 

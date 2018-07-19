@@ -50,10 +50,6 @@ def test_no_fail_cluster(smiles_list, layers):
     c = ClusterGraph(mols_list, smirks_dict_list, layers=layers)
     assert c.add_atom(None) is None
 
-    # check custom == function, created from same molecules
-    c2 = ClusterGraph(mols_list, smirks_dict_list, layers=layers)
-    assert c == c2
-
 def test_mols_mismatch():
     """
     tests that an exception is raised when the number of molecules
