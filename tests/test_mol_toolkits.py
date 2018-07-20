@@ -130,3 +130,14 @@ def test_atom():
     smiles = mol.get_smiles()
     assert smiles == "C"
 
+def test_atom_exception():
+    with pytest.raises(Exception):
+        mol_toolkit.Atom(None)
+
+def test_bond_exception():
+    with pytest.raises(Exception):
+        mol_toolkit.Bond(None)
+
+def test_mol_exception():
+    with pytest.raises(Exception):
+        mol_toolkit.Mol(None)
