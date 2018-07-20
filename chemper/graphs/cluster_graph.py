@@ -157,9 +157,17 @@ class ClusterGraph(ChemPerGraph):
 
             Returns
             -------
-            score: int
-                 how similar is atom to current storage, max of 7 for all decorators identical
-                 0 if atom's atomic number not included in current set
+            score: float
+                A score describing how similar the input atom is to any set of decorators currently
+                in this storage, based on its SMIRKS decorators.
+                This score ranges from 0 to 7. 7 comes from the number of decorators
+                on any atom, if this atom matches perfectly with one of the current decorator sets
+                then 7 decorators agree.
+                However, if the atomic number doesn't agree, then that set of decorators is considered
+                less ideal, thus if the atomic numbers don't agree, then the score is given by
+                the number other decorators divided by 10.
+                If the current storage is empty, then the score is given as 7 any atom matches
+                a wildcard atom.
             """
             # If decorators is empty (no known atom information, return 7 (current max)
             if len(self.decorators) == 0:
@@ -167,8 +175,6 @@ class ClusterGraph(ChemPerGraph):
 
             score = 0
             decs = self.make_atom_decorators(atom)
-            # extract atomic number for new atom
-            test_atomic = int(decs[0][1:])
 
             for ref in self.decorators:
                 # get atomic number for this set of decorators
@@ -280,7 +286,10 @@ class ClusterGraph(ChemPerGraph):
             Returns
             -------
             score: int (0,1,2)
-                1 for if the bond order is in storage plus
+                A score describing how similar the input bond is to any set of decorators currently
+                in this storage, based on its SMIRKS decorators.
+
+                1 for the bond order +
                 1 base on if this is a ring bond
             """
             score = 0
@@ -314,10 +323,6 @@ class ClusterGraph(ChemPerGraph):
             'all' will lead to all atoms in the molecule being specified (not recommended)
         """
         ChemPerGraph.__init__(self)
-
-        # TODO: make sure to remove this when layers works
-        #if layers != 0:
-        #    raise Exception("Currently we only support 0 layers for ClusterGraphs")
 
         self.mols = list()
         self.smirks_atoms_lists = list()
