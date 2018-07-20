@@ -24,7 +24,7 @@ def test_empty_graph(graph_method):
     assert c.as_smirks() == '[*]~[*]'
 
     c = graph_method()
-    c.add_atom(None, new_smirks_index=1)
+    c.add_atom(None, new_label=1)
     assert c.as_smirks() == '[*:1]'
 
 

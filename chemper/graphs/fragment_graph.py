@@ -1,9 +1,25 @@
 """
 fragment_graph.py
 
-ChemPerGraph are a class for tracking molecular fragments based on information about the atoms and bonds they contain.
-You can combine them or take a difference in order to find distinguishing characteristics in a set of clustered
-molecular sub-graphs.
+ChemPerGraph is a class for storing smirks decorators for a molecular fragment.
+These can be used to convert a molecular sub-graph or an entire molecule into a SMIRKS
+pattern with all decorators specified.
+
+For example, imagine you want a SMIRKS for the carbon in methane, it would become:
+
+"[#6AH4X4x0r0+0:1]"
+
+with decorators:
+#6: atomic number 6 for carbon
+A: aliphatic (a would be aromatic)
+H4: a total hydrogen count of 4, 4 neighbors are hydrogen
+X4: connectivity of 4, that is number of neighbors, not valence or sum of bond orders
+x0: ring connectivity of 0, no ring bonds
+r0: smallest ring is size 0 (or not in a ring)
++0: 0 formal charge
+
+To the best of the authors knowledge, this is the first open source tool capable
+of converting a molecule (or sub-graph) into a detailed SMIRKS pattern.
 
 AUTHORS:
 
@@ -22,14 +38,14 @@ class ChemPerGraph(object):
         """
         AtomStorage tracks information about an atom
         """
-        def __init__(self, atom=None, smirks_index=None):
+        def __init__(self, atom=None, label=None):
             """
             Initializes AtomStorage based on a provided atom
 
             Parameters
             ----------
             atom: chemper Atom object
-            smirks_index: int
+            label: int
                 integer for labeling this atom in a SMIRKS
                 or if negative number just used to track the atom locally
             """
@@ -55,7 +71,7 @@ class ChemPerGraph(object):
                 self.min_ring_size = atom.min_ring_size()
                 self.atom_index = atom.get_index()
 
-            self.smirks_index = smirks_index
+            self.label = label
 
         def __lt__(self, other):
             """
@@ -84,8 +100,8 @@ class ChemPerGraph(object):
             """
             # if either smirks index is None, then you can't directly compare
             # make a temporary index that is negative if it was None
-            self_index = self.smirks_index if self.smirks_index is not None else -1000
-            other_index = other.smirks_index if other.smirks_index is not None else -1000
+            self_index = self.label if self.label is not None else -1000
+            other_index = other.label if other.label is not None else -1000
             # if either index is greater than 0, the one that is largest should go at the end of the list
             if self_index > 0 or other_index > 0:
                 return self_index < other_index
@@ -93,14 +109,7 @@ class ChemPerGraph(object):
             # Both SMIRKS indices are not positive or None so compare the SMIRKS patterns instead
             return self.as_smirks() < other.as_smirks()
 
-        def __str__(self):
-            """
-            Overrides the default implementation
-            Returns
-            -------
-            returns a string of this atom storage as a SMIRKS
-            """
-            return self.as_smirks()
+        def __str__(self): return self.as_smirks()
 
         def as_smirks(self):
             """
@@ -110,9 +119,9 @@ class ChemPerGraph(object):
                 how this atom would be represented in a SMIRKS string
             """
             if self.atom is None:
-                if self.smirks_index is None or self.smirks_index <= 0:
+                if self.label is None or self.label <= 0:
                     return '[*]'
-                return '[*:%i]' % self.smirks_index
+                return '[*:%i]' % self.label
 
             aromatic = 'a' if self.aromatic else 'A'
             if self.charge >= 0:
@@ -128,21 +137,21 @@ class ChemPerGraph(object):
                                                    self.min_ring_size,
                                                    charge)
 
-            if self.smirks_index is None or self.smirks_index <= 0:
+            if self.label is None or self.label <= 0:
                 return '[%s]' % base_smirks
 
-            return '[%s:%i]' % (base_smirks, self.smirks_index)
+            return '[%s:%i]' % (base_smirks, self.label)
 
     class BondStorage(object):
         """
         BondStorage tracks information about a bond
         """
-        def __init__(self, bond=None, smirks_index=None):
+        def __init__(self, bond=None, label=None):
             """
             Parameters
             ----------
             bond: chemper Bond object
-            smirks_index: int or float
+            label: int or float
                 Bonds don't have SMIRKS indices so this is only used for internal
                 tracking of the object.
             """
@@ -156,32 +165,11 @@ class ChemPerGraph(object):
                 self.bond_index = bond.get_index()
 
             self._bond = bond
-            self.smirks_index = smirks_index
+            self.label = label
 
-        def __str__(self):
-            """
-            Overrides the default implementation
-            Returns
-            -------
-            returns a string of this atom storage as a SMIRKS
-            """
-            return self.as_smirks()
+        def __str__(self): return self.as_smirks()
 
-        def __lt__(self, other):
-            """
-            Overrides the default implementation
-            Used for sorting, while I don't know why you would want to sort Bond Storage
-            it seemed like a good idea to add this one when I added the sorting for Atom Storage
-            Parameters
-            ----------
-            other: BondStorage object
-
-            Returns
-            -------
-            is_less_than: boolean
-                self is less than other
-            """
-            return self.as_smirks() < other.as_smirks()
+        def __lt__(self, other): return self.as_smirks() < other.as_smirks()
 
         def as_smirks(self):
             """
@@ -206,47 +194,16 @@ class ChemPerGraph(object):
         Initialize empty ChemPerGraph
         """
         self._graph = nx.Graph()
-        self.atom_by_smirks_index = dict() # stores a dictionary of atoms with smirks_index
-        self.bond_by_smirks_index = dict() # stores a dictionary of bonds with smirks_index
+        self.atom_by_label = dict() # stores a dictionary of atoms by label
+        self.bond_by_label = dict() # stores a dictionary of bonds by label
 
-    def __str__(self):
-        """
-        Overrides the default implementation
-        Returns
-        -------
-        returns a string of this atom storage as a SMIRKS
-        """
-        return self.as_smirks()
+    def __str__(self): return self.as_smirks()
 
-    def __lt__(self, other):
-        """
-        Overrides the default implementation
-        Used for sorting, while I don't have a use case for sorting these yet, but
-        it seemed like a good idea to add this one when I added the sorting for Atom Storage
-
-        Parameters
-        ----------
-        other: BondStorage object
-
-        Returns
-        -------
-        is_less_than: boolean
-            self is less than other
-        """
-        return self.as_smirks() < other.as_smirks()
-
+    def __lt__(self, other): return self.as_smirks() < other.as_smirks()
 
     def __eq__(self, other):
         """
         Overrides the default implementation
-        Parameters
-        ----------
-        other: ChemPerGraph
-
-        Returns
-        -------
-        is_equal_to: boolean
-            self equal to other
         """
         if isinstance(other, self.__class__):
             return self.as_smirks() == other.as_smirks()
@@ -264,15 +221,15 @@ class ChemPerGraph(object):
         if len(self._graph.nodes()) == 0:
             return None
 
-        if self.atom_by_smirks_index:
+        if self.atom_by_label:
             # sometimes we use negative numbers for internal indexing
             # the first atom in a smirks pattern should be based on actual smirks indices (positive)
-            smirks_indices = [k for k in self.atom_by_smirks_index.keys() if k > 0]
+            smirks_indices = [k for k in self.atom_by_label.keys() if k > 0]
             if len(smirks_indices) != 0:
                 min_smirks = min(smirks_indices)
             else:
-                min_smirks = min( [k for k in self.atom_by_smirks_index.keys()] )
-            init_atom = self.atom_by_smirks_index[min_smirks]
+                min_smirks = min([k for k in self.atom_by_label.keys()])
+            init_atom = self.atom_by_label[min_smirks]
         else:
             init_atom = self.get_atoms()[0]
 
@@ -364,7 +321,7 @@ class ChemPerGraph(object):
         return list(self._graph.neighbors(atom))
 
     def add_atom(self, new_atom, new_bond=None, bond_to_atom=None,
-                 new_smirks_index=None, new_bond_index=None):
+                 new_label=None, new_bond_label=None):
         """
         Expand the graph by adding one new atom including relevant bond
 
@@ -374,9 +331,9 @@ class ChemPerGraph(object):
         new_bond: a chemper Bond object
         bond_to_atom: AtomStorage object
             This is where you want to connect the new atom, required if the graph isn't empty
-        new_smirks_index: int
+        new_label: int
             (optional) index for SMIRKS or internal storage if less than zero
-        new_bond_index: int or float
+        new_bond_label: int or float
             (optional) index used to track bond storage
 
         Returns
@@ -388,17 +345,17 @@ class ChemPerGraph(object):
         if bond_to_atom is None and len(self.get_atoms()) > 0:
             return None
 
-        new_atom_storage = self.AtomStorage(new_atom, smirks_index=new_smirks_index)
+        new_atom_storage = self.AtomStorage(new_atom, label=new_label)
         self._graph.add_node(new_atom_storage)
-        if new_smirks_index is not None:
-            self.atom_by_smirks_index[new_smirks_index] = new_atom_storage
+        if new_label is not None:
+            self.atom_by_label[new_label] = new_atom_storage
 
         # This is the first atom added to the graph
         if bond_to_atom is None:
             return new_atom_storage
 
-        new_bond_storage = self.BondStorage(new_bond, new_bond_index)
-        self.bond_by_smirks_index[new_bond_index] = new_bond_storage
+        new_bond_storage = self.BondStorage(new_bond, new_bond_label)
+        self.bond_by_label[new_bond_label] = new_bond_storage
 
         self._graph.add_edge(bond_to_atom, new_atom_storage, bond = new_bond_storage)
         return new_atom_storage
@@ -414,7 +371,7 @@ class ChemPerGraphFromMol(ChemPerGraph):
         ----------
         mol: chemper Mol
         smirks_atoms: dict
-            dictionary of the form {smirks_index: atom_index}
+            dictionary of the form {smirks index: atom index}
         layers: int or 'all'
             how many atoms out from the smirks indexed atoms do you wish save (default=0)
             'all' will lead to all atoms in the molecule being specified
@@ -424,9 +381,9 @@ class ChemPerGraphFromMol(ChemPerGraph):
         self.mol = mol
         self.atom_by_index = dict()
         self._add_smirks_atoms(smirks_atoms)
-        keys = list(self.atom_by_smirks_index.keys())
+        keys = list(self.atom_by_label.keys())
         for smirks_key in keys:
-            atom_storage = self.atom_by_smirks_index[smirks_key]
+            atom_storage = self.atom_by_label[smirks_key]
             self._add_layers(atom_storage, layers)
 
     def _add_smirks_atoms(self, smirks_atoms):
@@ -436,22 +393,22 @@ class ChemPerGraphFromMol(ChemPerGraph):
         Parameters
         ----------
         smirks_atoms: dict
-            dictionary of the form {smirks_index: atom_index}
+            dictionary of the form {smirks index: atom index}
         """
         # add all smirks atoms to the graph
         for key, atom_index in smirks_atoms.items():
             atom1 = self.mol.get_atom_by_index(atom_index)
             new_atom_storage = self.AtomStorage(atom1, key)
             self._graph.add_node(new_atom_storage)
-            self.atom_by_smirks_index[key] = new_atom_storage
+            self.atom_by_label[key] = new_atom_storage
             self.atom_by_index[atom_index] = new_atom_storage
             # Check for bonded atoms already in the graph
             for neighbor_key, neighbor_index in smirks_atoms.items():
-                if not neighbor_key in self.atom_by_smirks_index:
+                if not neighbor_key in self.atom_by_label:
                     continue
 
                 # check if atoms are already connected on the graph
-                neighbor_storage = self.atom_by_smirks_index[neighbor_key]
+                neighbor_storage = self.atom_by_label[neighbor_key]
                 if nx.has_path(self._graph, new_atom_storage, neighbor_storage):
                     continue
 
@@ -462,9 +419,9 @@ class ChemPerGraphFromMol(ChemPerGraph):
                 if bond is not None: # Atoms are connected add edge
                     bond_index = max(neighbor_key, key)-1
                     bond_storage = self.BondStorage(bond, bond_index)
-                    self.bond_by_smirks_index[bond_index] = bond_storage
+                    self.bond_by_label[bond_index] = bond_storage
                     self._graph.add_edge(new_atom_storage,
-                                         self.atom_by_smirks_index[neighbor_key],
+                                         self.atom_by_label[neighbor_key],
                                          bond=bond_storage)
 
     # TODO: I could probably do this with a while loop, is that better?
@@ -483,7 +440,7 @@ class ChemPerGraphFromMol(ChemPerGraph):
         if add_layer == 0:
             return
 
-        new_smirks_index = min(1, atom_storage.smirks_index) - 1
+        new_label = min(1, atom_storage.label) - 1
 
         for new_atom in atom_storage.atom.get_neighbors():
             if new_atom.get_index() in self.atom_by_index:
@@ -491,7 +448,7 @@ class ChemPerGraphFromMol(ChemPerGraph):
 
             new_bond = self.mol.get_bond_by_atoms(atom_storage.atom, new_atom)
             new_storage = self.add_atom(new_atom, new_bond, atom_storage,
-                                        new_smirks_index, new_smirks_index)
+                                        new_label, new_label)
             self.atom_by_index[new_atom.get_index()] = new_storage
             if add_layer == 'all':
                 self._add_layers(new_storage, add_layer)
