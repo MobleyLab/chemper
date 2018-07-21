@@ -2,4 +2,8 @@ conda:
     file: docs/environment.yml
 
 python:
-    setup_py_install: true
+    pip_install: true
+    version: 3.5
+    extra_requirements:
+        - tests
+        - docs
