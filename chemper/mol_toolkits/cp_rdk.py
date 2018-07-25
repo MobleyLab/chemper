@@ -34,6 +34,8 @@ class Mol(MolAdapter):
             raise Exception("Expecting an rdchem.Mol instead of %s" % type(mol))
         self.mol = mol
 
+    def __str__(self): return self.get_smiles()
+
     def get_atoms(self):
         """
         Returns
@@ -430,3 +432,50 @@ class Bond(BondAdapter):
             index of this bond in its parent molecule
         """
         return self.bond.GetIdx()
+
+
+# =======================================
+# Functions for parsing molecule files
+# =======================================
+
+def mols_from_mol2(mol2_file):
+    """
+    It turns out, as far as I could find, getting multiple molecules
+    from a mol2 file into RDKit is easier said than done.
+    I've adapt code provided in teh source forge discussion below
+    to parse separate molecules from one file.
+    https://www.mail-archive.com/rdkit-discuss@lists.sourceforge.net/msg01510.html
+    TODO: finish doc string
+    TODO: check that this works with mol2 files with a single molecule
+    TODO: figure out if @<TRIPOS>MOLECULE is the only delimiter in this file
+    """
+    delimiter="@<TRIPOS>MOLECULE"
+
+    if mol2_file.split('.')[-1] != "mol2":
+        # TODO: make more specific Exception ?
+        raise Exception("File '%s' is not a mol2 file" % mol2_file)
+
+    import os
+    if not os.path.exists(mol2_file):
+        # TODO: make more specific Exception?
+        raise Exception("File '%s' not found." % mol2_file)
+
+    molecules = list()
+    mol2_block = list()
+
+    file_open = open(mol2_file, 'r')
+
+    for line in file_open:
+        if line.startswith(delimiter) and mol2_block:
+            rdmol = Chem.MolFromMol2Block("".join(mol2_block))
+            if rdmol is not None:
+                molecules.append(Mol(rdmol))
+            mol2_block = []
+        mol2_block.append(line)
+    if mol2_block:
+        rdmol = Chem.MolFromMol2Block("".join(mol2_block))
+        if rdmol is not None:
+            molecules.append(Mol(rdmol))
+
+    file_open.close()
+    return molecules

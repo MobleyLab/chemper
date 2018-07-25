@@ -114,8 +114,13 @@ class ClusterGraph(ChemPerGraph):
                 charge
                 )
 
-        def as_smirks(self):
+        def as_smirks(self, compress=False):
             """
+            Parameters
+            ----------
+            compress: boolean
+                should decorators common to all sets be combined
+
             Returns
             -------
             smirks: str
@@ -127,11 +132,36 @@ class ClusterGraph(ChemPerGraph):
                     return '[*]'
                 return '[*:%i]' % self.label
 
-            base_smirks = ','.join([''.join(l) for l in sorted(list(self.decorators))])
+            if compress:
+                base_smirks = self._compress_smirks()
+            else:
+                base_smirks = ','.join([''.join(l) for l in sorted(list(self.decorators))])
+
             if self.label is None or self.label <= 0:
                 return '[%s]' % base_smirks
 
             return '[%s:%i]' % (base_smirks, self.label)
+
+        def _compress_smirks(self):
+            """
+            Returns
+            -------
+            """
+            set_decs = [set(d) for d in self.decorators]
+            ands = set_decs[0]
+
+            for d_set in set_decs:
+                ands = ands & d_set
+
+            ors = [''.join(list(d_set.difference(ands))) for d in set_decs]
+
+            # add commas between ors
+            base = ','.join(sorted(ors))
+            # add and decorators
+            if len(ands) > 0:
+                base += ';'+''.join(ands)
+            return base
+
 
         def add_atom(self, atom):
             """

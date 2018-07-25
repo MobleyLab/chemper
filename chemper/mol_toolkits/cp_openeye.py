@@ -34,6 +34,8 @@ class Mol(MolAdapter):
             raise Exception("Expecting an OEMol object instead of %s" % type(mol))
         self.mol = mol
 
+    def __str__(self): return self.get_smiles()
+
     def get_atoms(self):
         """
         Returns
@@ -163,7 +165,6 @@ class MolFromSmiles(Mol):
 # =======================================
 # Atom Class
 # =======================================
-
 
 class Atom(AtomAdapter):
     """
@@ -427,3 +428,34 @@ class Bond(BondAdapter):
             index of this bond in its parent molecule
         """
         return self._idx
+
+
+# =======================================
+# Functions for parsing molecule files
+# =======================================
+
+def mols_from_mol2(mol2_file):
+    # TODO: make doc string
+    import os
+    if mol2_file.split('.')[-1] != "mol2":
+        # TODO: make more specific Exception ?
+        raise Exception("File '%s' is not a mol2 file" % mol2_file)
+
+    if not os.path.exists(mol2_file):
+        # TODO: make more specific Exception?
+        raise Exception("File '%s' not found." % mol2_file)
+
+    molecules = list()
+
+    # make Openeye input file stream
+    ifs = oechem.oemolistream(mol2_file)
+    flavor = oechem.OEIFlavor_Generic_Default | oechem.OEIFlavor_MOL2_Default | oechem.OEIFlavor_MOL2_Forcefield
+    ifs.SetFlavor(oechem.OEFormat_MOL2, flavor)
+
+    oemol = oechem.OECreateOEGraphMol()
+    while oechem.OEReadMolecule(ifs, oemol):
+        # Append to list.
+        molecules.append(Mol(oechem.OEMol(oemol)))
+    ifs.close()
+
+    return molecules
