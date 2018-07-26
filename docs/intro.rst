@@ -39,23 +39,3 @@ The final product will be capable of clustering molecular fragments based on ref
 then assigning SMIRKS patterns for each of those clusters.
 See :doc:`installation`.
 
-Contributors
-------------
-
-* `Caitlin Bannan (UCI) <https://github.com/bannanc>`_
-* `David L. Mobley (UCI) <https://github.com/davidlmobley>`_
-
-Acknowledgments
----------------
-
-CCB is funded by a fellowship from
-`The Molecular Sciences Software Institute <http://molssi.org/>`_
-under NSF grant ACI-1547580.
-
-.. _refs:
-
-References
-----------
-
-1. D. Mobley et al. bioRxiv 2018, 286542. `doi.org/10.1101/286542 <http://doi.org/10.1101/286542>`_
-2. C. Zanette and C.C. Bannan et al. chemRxiv 2018, `doi.org/10.26434/chemrxiv.6230627.v1 <https://doi.org/10.26434/chemrxiv.6230627.v1>`_
