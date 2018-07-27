@@ -132,7 +132,7 @@ class ClusterGraph(ChemPerGraph):
                     return '[*]'
                 return '[*:%i]' % self.label
 
-            if compress:
+            if compress and len(self.decorators) > 1:
                 base_smirks = self._compress_smirks()
             else:
                 base_smirks = ','.join([''.join(l) for l in sorted(list(self.decorators))])
@@ -153,13 +153,14 @@ class ClusterGraph(ChemPerGraph):
             for d_set in set_decs:
                 ands = ands & d_set
 
-            ors = [''.join(list(d_set.difference(ands))) for d in set_decs]
+            or_sets = [sorted(list(d.difference(ands))) for d in set_decs]
+            ors = [''.join(o) for o in or_sets]
 
             # add commas between ors
             base = ','.join(sorted(ors))
             # add and decorators
             if len(ands) > 0:
-                base += ';'+''.join(ands)
+                base += ';'+''.join(sorted(list(ands)))
             return base
 
 
@@ -356,6 +357,24 @@ class ClusterGraph(ChemPerGraph):
 
             for idx, mol in enumerate(mols):
                 self.add_mol(mol, smirks_atoms_lists[idx])
+
+    def as_smirks(self, compress=False):
+        """
+        Parameters
+        ----------
+        compress: boolean
+                  returns the shorter version of atom SMIRKS patterns
+                  that is atoms have decorators "anded" to the end rather than listed
+                  in each set that are OR'd together.
+                  For example "[#6AH2X3x0r0+0,#6AH1X3x0r0+0:1]-;!@[#1AH0X1x0r0+0]"
+                  compresses to: "[#6H2,#6H1;AX3x0r0+0:1]-;!@[#1AH0X1x0r0+0]"
+
+        Returns
+        -------
+        SMIRKS: str
+            a SMIRKS string matching the exact atom and bond information stored
+        """
+        return ChemPerGraph.as_smirks(self, compress)
 
     def add_mol(self, mol, smirks_atoms_list):
         """
