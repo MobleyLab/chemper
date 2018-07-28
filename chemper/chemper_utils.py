@@ -8,7 +8,7 @@ This file provides simple functions that might be of use to people using the che
 import os
 from chemper.mol_toolkits import mol_toolkit
 
-def get_filename(relative_path, package='chemper'):
+def get_data_path(relative_path, package='chemper'):
     """
     Returns the absolute path to a specified relative path inside data directory of a given package
     there for this will find a file at:
@@ -37,6 +37,30 @@ def get_filename(relative_path, package='chemper'):
                           % (fn, relative_path, package))
 
     return fn
+
+def get_full_path(relative_path, package="chemper"):
+    """
+    This function checks to see if a file/path at this relative path is available locally
+    if it is it returns the absolute path to that file.
+    Otherwise it checks if that relative path is located at [package location]/data/relative path
+    it will raise an IOError if neither location exists.
+
+    Parameters
+    ----------
+    relative_path: str
+                   relative path to a file available locally or in package/data
+    package: str
+             package name with a data directory the file might be located in
+
+    Returns
+    -------
+    abs_path: str
+              The absolute path to a local file if available, otherwise the abolsute path
+              to [package]/data/[relative_path]
+    """
+    if os.path.exists(relative_path):
+        return os.path.abspath(relative_path)
+    return get_data_path(relative_path, package)
 
 # =======================================
 # Check SMIRKS validity
@@ -86,6 +110,15 @@ def mols_fom_mol2(mol2_file, toolkit=None):
     mol2s: list of chemper Mol
            list of molecules in the provided mol2 file
     """
+
+    if os.path.exists(mol2_file):
+        mol2_path = os.path.abspath(mol2_file)
+    else:
+        mol2_path = get_data_path('molecules/%s' % mol2_file)
+
+    if not os.path.exists(mol2_path):
+        raise IOError("Mol2 file (%s) was not found locally or in chemper/data/molecules" % mol2_file)
+
     if toolkit is None:
         try:
             from openeye import oechem
@@ -98,10 +131,10 @@ def mols_fom_mol2(mol2_file, toolkit=None):
                 raise ImportError("Could not find OpenEye or RDKit toolkits in this pythong environment")
 
     if toolkit.lower() == 'oe':
-        return oe_mols_from_file(mol2_file)
+        return oe_mols_from_file(mol2_path)
 
     elif toolkit.lower() == 'rdk':
-        return rdk_mols_from_mol2(mol2_file)
+        return rdk_mols_from_mol2(mol2_path)
 
 def oe_mols_from_file(mol_file):
     """
@@ -110,7 +143,9 @@ def oe_mols_from_file(mol_file):
     Parameters
     ----------
     mol_file: str
-               relative or full path to molecule containing file
+              relative or full path to molecule containing the molecule file
+              that is accessible from the current working directory
+
 
     Returns
     -------
@@ -124,7 +159,7 @@ def oe_mols_from_file(mol_file):
         raise ImportError("Could not find OpenEye Toolkits, try the rdk_mols_from_mol2 method instead")
 
     if not os.path.exists(mol_file):
-        raise IOError("File '%s' not found." % mol2_file)
+        raise IOError("File '%s' not found." % mol_file)
 
     molecules = list()
 
@@ -155,7 +190,8 @@ def rdk_mols_from_mol2(mol2_file):
     Parameters
     ----------
     mol2_file: str
-               relative or full path to a mol2 file you want to parse
+               relative or absolute path to a mol2 file you want to parse
+               accessible form the current directory
 
     Returns
     -------
