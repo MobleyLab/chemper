@@ -7,7 +7,7 @@ pattern with all decorators specified.
 
 For example, imagine you want a SMIRKS for the carbon in methane, it would become:
 
-"[#6AH4X4x0r0+0:1]"
+"[#6AH4X4x0!r+0:1]"
 
 with decorators:
 #6: atomic number 6 for carbon
@@ -15,7 +15,7 @@ A: aliphatic (a would be aromatic)
 H4: a total hydrogen count of 4, 4 neighbors are hydrogen
 X4: connectivity of 4, that is number of neighbors, not valence or sum of bond orders
 x0: ring connectivity of 0, no ring bonds
-r0: smallest ring is size 0 (or not in a ring)
+!r: not in a ring, for atoms in a ring this decorator is `rn` where n is the size of the smallest ring
 +0: 0 formal charge
 
 To the best of the authors knowledge, this is the first open source tool capable
@@ -128,17 +128,21 @@ class ChemPerGraph(object):
                 charge = '+%i' % self.charge
             else:
                 charge = '%i' % self.charge
+            if self.min_ring_size == 0:
+                ring = '!r'
+            else:
+                ring = 'r%i' % self.min_ring_size
 
             if compress:
                 base_smirks = "#%i" % self.atomic_number
             else:
-                base_smirks = '#%i%sH%iX%ix%ir%i%s' % (self.atomic_number,
-                                                       aromatic,
-                                                       self.hydrogen_count,
-                                                       self.connectivity,
-                                                       self.ring_connectivity,
-                                                       self.min_ring_size,
-                                                       charge)
+                base_smirks = '#%i%sH%iX%ix%i%s%s' % (self.atomic_number,
+                                                      aromatic,
+                                                      self.hydrogen_count,
+                                                      self.connectivity,
+                                                      self.ring_connectivity,
+                                                      ring,
+                                                      charge)
 
             if self.label is None or self.label <= 0:
                 return '[%s]' % base_smirks

@@ -6,6 +6,8 @@ of molecular fragments. Moving forward these will be used to find the minimum nu
 smirks decorators that are required to have a set of smirks patterns that maintain
 a given clustering of fragments.
 
+# TODO: add specific example like the one at the top of fragment_graph
+
 AUTHORS:
 
 Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
@@ -103,6 +105,11 @@ class ClusterGraph(ChemPerGraph):
                 charge = '+%i' % charge
             else:
                 charge = '%i' % charge
+            min_ring_size = atom.min_ring_size()
+            if min_ring_size == 0:
+                ring = '!r'
+            else:
+                ring = 'r%i' % min_ring_size
 
             return (
                 '#%i' % atom.atomic_number(),
@@ -110,7 +117,7 @@ class ClusterGraph(ChemPerGraph):
                 'H%i' % atom.hydrogen_count(),
                 'X%i' % atom.connectivity(),
                 'x%i' % atom.ring_connectivity(),
-                'r%i' % atom.min_ring_size(),
+                ring,
                 charge
                 )
 
