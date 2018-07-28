@@ -17,6 +17,7 @@ env:
   matrix:
     - OE=false RDK=true
     - OE=true RDK=false
+    - OE=true RDK=true
 
   global:
     - ORGNAME="mobleylab"
