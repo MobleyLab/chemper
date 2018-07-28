@@ -13,6 +13,4 @@ except ImportError:
 try:
     from . import cp_rdk
 except:
-    print()
-
-from . import mol_utils
+    print(end='')
