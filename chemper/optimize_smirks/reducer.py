@@ -122,7 +122,7 @@ class Reducer(object):
                     self.total += 1
                     self.cluster_dict[mol_idx][atom_indices] = label
 
-        self.type_matches, self.score = self.best_match_reference(proposed_smirks)
+        self.type_matches, self.score = self.best_match_reference(self.current_smirks)
 
     def make_cluster_graphs(self):
         """
