@@ -347,6 +347,11 @@ class ClusterGraph(ChemPerGraph):
             required if a list of molecules is provided.
             This is a list of dictionaries of the form [{smirks index: atom index}]
             for each molecule provided
+            # TODO: not now, but I would like to rework this to just use a tuple of
+            # atom indices instead of knowing the SMIRKS, where the smirks index
+            # would be tuple index + 1 so it would be a list of list of tuples where
+            # [ [ (0,1) ] ] would indicate that for molecule 0 smirks atom 1 label go to
+            # atom with index 0 and smirks atom 2 label go to atom with index 1
         layers: int
             (optional) currently only 0 is supported
             how many atoms out from the smirks indexed atoms do you wish save (default=0)
@@ -395,6 +400,9 @@ class ClusterGraph(ChemPerGraph):
             each atom (by index) in the dictionary will be added the relevant
             AtomStorage by smirks index
         """
+        if len(smirks_atoms_list) == 0:
+            return
+
         if len(self.mols) == 0:
             self._add_first_smirks_atoms(mol, smirks_atoms_list[0])
             self._add_mol(mol, smirks_atoms_list[1:])
@@ -413,8 +421,9 @@ class ClusterGraph(ChemPerGraph):
         ----------
         mol: chemper Mol
         smirks_atoms: dict
-            dictionary for first atoms to add to the graph in the form {smirks index: atom index}]
+            dictionary for first atoms to add to the graph in the form {smirks index: atom index}
         """
+        print("adding first molecule")
         atom_dict = dict()
         sorted_keys = sorted(list(smirks_atoms.keys()))
         for key in sorted_keys:

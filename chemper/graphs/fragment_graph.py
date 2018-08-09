@@ -261,13 +261,15 @@ class ChemPerGraph(object):
             This graph as a SMIRKS string
         """
         smirks = init_atom.as_smirks(compress)
-
+        #print('current smirks: ', smirks)
+        #print('len neigh: ', len(neighbors))
         for idx, neighbor in enumerate(neighbors):
             bond = self.get_connecting_bond(init_atom, neighbor)
             bond_smirks = bond.as_smirks()
 
             new_neighbors = sorted(self.get_neighbors(neighbor))
             new_neighbors.remove(init_atom)
+            #print('len new neigh: ', len(neighbors))
 
             atom_smirks = self._as_smirks(neighbor, new_neighbors,compress)
 
