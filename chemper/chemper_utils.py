@@ -234,4 +234,175 @@ def rdk_mols_from_mol2(mol2_file):
     file_open.close()
     return molecules
 
+# ===================================================================
+# custom classes and functions for matching sets of SMIRKS to molecules
+# ===================================================================
+"""
+custom_dicts
+
+This custom dictionaries are taken from
+openforcefield.typing.engines.smirnoff.forcefield
+Like other openforcefield typing tools, I wanted to be
+able to test ideas for chemper without adding dependencies
+assuming things work and openforcefield all gets
+merged to support OE/RDK I will just import these from there.
+"""
+
+
+import collections
+class TransformedDict(collections.MutableMapping):
+    """A dictionary that applies an arbitrary key-altering
+       function before accessing the keys"""
+
+    def __init__(self, *args, **kwargs):
+        self.store = dict()
+        self.update(dict(*args, **kwargs))  # use the free update to set keys
+
+    def __getitem__(self, key):
+        return self.store[self.__keytransform__(key)]
+
+    def __setitem__(self, key, value):
+        self.store[self.__keytransform__(key)] = value
+
+    def __delitem__(self, key):
+        del self.store[self.__keytransform__(key)]
+
+    def __iter__(self):
+        return iter(self.store)
+
+    def __len__(self):
+        return len(self.store)
+
+    def __keytransform__(self, key):
+        return key
+
+    def __str__(self): return str(self.store)
+
+
+class ValenceDict(TransformedDict):
+    """Enforce uniqueness in atom indices"""
+    def __keytransform__(self, key):
+        """Reverse tuple if first element is larger than last element."""
+        # Ensure key is a tuple.
+        key = tuple(key)
+        # Reverse the key if the first element is bigger than the last.
+        if key[0] > key[-1]:
+            key = tuple(reversed(key))
+        return key
+
+
+class ImproperDict(TransformedDict):
+    """Symmetrize improper torsions"""
+    def __keytransform__(self,key):
+        """Reorder tuple in numerical order except for element[1] which is the central atom; it retains its position."""
+        # Ensure key is a tuple
+        key = tuple(key)
+        # Retrieve connected atoms
+        connectedatoms = [key[0], key[2], key[3]]
+        # Sort connected atoms
+        connectedatoms.sort()
+        # Re-store connected atoms
+        key = tuple( [connectedatoms[0], key[1], connectedatoms[1], connectedatoms[2]])
+        return key
+
+
+def get_typed_molecules(smirks_list, molecules):
+    """
+    Creates a dictionary assigning a typename
+    for each set of atom indices in each molecule
+
+    Parameters
+    ----------
+    smirks_list: list of tuples in the form (label, smirks)
+    molecules: list of chemper Mols
+
+    Returns
+    -------
+    typeDict: embedded dictionary
+        keys: SMILES string for each molecule
+            keys: tuple of indices assigned a parameter type
+    """
+    type_dict = dict()
+    for mol_idx, mol in enumerate(molecules):
+        type_dict[mol_idx] = {}
+        for [label, smirks] in smirks_list:
+            matches = get_smirks_matches(mol, smirks)
+            for match in matches:
+                type_dict[mol_idx][match] = label
+
+    return type_dict
+
+
+def create_dictionaries_for_clusters(smirks_list, molecules):
+    """
+    This is temporary, I think the better way to do this is to just use atom
+    indice tuples in the chemper cluster graphs since expecting the user to know the
+    smirks index is a little ridiculous
+
+    This converts the type_dict such as the one in get_typed molecules
+    assuming the smirks_index were assigned in that order
+    so smirks_index = tuple index + 1
+
+    So this will return something in the form:
+    [ (label, [ [ {smirks_idx: atom_idx}, {...} ] ] ), ...]
+    """
+    type_dict = get_typed_molecules(smirks_list, molecules)
+    # start by getting things in the form
+    # {label: {mol_idx: list of dictionary of indices} }
+    label_dict = dict()
+    for mol_idx, mol_dict in type_dict.items():
+        for match, label in mol_dict.items():
+            if label not in label_dict:
+                label_dict[label] = dict()
+            if mol_idx not in label_dict[label]:
+                label_dict[label][mol_idx] = list()
+
+            smirks_dict = {s+1:a for s,a in enumerate(match)}
+            label_dict[label][mol_idx].append(smirks_dict)
+
+    final_list = list()
+    mols_idx = range(len(molecules))
+    for label, mols in label_dict.items():
+        mol_list = list()
+        for idx in mols_idx:
+            if idx in mols:
+                mol_list.append(mols[idx])
+            else:
+                mol_list.append(list())
+        final_list.append( (label, mol_list) )
+
+    return final_list
+
+
+def get_smirks_matches(mol, smirks):
+    """
+    Gets atom indices for a smirks string in a given molecule
+
+    Parameters
+    ----------
+    mol : a chemper Mol
+    smirks : str
+             SMIRKS pattern being matched to the molecule
+
+    Returns
+    --------
+    matches: list of tuples
+        atom indices for labeled atom in the smirks
+    """
+    from chemper.optimize_smirks.environment import ChemicalEnvironment
+
+    env = ChemicalEnvironment(smirks)
+    if env.getType().lower() == 'impropertorsion':
+        matches = ImproperDict()
+    else:
+        matches = ValenceDict()
+
+    for match in mol.smirks_search(smirks):
+        smirks_indices = sorted(list(match.keys()))
+        atom_indices = tuple([match[s].get_index() for s in smirks_indices])
+        matches[atom_indices] = ''
+
+    return matches.keys()
+
+
 
