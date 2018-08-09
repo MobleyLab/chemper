@@ -222,6 +222,16 @@ class ChemicalEnvironment(object):
             self.ring = ring
             self._atom = True
 
+        def is_generic(self):
+            """
+            returns True if there are no decorators on this atom
+            (IMPORTANT: this is newly added and in chemper only as of 8/9/18)
+            """
+            if not self.ORtypes:
+                if not self.ANDtypes:
+                    return True
+            return False
+
         def asSMARTS(self):
             """Return the atom representation as SMARTS.
 
