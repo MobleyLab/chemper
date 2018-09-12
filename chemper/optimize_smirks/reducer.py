@@ -12,16 +12,15 @@ indexed atoms as those you would use to build a ClusterGraph.
 We then build cluster Graphs to create the initial SMIRKS patterns and check
 that the generated SMIRKS patterns retain the typing from the input cluster.
 Next we run a series of iterations removing SMIRKS decorators.
-If this "move" of removing a decorator doesn't change the "score" then the move
-is retained.
+If this "move" doesn't change the way the molecules are typed then the change is accepted.
 
-This class takes inspiration from the tool smirky previously published by the
+This class takes inspiration from the tool SMIRKY previously published by the
 Open Force Field Initiative:
 github.com/openforcefield/smarty
 
-Some authors theorize this process of removing decorators could be more
+In theory, it is possible this process of removing decorators could be more
 systematic/deterministic, however this is a first approach to see
-if extracted SMIRKS patterns can do better than smirky.
+if extracted SMIRKS patterns can do better than SMIRKY.
 Also, this approach will be more general since the input clusters do not
 rely on a reference force field.
 
@@ -84,9 +83,6 @@ class Reducer(object):
         layers: int (optional)
             how many atoms away from the indexed atoms should we consider
             default = 2
-        max_its: int (optional)
-            maximum number of iterations
-            default = 1000
         verbose: boolean (optional)
             If true information is printed to the command line during reducing
             default = True
@@ -95,10 +91,10 @@ class Reducer(object):
         self.cluster_list = cluster_list
         self.layers = layers
         self.verbose = verbose
-        #TODO: figure out how to test score if less than 100% raise error? exit?
 
-        # TODO: figure out how to handle layers (self determine or user set)
+        # TODO: figure out how to handle layers (self determine or user set, both?)
         self.current_smirks = self.make_cluster_graphs()
+        self.print_smirks(self.current_smirks)
 
         # TODO: I want to change ClusterGraph to take a "cluster_dict"
         # instead of the weird list of list of dictionaries it uses now...
@@ -109,20 +105,25 @@ class Reducer(object):
         else:
             self.dict_type = ValenceDict
 
+        # Convert input "smirks_atom_list" into a dictionary with the form:
+        # {mol_idx: {(atom indices): label, ...}, ... }
         self.cluster_dict = dict()
         self.ref_labels = set()
         self.total = 0
         for label, smirks_atom_list in self.cluster_list:
             self.ref_labels.add(label)
             for mol_idx, smirks_sets in enumerate(smirks_atom_list):
-                self.cluster_dict[mol_idx] = self.dict_type()
+                if mol_idx not in self.cluster_dict:
+                    self.cluster_dict[mol_idx] = self.dict_type()
                 for smirks_dict in smirks_sets:
                     sorted_keys = sorted(list(smirks_dict.keys()))
                     atom_indices = tuple([smirks_dict[k] for k in sorted_keys])
                     self.total += 1
                     self.cluster_dict[mol_idx][atom_indices] = label
 
-        self.type_matches, self.score = self.best_match_reference(self.current_smirks)
+        # save matches and score
+        self.type_matches, self.score = self.best_match_reference()
+        # TODO: figure out how to test score if less than 100% raise error? or maintain that score?
 
     def make_cluster_graphs(self):
         """
@@ -132,11 +133,18 @@ class Reducer(object):
         """
         from chemper.graphs.cluster_graph import ClusterGraph
         smirks_list = list()
+
+        # loop through the list of fragment clusters
         for label, smirks_atom_list in self.cluster_list:
-            print("making graph: ", len(smirks_atom_list))
+            print("making graph: ", len(smirks_atom_list)) # TODO: remove this when done testing
+
+            # make a ClusterGraph for that label
             graph = ClusterGraph(self.molecules, smirks_atom_list, self.layers)
-            smirks = graph.as_smirks(True)
+
+            # extract and save the SMIRKS for the cluster
+            smirks = graph.as_smirks(compress=True)
             smirks_list.append(('zz_'+str(label), smirks))
+
         return smirks_list
 
     def best_match_reference(self, current_types=None):
@@ -145,17 +153,17 @@ class Reducer(object):
 
         Parameters
         ----------
-        current_types : list of list with form [label, smirks]
+        current_types : list of tuples with form [ (label, smirks), ]
 
         Returns
         -------
-        type_matches : list of tuples (current_typelabel, reference_typelabel, counts)
-            Best correspondence between current and reference types, along with number of current types equivalently typed in reference molecule set.
-        total_type_matches : int
-            The total number of corresponding types in the reference molecule set.
+        type_matches : list of tuples (current_label, reference_label, counts)
+            pair of current and reference labels with the number of fragments that match it
+        score : int
+            Fraction of fragments where the current and reference types agree
 
         Contributor:
-        * Josh Fass <josh.fass@choderalab.org> contributed this algorithm.
+        * Josh Fass <josh.fass@choderalab.org> contributed this scoring algorithm using the bipartite graph.
 
         """
         if current_types is None:
@@ -165,49 +173,41 @@ class Reducer(object):
 
         # check for missing tuples in dictionaries
         for mol_idx, current_dict in current_assignments.items():
-            print("Molecule ", mol_idx)
             cur_keys = set(current_dict.keys())
             ref_keys = set(self.cluster_dict[mol_idx].keys())
             # check if there are indice sets in references not in current
             if ref_keys - cur_keys:
-                print("missing keys for mol ", self.molecules[mol_idx].get_smiles())
-                print('reference: ', ref_keys)
-                print('current: ', cur_keys)
-                print('difference: ', ref_keys-cur_keys)
-                #return None, None
+                return None, -1
 
         # Create bipartite graph (U,V,E) matching current types U with
         # reference types V via edges E with weights equal to number of types in common.
         if self.verbose: print('Creating graph matching current types with reference types...\n')
         initial_time = time.time()
-        graph = nx.Graph()
 
-        # Get current types and reference types
+        # Get current types
         cur_labels = [ lab for (lab, smirks) in current_types ]
-        # ref_names = self.ref_lables
-        # check that current types are not in reference types
-        if set(cur_labels) & set(self.ref_labels):
-            raise Exception("Current and reference type names must be unique")
 
+        # create a dictionary for each possible pair of current and reference labels
+        types_in_common = dict()
+        for c_lab in cur_labels:
+            for r_lab in self.ref_labels:
+                types_in_common[(c_lab, r_lab)] = 0
+
+        # up the count by +1 for each time a current and reference type matches the same set of atoms
+        for mol_idx, index_dict in self.cluster_dict.items():
+            for indices, r_lab in index_dict.items():
+                c_lab = current_assignments[mol_idx][indices]
+                types_in_common[(c_lab, r_lab)] += 1
+
+        # Actually make the graph
+        graph = nx.Graph()
         # Add current types
         for c_lab in cur_labels:
             graph.add_node(c_lab, bipartite=0)
         # add reference types
         for r_lab in self.ref_labels:
             graph.add_node(r_lab, bipartite=1)
-        # Add edges.
-        types_in_common = dict()
-        for c_lab in cur_labels:
-            for r_lab in self.ref_labels:
-                types_in_common[(c_lab, r_lab)] = 0
-
-        print(self.cluster_dict)
-        for mol_idx, index_dict in self.cluster_dict.items():
-            for indices, r_lab in index_dict.items():
-                c_lab = current_assignments[mol_idx][indices]
-                print(c_lab)
-                types_in_common[(c_lab, r_lab)] += 1
-
+        # add edges
         for c_lab in cur_labels:
             for r_lab in self.ref_labels:
                 weight = types_in_common[(c_lab, r_lab)]
@@ -219,8 +219,6 @@ class Reducer(object):
             print('Computing maximum weight match...\n')
 
         initial_time = time.time()
-        for e in graph.edges(data=True):
-            print(e)
         mate = nx.algorithms.max_weight_matching(graph, maxcardinality=False)
         print('matching: ', mate)
         elapsed_time = time.time() - initial_time
@@ -233,18 +231,17 @@ class Reducer(object):
         for lab1, lab2 in mate:
             counts = graph[lab1][lab2]['weight']
             total_type_matches += counts
+            # labels come back in an arbitrary order, so determine if which is current/reference
             if lab1 in cur_labels:
                 type_matches.append(( lab1, lab2, counts))
             else:
                 type_matches.append( (lab2, lab1, counts))
 
-            # else:
-            #    type_matches.append( (c_lab, None, None ))
-            # figure out how to know what is missing
+        # compute fractional score:
+        score = total_type_matches / self.total
 
         # TODO: determine how/if we want to print matching types
-
-        return type_matches, total_type_matches
+        return type_matches, score
 
     def print_smirks(self, smirks_list=None):
         """
@@ -267,32 +264,39 @@ class Reducer(object):
         removes a decorator that is OR'd in the original SMIRKS
         """
         if len(input_all_ors) == 0:
-            return input_all_ors
+            return input_all_ors, False
 
+        # chose a set of or decorators to change
+        # these come in the form [base, (decorators)]
         all_ors = copy.deepcopy(input_all_ors)
-        change_or = random.choice(all_ors)
+        or_idx = random.randint(len(all_ors))
+        change_or = all_ors[or_idx]
+        # temporarily remove the change OR from the list
         all_ors.remove(change_or)
 
+        # if it has no decorators, just remove the whole ORtype
         decs = change_or[1]
         if len(decs) == 0:
-            # just remove the whole ORtype
-            return all_ors
+            return all_ors, True
 
         # otherwise remove one decorator from this ORtype
         base = change_or[0]
         decs.remove(random.choice(decs))
         all_ors.append((base, decs))
-        return all_ors
+        return all_ors, True
 
     def remove_and(self, input_all_ands):
         """
         removes a decorated that is AND'd in the original SMIRKS
         """
+        # if there are no ands return with no changes
         if len(input_all_ands) == 0:
-            return input_all_ands
+            return input_all_ands, False
+
+        # otherwise randomly remove an AND decorator
         all_ands = copy.deepcopy(input_all_ands)
         all_ands.remove(random.choice(all_ands))
-        return all_ands
+        return all_ands, True
 
     def remove_decorator(self, smirks):
         """
@@ -301,7 +305,8 @@ class Reducer(object):
         env = ChemicalEnvironment(smirks)
         # change atom or bond with equal probability
         # also chose type of decorator removal
-        if random.random() > 0.5:
+        # TODO: figure out a better probability or how to learn it
+        if random.random() > 0.0005:
             sub = random.choice(env.getAtoms())
         else: # chose a bond
             sub = random.choice(env.getBonds())
@@ -309,10 +314,10 @@ class Reducer(object):
         no_ors = True
         no_ands = True
         dec_opts = list()
-        if len(sub.GetORtypes()) > 0:
+        if len(sub.getORtypes()) > 0:
             dec_opts.append(0)
             no_ors = False
-        if len(sub.GetANDtypes()) > 0:
+        if len(sub.getANDtypes()) > 0:
             dec_opts.append(1)
             no_ands = False
 
@@ -320,28 +325,22 @@ class Reducer(object):
             return smirks, False
 
         if random.choice(dec_opts) == 0:
-            new_or_types = self.remove_or(sub.GetORtypes())
-            sub.SetORtypes(new_or_types)
+            new_or_types, changed = self.remove_or(sub.getORtypes())
+            if not changed:
+                return smirks, False
+            sub.setORtypes(new_or_types)
         else:
-            new_and_types = self.remove_and(sub.GetANDtypes)
-            sub.SetANDtypes(new_and_types)
+            new_and_types, changed = self.remove_and(sub.getANDtypes())
+            if not changed:
+                return smirks, False
+            sub.setANDtypes(new_and_types)
 
         return env.asSMIRKS(), True
 
-    def reduce_smirks(self, smirks_list):
+    def reduce_smirks(self, smirks):
         """
         TODO:write docs
         """
-        proposed_smirks = copy.deepcopy(smirks_list)
-        changed = False
-        idx = 0
-        while not changed and idx < 1000:
-            proposed_smirks = copy.deepcopy(smirks_list)
-            change_entry = random.choice(proposed_smirks)
-            change_idx = proposed_smirks.index(change_entry)
-            new_smirks, changed = self.remove_decorator(change_entry[1])
-            proposed_smirks[change_idx] = (change_entry[0], new_smirks)
-            idx += 1
 
         return proposed_smirks, changed
 
@@ -363,10 +362,23 @@ class Reducer(object):
         for it in range(max_its):
             if self.verbose: print("Iteration: ", it)
 
-            proposed_smirks = self.reduce_smirks(copy.deepcopy(self.current_smirks))
+            proposed_smirks = copy.deepcopy(self.current_smirks)
+            # chose a SMIRKS to change
+            change_idx = random.randint(len(proposed_smirks))
+            change_entry = proposed_smirks[change_idx]
+            if self.verbose: print("Attempting to change SMIRKS #%i\n%s" % (change_idx, change_entry[1]))
+
+            # generate new smirks
+            new_smirks, changed = self.remove_decorator(change_entry[1])
+            if not changed:
+                if self.verbose: print("Rejected!\nNo change made to SMIRKS\n%s" % change_entry[1])
+                continue
+
+            # update and score proposed list
+            proposed_smirks[change_idx] = (change_entry[0], new_smirks)
             proposed_type_matches, proposed_score = self.best_match_reference(proposed_smirks)
 
-            if proposed_score == self.total:
+            if proposed_score == 1.0:
                 if self.verbose: print("Accepted! ")
                 self.current_smirks = copy.deepcopy(proposed_smirks)
                 self.type_matches = copy.deepcopy(proposed_type_matches)
