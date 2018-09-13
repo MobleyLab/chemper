@@ -136,8 +136,6 @@ class Reducer(object):
 
         # loop through the list of fragment clusters
         for label, smirks_atom_list in self.cluster_list:
-            print("making graph: ", len(smirks_atom_list)) # TODO: remove this when done testing
-
             # make a ClusterGraph for that label
             graph = ClusterGraph(self.molecules, smirks_atom_list, self.layers)
 
@@ -220,7 +218,6 @@ class Reducer(object):
 
         initial_time = time.time()
         mate = nx.algorithms.max_weight_matching(graph, maxcardinality=False)
-        print('matching: ', mate)
         elapsed_time = time.time() - initial_time
 
         if self.verbose: print('Maximum weight match took %.3f s\n' % elapsed_time)
@@ -300,7 +297,8 @@ class Reducer(object):
 
     def remove_decorator(self, smirks):
         """
-        TODO: write docs
+        Chose an atom or bond in the input smirks pattern
+        and then remove one decorator from it.
         """
         env = ChemicalEnvironment(smirks)
         # change atom or bond with equal probability
