@@ -437,7 +437,7 @@ class ChemicalEnvironment(object):
             orderList = [orderDict[base] for (base, decor) in self.ORtypes]
             return min(orderList)
 
-    def __init__(self, smirks = None, label = None, replacements = None, toolkit='openeye'):
+    def __init__(self, smirks = None, label = None, replacements = None):
         """Initialize a chemical environment abstract base class.
 
         smirks = string, optional
@@ -449,21 +449,6 @@ class ChemicalEnvironment(object):
         replacements = list of lists, optional,
             [substitution, smarts] form for parsing SMIRKS
         """
-        if toolkit.lower() == 'openeye':
-            try:
-                from openeye import oechem
-                self.toolkit = 'openeye'
-            except:
-                raise Exception("Could not import openeye.oechem")
-        elif toolkit.lower() == 'rdkit':
-            try:
-                from rdkit import Chem
-                self.toolkit = 'rdkit'
-            except:
-                raise Exception("Could not import rdkit.Chem")
-        else:
-            raise Exception("Toolkit %s was not recognized, please use openeye or rdkit" % toolkit)
-
         # Define the regular expressions used for all SMIRKS decorators
         # There are a limited number of descriptors for smirks string they are:
         # That is a # followed by one or more ints w/or w/o at ! in front '!#16'
@@ -506,7 +491,7 @@ class ChemicalEnvironment(object):
             # Check that it is a valid SMIRKS
             if not self.isValid(smirks):
                 raise SMIRKSParsingError("Error Provided SMIRKS ('%s') was \
-not parseable with %s tools" % (smirks, self.toolkit))
+not parseable with current toolkit" % smirks)
 
             # Check for SMIRKS not supported by Chemical Environments
             if smirks.find('.') != -1:
