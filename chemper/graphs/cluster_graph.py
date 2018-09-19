@@ -142,17 +142,38 @@ class ClusterGraph(ChemPerGraph):
             if compress and len(self.decorators) > 1:
                 base_smirks = self._compress_smirks()
             else:
-                base_smirks = ','.join([''.join(l) for l in sorted(list(self.decorators))])
+                base_smirks = ','.join(sorted([''.join(l) for l in self.decorators]))
 
             if self.label is None or self.label <= 0:
                 return '[%s]' % base_smirks
 
             return '[%s:%i]' % (base_smirks, self.label)
 
+        def _sort_decs(self, dec_set, wild=True):
+            """
+            Parameters
+            ----------
+            dec_set: list like
+                single set of atom decorators
+
+            Returns
+            -------
+            sorted_dec_set: list
+                same set of decorators sorted with atomic number or * first
+            """
+            atom_num = [i for i in dec_set if '#' in i]
+            if len(atom_num) == 0 and wild:
+                atom_num = ["*"]
+
+            return atom_num + sorted(list(set(dec_set) - set(atom_num)))
+
         def _compress_smirks(self):
             """
             Returns
             -------
+            smirks: str
+                This SMIRKS is compressed with all common decorators and'd to
+                the end of the pattern
             """
             set_decs = [set(d) for d in self.decorators]
             ands = set_decs[0]
@@ -160,16 +181,15 @@ class ClusterGraph(ChemPerGraph):
             for d_set in set_decs:
                 ands = ands & d_set
 
-            or_sets = [sorted(list(d.difference(ands))) for d in set_decs]
+            or_sets = [self._sort_decs(d.difference(ands)) for d in set_decs]
             ors = [''.join(o) for o in or_sets]
 
             # add commas between ors
             base = ','.join(sorted(ors))
             # add and decorators
             if len(ands) > 0:
-                base += ';'+''.join(sorted(list(ands)))
+                base += ';'.join(self._sort_decs(ands, wild=False))
             return base
-
 
         def add_atom(self, atom):
             """
@@ -423,7 +443,6 @@ class ClusterGraph(ChemPerGraph):
         smirks_atoms: dict
             dictionary for first atoms to add to the graph in the form {smirks index: atom index}
         """
-        print("adding first molecule")
         atom_dict = dict()
         sorted_keys = sorted(list(smirks_atoms.keys()))
         for key in sorted_keys:
