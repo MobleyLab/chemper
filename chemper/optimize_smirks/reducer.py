@@ -301,6 +301,7 @@ class Reducer(object):
         and then remove one decorator from it.
         """
         env = ChemicalEnvironment(smirks)
+        subs = list()
         # change atom or bond with equal probability
         # also chose type of decorator removal
         # TODO: figure out a better probability or how to learn it
@@ -335,14 +336,7 @@ class Reducer(object):
 
         return env.asSMIRKS(), True
 
-    def reduce_smirks(self, smirks):
-        """
-        TODO:write docs
-        """
-
-        return proposed_smirks, changed
-
-    def run(self, max_its=1000):
+    def run(self, max_its=1000, verbose=None):
         """
         Run sampler for the specified number of iterations.
 
@@ -350,6 +344,9 @@ class Reducer(object):
         ----------
         max_its : int
             The specified number of iterations
+        verbose: boolean
+            will set the verboseness while running
+            (if None, the current verbose variable will be used)
 
         Returns
         ----------
@@ -357,17 +354,23 @@ class Reducer(object):
             list of final smirks patterns after reducing in the form
             [(label, smirks)]
         """
+        temp_verbose = self.verbose
+        if verbose is not None:
+            self.verbose = verbose
+
         for it in range(max_its):
             if self.verbose: print("Iteration: ", it)
 
             proposed_smirks = copy.deepcopy(self.current_smirks)
             # chose a SMIRKS to change
+            # TODO: set a criteria for chosing smirks and atoms/bonds that won't chose "empty" ones
             change_idx = random.randint(len(proposed_smirks))
             change_entry = proposed_smirks[change_idx]
-            if self.verbose: print("Attempting to change SMIRKS #%i\n%s" % (change_idx, change_entry[1]))
 
             # generate new smirks
             new_smirks, changed = self.remove_decorator(change_entry[1])
+            if self.verbose: print("Attempting to change SMIRKS #%i\n%s  -->  %s"\
+                                   % (change_idx, change_entry[1], new_smirks))
             if not changed:
                 if self.verbose: print("Rejected!\nNo change made to SMIRKS\n%s" % change_entry[1])
                 continue
@@ -385,6 +388,8 @@ class Reducer(object):
                 if self.verbose: print("Rejected! ")
 
         if self.verbose: self.print_smirks()
+        self.verbose = temp_verbose
+
         return self.current_smirks
 
 
