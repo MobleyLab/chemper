@@ -237,7 +237,6 @@ class Reducer(object):
         # compute fractional score:
         score = total_type_matches / self.total
 
-        # TODO: determine how/if we want to print matching types
         return type_matches, score
 
     def print_smirks(self, smirks_list=None):
@@ -252,8 +251,10 @@ class Reducer(object):
 
         print()
         print(str_form.format("Label", "SMIRKS"))
+        print('='*80)
         for label, smirks in smirks_list:
             print(str_form.format(label, smirks))
+            print('-'*80)
         print()
 
     def remove_or(self, input_all_ors):
@@ -372,7 +373,9 @@ class Reducer(object):
             if self.verbose: print("Attempting to change SMIRKS #%i\n%s  -->  %s"\
                                    % (change_idx, change_entry[1], new_smirks))
             if not changed:
-                if self.verbose: print("Rejected!\nNo change made to SMIRKS\n%s" % change_entry[1])
+                if self.verbose:
+                    print("Rejected!\nNo change made to SMIRKS\n%s" % change_entry[1])
+                    print('-'*90)
                 continue
 
             # update and score proposed list
@@ -385,7 +388,8 @@ class Reducer(object):
                 self.type_matches = copy.deepcopy(proposed_type_matches)
                 self.score = proposed_score
             else:
-                if self.verbose: print("Rejected! ")
+                if self.verbose: print("Rejected!\n proposed SMIRKS changed the way fragments are clustered")
+            if self.verbose: print('-'*90)
 
         if self.verbose: self.print_smirks()
         self.verbose = temp_verbose
