@@ -188,7 +188,7 @@ class ClusterGraph(ChemPerGraph):
             base = ','.join(sorted(ors))
             # add and decorators
             if len(ands) > 0:
-                base += ';'.join(self._sort_decs(ands, wild=False))
+                base += ';'+ ';'.join(self._sort_decs(ands, wild=False))
             return base
 
         def add_atom(self, atom):
