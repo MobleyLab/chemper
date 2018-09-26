@@ -16,10 +16,11 @@ The SMARTS files:
 in this directory were created with the following code snippet
 using an intermediate file from the Open Force Field Initiative
 for smirnoff99frosst:
+[`smirnoffishFrcmod.parm99Frosst.txt`](https://github.com/openforcefield/openforcefield/blob/master/utilities/convert_frosst/smirnoffishFrcmod.parm99Frosst.txt)
 
 ```python
 
-f = open('/Users/caitlinbannan/github/openforcefield/utilities/convert_frosst/smirnoffishFrcmod.parm99Frosst.txt', 'r')
+f = open('smirnoffishFrcmod.parm99Frosst.txt', 'r')
 lines = f.readlines()
 f.close()
 
