@@ -59,9 +59,9 @@ from numpy import random
 # SMIRKS reducer
 # =============================================================================================
 
-class Reducer(object):
+class SMIRKSify(object):
     """
-    Generates complex SMIRKS for a given cluster of substructures 
+    Generates complex SMIRKS for a given cluster of substructures
     and then reduces the decorators in those smirks
     """
     def __init__(self, molecules, cluster_list,
@@ -337,9 +337,9 @@ class Reducer(object):
 
         return env.asSMIRKS(), True
 
-    def run(self, max_its=1000, verbose=None):
+    def reduce(self, max_its=1000, verbose=None):
         """
-        Run sampler for the specified number of iterations.
+        Reduce the SMIRKS decorators for a number of iterations
 
         Parameters
         ----------
