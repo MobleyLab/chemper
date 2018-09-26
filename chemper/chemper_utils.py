@@ -346,6 +346,7 @@ def create_dictionaries_for_clusters(smirks_list, molecules):
     So this will return something in the form:
     [ (label, [ [ {smirks_idx: atom_idx}, {...} ] ] ), ...]
     """
+    ordered_labels = [l for l, s in smirks_list]
     type_dict = get_typed_molecules(smirks_list, molecules)
     # start by getting things in the form
     # {label: {mol_idx: list of dictionary of indices} }
@@ -362,7 +363,10 @@ def create_dictionaries_for_clusters(smirks_list, molecules):
 
     final_list = list()
     mols_idx = range(len(molecules))
-    for label, mols in label_dict.items():
+    for label in ordered_labels:
+        if label not in label_dict:
+            continue
+        mols = label_dict[label]
         mol_list = list()
         for idx in mols_idx:
             if idx in mols:
