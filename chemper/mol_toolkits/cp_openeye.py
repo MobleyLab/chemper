@@ -34,6 +34,8 @@ class Mol(MolAdapter):
             raise Exception("Expecting an OEMol object instead of %s" % type(mol))
         self.mol = mol
 
+    def __str__(self): return self.get_smiles()
+
     def get_atoms(self):
         """
         Returns
@@ -117,7 +119,6 @@ class Mol(MolAdapter):
 
         ss = oechem.OESubSearch()
         if not ss.Init(smirks):
-            # TODO: write custom exceptions?
             raise ValueError("Error parsing SMIRKS %s" % smirks)
 
         for match in ss.Match(self.mol, False):
@@ -163,7 +164,6 @@ class MolFromSmiles(Mol):
 # =======================================
 # Atom Class
 # =======================================
-
 
 class Atom(AtomAdapter):
     """
