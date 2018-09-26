@@ -1,9 +1,9 @@
 """
-This script is used to test the Reducer Class and the class methods it contains
+This script is used to test the SMIRKSifier Class and the class methods it contains
 """
 
 from chemper.mol_toolkits import mol_toolkit
-from chemper.optimize_smirks.reducer import Reducer
+from chemper.optimize_smirks.smirksify import SMIRKSifier
 import pytest
 
 smiles_list = ['C', 'N', 'C=C', 'C#C' 'c1ccccc1']
@@ -16,14 +16,14 @@ def test_max_reduction(smiles):
     mol = mol_toolkit.MolFromSmiles(smiles)
     cluster_lists = [('1', [[{1:0}]])]
     # create reducer
-    red = Reducer([mol], cluster_lists, layers=0)
-    smirks_list = red.run(10)
+    red = SMIRKSifier([mol], cluster_lists, layers=0)
+    smirks_list = red.reduce(10)
     final_smirks = smirks_list[0][1]
     assert final_smirks == '[*:1]'
 
 def test_more_complex_reducer():
     """
-    Check that all Reducer class functions at least work
+    Check that all SMIRKSifier class functions at least work
     """
     smiles = ['CC', 'C=C', 'C#C']
     mols = [mol_toolkit.MolFromSmiles(s) for s in smiles]
@@ -31,11 +31,11 @@ def test_more_complex_reducer():
     c2 = [[{1:0, 2:2}]]*len(smiles)
     cluster_lists = [('1', c1), ('2', c2)]
     # create reducer
-    red = Reducer(mols, cluster_lists, verbose=False)
+    red = SMIRKSifier(mols, cluster_lists, verbose=False)
     # make sure printing runs:
     red.print_smirks()
     # run for a long time (assumed to hit all possible methods)
-    smirks_list = red.run(2000)
+    smirks_list = red.reduce(2000)
 
 def test_explicitly_check_methods():
     """
@@ -46,7 +46,7 @@ def test_explicitly_check_methods():
     mol = mol_toolkit.MolFromSmiles('C')
     cluster_lists = [('1', [[{1:0}]])]
     # create reducer
-    red = Reducer([mol], cluster_lists, layers=0)
+    red = SMIRKSifier([mol], cluster_lists, layers=0)
     red.print_smirks()
 
     # check generic SMIRKS output
@@ -77,7 +77,7 @@ def check_expected_removal(in_smirks, out_smirks):
     mol = mol_toolkit.MolFromSmiles('C')
     cluster_lists = [('1', [[{1:0}]])]
     # create reducer
-    red = Reducer([mol], cluster_lists, layers=0)
+    red = SMIRKSifier([mol], cluster_lists, layers=0)
 
     # check only OR base to remove
     red_smirks, changed = red.remove_decorator(in_smirks)
