@@ -5,7 +5,7 @@
 #=============================================================================================
 
 """
-reducer.py
+smirksify.py
 
 In this script, we start with a set of clustered molecular fragments with specified
 indexed atoms as those you would use to build a ClusterGraph.
@@ -56,10 +56,10 @@ from numpy import random
 # ==============================================================================
 
 # =============================================================================================
-# SMIRKS reducer
+# SMIRKSifier
 # =============================================================================================
 
-class SMIRKSify(object):
+class SMIRKSifier(object):
     """
     Generates complex SMIRKS for a given cluster of substructures
     and then reduces the decorators in those smirks
