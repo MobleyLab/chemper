@@ -6,6 +6,8 @@ of molecular fragments. Moving forward these will be used to find the minimum nu
 smirks decorators that are required to have a set of smirks patterns that maintain
 a given clustering of fragments.
 
+# TODO: add specific example like the one at the top of fragment_graph
+
 AUTHORS:
 
 Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
@@ -103,6 +105,11 @@ class ClusterGraph(ChemPerGraph):
                 charge = '+%i' % charge
             else:
                 charge = '%i' % charge
+            min_ring_size = atom.min_ring_size()
+            if min_ring_size == 0:
+                ring = '!r'
+            else:
+                ring = 'r%i' % min_ring_size
 
             return (
                 '#%i' % atom.atomic_number(),
@@ -110,12 +117,17 @@ class ClusterGraph(ChemPerGraph):
                 'H%i' % atom.hydrogen_count(),
                 'X%i' % atom.connectivity(),
                 'x%i' % atom.ring_connectivity(),
-                'r%i' % atom.min_ring_size(),
+                ring,
                 charge
                 )
 
-        def as_smirks(self):
+        def as_smirks(self, compress=False):
             """
+            Parameters
+            ----------
+            compress: boolean
+                should decorators common to all sets be combined
+
             Returns
             -------
             smirks: str
@@ -127,11 +139,57 @@ class ClusterGraph(ChemPerGraph):
                     return '[*]'
                 return '[*:%i]' % self.label
 
-            base_smirks = ','.join([''.join(l) for l in sorted(list(self.decorators))])
+            if compress and len(self.decorators) > 1:
+                base_smirks = self._compress_smirks()
+            else:
+                base_smirks = ','.join(sorted([''.join(l) for l in self.decorators]))
+
             if self.label is None or self.label <= 0:
                 return '[%s]' % base_smirks
 
             return '[%s:%i]' % (base_smirks, self.label)
+
+        def _sort_decs(self, dec_set, wild=True):
+            """
+            Parameters
+            ----------
+            dec_set: list like
+                single set of atom decorators
+
+            Returns
+            -------
+            sorted_dec_set: list
+                same set of decorators sorted with atomic number or * first
+            """
+            atom_num = [i for i in dec_set if '#' in i]
+            if len(atom_num) == 0 and wild:
+                atom_num = ["*"]
+
+            return atom_num + sorted(list(set(dec_set) - set(atom_num)))
+
+        def _compress_smirks(self):
+            """
+            Returns
+            -------
+            smirks: str
+                This SMIRKS is compressed with all common decorators and'd to
+                the end of the pattern
+            """
+            set_decs = [set(d) for d in self.decorators]
+            ands = set_decs[0]
+
+            for d_set in set_decs:
+                ands = ands & d_set
+
+            or_sets = [self._sort_decs(d.difference(ands)) for d in set_decs]
+            ors = [''.join(o) for o in or_sets]
+
+            # add commas between ors
+            base = ','.join(sorted(ors))
+            # add and decorators
+            if len(ands) > 0:
+                base += ';'+ ';'.join(self._sort_decs(ands, wild=False))
+            return base
 
         def add_atom(self, atom):
             """
@@ -309,6 +367,11 @@ class ClusterGraph(ChemPerGraph):
             required if a list of molecules is provided.
             This is a list of dictionaries of the form [{smirks index: atom index}]
             for each molecule provided
+            # TODO: not now, but I would like to rework this to just use a tuple of
+            # atom indices instead of knowing the SMIRKS, where the smirks index
+            # would be tuple index + 1 so it would be a list of list of tuples where
+            # [ [ (0,1) ] ] would indicate that for molecule 0 smirks atom 1 label go to
+            # atom with index 0 and smirks atom 2 label go to atom with index 1
         layers: int
             (optional) currently only 0 is supported
             how many atoms out from the smirks indexed atoms do you wish save (default=0)
@@ -327,6 +390,24 @@ class ClusterGraph(ChemPerGraph):
             for idx, mol in enumerate(mols):
                 self.add_mol(mol, smirks_atoms_lists[idx])
 
+    def as_smirks(self, compress=False):
+        """
+        Parameters
+        ----------
+        compress: boolean
+                  returns the shorter version of atom SMIRKS patterns
+                  that is atoms have decorators "anded" to the end rather than listed
+                  in each set that are OR'd together.
+                  For example "[#6AH2X3x0r0+0,#6AH1X3x0r0+0:1]-;!@[#1AH0X1x0r0+0]"
+                  compresses to: "[#6H2,#6H1;AX3x0r0+0:1]-;!@[#1AH0X1x0r0+0]"
+
+        Returns
+        -------
+        SMIRKS: str
+            a SMIRKS string matching the exact atom and bond information stored
+        """
+        return ChemPerGraph.as_smirks(self, compress)
+
     def add_mol(self, mol, smirks_atoms_list):
         """
         Expand the information in this graph by adding a new molecule
@@ -339,6 +420,9 @@ class ClusterGraph(ChemPerGraph):
             each atom (by index) in the dictionary will be added the relevant
             AtomStorage by smirks index
         """
+        if len(smirks_atoms_list) == 0:
+            return
+
         if len(self.mols) == 0:
             self._add_first_smirks_atoms(mol, smirks_atoms_list[0])
             self._add_mol(mol, smirks_atoms_list[1:])
@@ -357,7 +441,7 @@ class ClusterGraph(ChemPerGraph):
         ----------
         mol: chemper Mol
         smirks_atoms: dict
-            dictionary for first atoms to add to the graph in the form {smirks index: atom index}]
+            dictionary for first atoms to add to the graph in the form {smirks index: atom index}
         """
         atom_dict = dict()
         sorted_keys = sorted(list(smirks_atoms.keys()))
@@ -514,7 +598,6 @@ class ClusterGraph(ChemPerGraph):
             for s_idx, (sa, sb) in storage_dict.items():
                 score = sa.compare_atom(a)
                 score += sb.compare_bond(b) / 10.
-                print(sa.as_smirks(), sb.as_smirks(), a.atomic_number(), score)
                 g.add_edge(a_idx,s_idx,weight=score+1)
 
         # calculate maximum matching, that is the pairing of atoms/bonds to

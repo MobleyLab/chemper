@@ -13,4 +13,4 @@ except ImportError:
 try:
     from . import cp_rdk
 except:
-    print()
+    print(end='')

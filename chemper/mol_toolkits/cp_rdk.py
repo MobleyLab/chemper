@@ -34,6 +34,8 @@ class Mol(MolAdapter):
             raise Exception("Expecting an rdchem.Mol instead of %s" % type(mol))
         self.mol = mol
 
+    def __str__(self): return self.get_smiles()
+
     def get_atoms(self):
         """
         Returns
@@ -117,7 +119,6 @@ class Mol(MolAdapter):
 
         ss = Chem.MolFromSmarts(smirks)
         if ss is None:
-            # TODO: write custom exceptions?
             raise ValueError("Error parsing SMIRKS %s" % smirks)
 
         # get atoms in query mol with smirks index
@@ -430,3 +431,4 @@ class Bond(BondAdapter):
             index of this bond in its parent molecule
         """
         return self.bond.GetIdx()
+
