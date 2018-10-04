@@ -3,45 +3,39 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to chemper
+Welcome to ChemPer
 ==================
 
-``chemper`` is python package that works to automatically learn chemical perception
--- that is, the way force field parameters are assigned to a molecule based on chemical environment.
-Traditional force fields use atom types to assign parameters.
-This effort is in conjunction with the Open Force Field Initiative
--- an academic and industrial collaboration focused on developing a machinery that could automatically
-generate a classical all-atom force field given reference data and a functional form [:ref:`offinitiative`].
+`ChemPer` is a Python module for creating custom chemical perception based on
+user provided reference data or specified molecular examples.
+Chemical perception is typically defined in the context of molecular mechanics force fields
+and refers to the way parameters are assigned to a molecule based on chemical environment.
 
-Molecular mechanics force fields enable a wide variety of computational chemistry calculations
-by giving the energy and forces of an atomistic system as a function of the coordinates.
-The literature is littered with concerns about force field limitations, but due to the considerable number of
-human hours it takes to build a new force field, quantifying these limitations is nearly impossible.
-In an effort to help improve these essential models, the Open Force Field Initiative is working
-to build a machinery that could automatically generate a classical all-atom force field given
-reference data and a functional form. This set of open source parameterization
-tools will increase our ability to do force field science. In the traditional form, new general all atom
-force fields take years to generate. With an automated tool, it will be easier to test choices in functional form.
+For example, consider the highlighted angles in the molecules above.
+You could assume these types of assignment should be taken generally.
+That is angles around carbon could always be categorized as
+tetrahedral ([insert color] above) and trivalent ([insert color] above).
+Using the molecules above as training you would want to recover the same typing in these molecules:
 
-Our new SMIRKS Native Open Force Field (SMIRNOFF) format replaces atom types with direct chemical perception [:ref:`escaping`].
-Most current force fields use atom types for chemical perception.
-Atom types are considered indirect chemical perception because first a molecule is labeled with these types;
-then all other chemical information (i.e. bond orders) are removed; and parameters are then assigned using only
-the atom types and their connectivity.
-This means the chemistry required for all force field parameters -- Lennard-Jones interactions, bond-stretching,
-angle-bending, and torsions -- must be included in those those atom types.
-SMIRNOFF uses direct chemical perception in the form of SMIRKS strings.
-SMIRKS are a cheminformatics language for describing molecular fragments with decorators to
-distinguish characteristics of the atoms and bonds in that fragment [:ref:`daylight`,:ref:`smarts_lit`].
-This allows each parameter type to be specified independently.
-We have shown that the first SMIRNOFF implementation, smirnoff99Frosst [:ref:`smirnoff99frosst`],
-performs comparably to GAFF and is capable of
-typing significantly more molecules in both the DrugBank and eMolecules databases [:ref:`escaping`].
-However, like traditional atom types, the SMIRKS patterns in smirnoff99Frosst were determined by a chemical expert.
-In order to automate force field parameterization we need a way to automatically learn these SMIRKS patterns based on
-reference quantum mechanical or experimental reference data, which is why we introduce ``chemper``.
+`ChemPer` can automatically generate a hierarchical list of
+general SMIRKS patterns using the input molecules which will retain these types.
+SMIRKS are a cheminformatics language for describing molecular fragments [:ref:`daylight`, :ref:`smartslit`].
+A hierarchical list of SMIRKS can be used to recover typing rules by storing the last SMIRKS to match
+a set of atoms as the type to assign that set.
 
-``chemper`` provides
+Available Now
+--------------
+You can install `ChemPer` now from our `GitHub <https://github.com/Mobleylab/chemper/>`_
+page. See :doc:`docs/installation` for more details.
+
+A good place after installing is to checkout the :doc:`docs/examples` which are also included in the GitHub repository.
+
+`ChemPer`'s key ingrediant is `smirksify` which takes input molecules.
+`smirksify` takes user specified clustering (such as the colored angles above)
+and generates a general list of SMIRKS patterns to act as typing rules.
+Other modules include `ChemPerGraph` which will generate a SMIRKS pattern for a single molecule and
+`ClusterGraph` which generates a very specific SMIRKS pattern for one group of molecular fragments.
+Also included are a number of utility functions for using SMIRKS patterns with molecules.
 
 Contributors
 ------------
@@ -54,19 +48,31 @@ Contributors
       :maxdepth: 1
       :caption: Contents:
 
-      docs/intro
       docs/installation
       docs/api/index
       docs/examples
       docs/future
+      docs/background
       docs/references
+
+Coming Soon
+------------
+Currently, `ChemPer` requires the user to know how they want to type their molecules.
+To implement the example above, the user would need to know they want to
+group carbons by tetrahedral and trivalent.
+Soon `ChemPer` will also provide examples for how to cluster those angles based on
+quantitative data, such as angle in a minimized conformer.
 
 Acknowledgments
 ---------------
 
+This project is a part of the larger `Open Force Field Initiative <http://openforcefield.org>`_
+We are thankful for the useful conversations about chemical perception with many Initiative members.
 CCB is funded by a fellowship from
 `The Molecular Sciences Software Institute <http://molssi.org/>`_
-under NSF grant ACI-1547580.
-JM and DLM appreciate appreciate the financial support from the
+(MolSSI) under NSF grant ACI-1547580.
+We would also like to thank Jessica Nash and Daniel G. A. Smith
+from MolSSI for their help on this project from the beginning.
+JM and DLM appreciate financial support from the
 National Science Foundation (CHE 1352608) and the National Institutes of Health (1R01GM108889-01).
 

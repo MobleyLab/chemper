@@ -19,7 +19,7 @@ D.L. Mobley et al. bioRxiv 2018, 286542. `doi.org/10.1101/286542 <http://doi.org
 #
 Daylight Chemical Information Systems Inc., `2011, Daylight Version 4.9 <http://www.daylight.com/dayhtml/doc/theory/theory.smirks.html>`_.
 
-.. _smarts_lit:
+.. _smartslit:
 
 4
 #

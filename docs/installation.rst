@@ -46,10 +46,12 @@ Conda installation according to `OpenEye documentation <https://docs.eyesopen.co
 Installation
 ------------
 
-Hopefully chemper will be conda installable in the near future, but for now the best option
-is to download or clone from `GitHub <https://github.com/Mobleylab/chemper/>`_
-and then from inside the ``chemper`` directory install with the command:
+When ``ChemPer`` is ready for more extensive beta testing, we will make it conda installable.
+
+Currently, we are still in early development phases and the best option to use ``ChemPer`` is to
+download or clone from `GitHub <https://github.com/Mobleylab/chemper/>`_
+and then from inside the ``ChemPer`` directory install with the command:
 
 .. code-block:: bash
 
-    pip install -e .
+    pip install .
