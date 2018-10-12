@@ -182,6 +182,6 @@ def test_wrong_smirks_error():
     """
     smirks = "[*;m:1]"
     msg = "SMIRKS (%s) should not be parseable, but an environment was successfully created"
-    from chemper.optimize_smirks.environment import SMIRKSParsingError
+    from chemper.graphs.environment import SMIRKSParsingError
     with pytest.raises(SMIRKSParsingError):
         env = ChemicalEnvironment(smirks)
