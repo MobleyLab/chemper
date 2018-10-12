@@ -10,7 +10,7 @@ supports RDKit we will make it a dependency and then these tests will be removed
 """
 from functools import partial
 import pytest
-from chemper.optimize_smirks.environment import ChemicalEnvironment
+from chemper.graphs.environment import ChemicalEnvironment
 from chemper.chemper_utils import is_valid_smirks
 
 input_SMIRKS = [

@@ -3,7 +3,7 @@ This script is used to test the SMIRKSifier Class and the class methods it conta
 """
 
 from chemper.mol_toolkits import mol_toolkit
-from chemper.optimize_smirks.smirksify import SMIRKSifier
+from chemper.smirksify import SMIRKSifier
 import pytest
 
 smiles_list = ['C', 'N', 'C=C', 'C#C' 'c1ccccc1']

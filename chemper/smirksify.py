@@ -40,11 +40,10 @@ import copy
 
 import networkx as nx
 import time
-from chemper.optimize_smirks.environment import ChemicalEnvironment
+from chemper.graphs.environment import ChemicalEnvironment
 from chemper.mol_toolkits import mol_toolkit
 from chemper.chemper_utils import ImproperDict, ValenceDict, \
     get_typed_molecules, is_valid_smirks
-from chemper.optimize_smirks.environment import ChemicalEnvironment
 
 import numpy
 from numpy import random

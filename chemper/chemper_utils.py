@@ -398,7 +398,7 @@ def get_smirks_matches(mol, smirks):
     matches: list of tuples
         atom indices for labeled atom in the smirks
     """
-    from chemper.optimize_smirks.environment import ChemicalEnvironment
+    from chemper.graphs.environment import ChemicalEnvironment
 
     env = ChemicalEnvironment(smirks)
     if env.getType().lower() == 'impropertorsion':
