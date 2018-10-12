@@ -108,3 +108,8 @@ See the general_smirks_for_clusters_ example for how this process could
 be applied to different bonding parameters.
 
 .. _general_smirks_for_clusters: ../../examples/general_smirks_for_clusters.ipynb
+
+.. toctree::
+    :maxdepth: 2
+
+    smirksify.rst
