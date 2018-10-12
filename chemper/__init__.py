@@ -1,3 +1,4 @@
 from . import mol_toolkits
 from . import graphs
-from . import optimize_smirks
+from . import chemper_utils
+from . import smirksify
