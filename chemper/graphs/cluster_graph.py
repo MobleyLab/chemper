@@ -463,7 +463,7 @@ class ClusterGraph(ChemPerGraph):
                     continue
 
                 # check if atoms are connected in the molecule
-                atom2 = mol.get_atom_by_index(smirks_atoms[neighbor_key])
+                atom2 = mol.get_atom_by_index(smirks_atoms[neighbor_key-1])
                 bond = mol.get_bond_by_atoms(atom1, atom2)
 
                 if bond is not None: # Atoms are connected add edge
