@@ -14,5 +14,4 @@ Welcome to chemper
    docs/installation
    docs/api/index
    docs/examples
-   docs/future
 
