@@ -71,15 +71,18 @@ class SMIRKSifier(object):
         ----------
         mols: list of chemper Mols
         cluster_list: list of labels and smirks_atom_lists
-            with the form [(label, smirks_atom_list)] where the
-            smirks_atoms_lists is a list of list of dict
-            atom indices by smirks index for each molecule
-            required if a list of molecules is provided.
-            This is a list of dictionaries of the form [{smirks index: atom index}]
-            for each molecule provided
-            # TODO: this is complicated, but I'm not going to do anything else
-            # until I can show this works, then we can brain storm a
-            # better way to format inputs.
+            For each label the user should provide a list tuple for atom indices
+            in each molecule you want included in that cluster.
+
+            For example, if you wanted all atoms with indices (0,1) and (1,2) to be in cluster 'c1'
+            and atoms (2,3) in cluster 'c2' for each of two molecules then cluster_list would be
+
+            [ ('c1', [ (0,1), (1,2) ], [ (0,1), (1,2) ]),
+              ('c2', [ (2,3)        ], [ (2,3)        ]) ]
+
+            To see an example of this in action checkout
+            https://github.com/MobleyLab/chemper/tree/master/examples
+
         layers: int (optional)
             how many atoms away from the indexed atoms should we consider
             default = 2
@@ -92,12 +95,11 @@ class SMIRKSifier(object):
         self.layers = layers
         self.verbose = verbose
 
-        # TODO: figure out how to handle layers (self determine or user set, both?)
+        # TODO: internally determine the number of layers!!!
         self.current_smirks = self.make_cluster_graphs()
         self.print_smirks(self.current_smirks)
 
-        # TODO: I want to change ClusterGraph to take a "cluster_dict"
-        # instead of the weird list of list of dictionaries it uses now...
+        # determine the type of SMIRKS for symmetry in indices purposes
         test_smirks = self.current_smirks[0][1]
         env = ChemicalEnvironment(test_smirks)
         if env.getType().lower() == 'impropertorsion':
@@ -110,20 +112,21 @@ class SMIRKSifier(object):
         self.cluster_dict = dict()
         self.ref_labels = set()
         self.total = 0
-        for label, smirks_atom_list in self.cluster_list:
+        # form of cluster_list is [(label, [for each mol [ (tuples of atom indices)] ) ]
+        for label, mol_list in self.cluster_list:
             self.ref_labels.add(label)
-            for mol_idx, smirks_sets in enumerate(smirks_atom_list):
+            # [for each mol [ (tuples of atom indices)]
+            for mol_idx, atom_indice_tuples in enumerate(mol_list):
                 if mol_idx not in self.cluster_dict:
                     self.cluster_dict[mol_idx] = self.dict_type()
-                for smirks_dict in smirks_sets:
-                    sorted_keys = sorted(list(smirks_dict.keys()))
-                    atom_indices = tuple([smirks_dict[k] for k in sorted_keys])
+                for atom_tuple in atom_indice_tuples:
                     self.total += 1
-                    self.cluster_dict[mol_idx][atom_indices] = label
+                    self.cluster_dict[mol_idx][atom_tuple] = label
 
         # save matches and score
         self.type_matches, self.score = self.best_match_reference()
         # TODO: figure out how to test score if less than 100% raise error? or maintain that score?
+        # TODO: we will include this in the PR handling internal layer management
 
     def make_cluster_graphs(self):
         """

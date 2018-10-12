@@ -29,6 +29,7 @@ def test_empty_graph(graph_method):
 
 
 # Make sure tests run without failures for a variety of simple molecules
+# including a variety of possible atom indices
 smiles_set = ['C', 'c1ccccc1', 'C1CC1F', 'OC(=O)CC', 'c1ccccc1', '[O-1]c1ccccc1']
 layers_options = [1,3,'all']
 
@@ -39,16 +40,21 @@ def test_no_fail_fragment(smile, layers):
     smirks_atoms = (0, 1)
     c = ChemPerGraphFromMol(mol, smirks_atoms, layers)
     assert c.add_atom(None) is None
+    smirks_atoms = (0,)
+    c = ChemPerGraphFromMol(mol, smirks_atoms, layers)
 
 
 cluster_combos = [([smiles_set[i], smiles_set[i+1]], l)
                   for i in range(len(smiles_set)-1) for l in layers_options]
 @pytest.mark.parametrize('smiles_list,layers',cluster_combos)
 def test_no_fail_cluster(smiles_list, layers):
-    smirks_atom_lists = [ [(0,1), (1,2)] ] * len(smiles_list)
+    smirks_atom_lists1 = [ [(0,1), (1,2)] ] * len(smiles_list)
+    smirks_atom_lists2 = [ [(0,), (1,), (2,) ] ] * len(smiles_list)
     mols_list = [mol_toolkit.MolFromSmiles(s) for s in smiles_list]
-    c = ClusterGraph(mols_list, smirks_atom_lists, layers=layers)
-    assert c.add_atom(None) is None
+    c1 = ClusterGraph(mols_list, smirks_atom_lists1, layers=layers)
+    c2 = ClusterGraph(mols_list, smirks_atom_lists2, layers=layers)
+    assert c1.add_atom(None) is None
+    assert c2.add_atom(None) is None
 
 def test_mols_mismatch():
     """
