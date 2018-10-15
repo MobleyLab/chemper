@@ -57,7 +57,7 @@ conda install -c rdkit rdkit
 #### OpenEye environment
 Conda installation according to [OpenEye documentation](https://docs.eyesopen.com/toolkits/python/quickstart-python/linuxosx.html)
 ```bash
-cond install -c openeye openeye-toolkits
+conda install -c openeye openeye-toolkits
 ```
 
 ## Installation
