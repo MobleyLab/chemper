@@ -1,11 +1,11 @@
-chemper API
+ChemPer API
 ==============
 
-``chemper`` is open source. If you have suggestions or concerns
+``ChemPer`` is open source. If you have suggestions or concerns
 please add them to our `issue tracker <https://github.com/MobleyLab/chemper/issues>`_.
 Documentation for contributing to this work will be available soon.
-Below is an outline of tools provided in  ``chemper`` see :doc:`examples <../examples>`
-for more details.
+Below is an outline of tools provided in  ``ChemPer``. See :doc:`examples <../examples>`
+for more details on how to use these tools.
 
 mol_toolkits
 ------------
@@ -37,14 +37,12 @@ single_mol_smirks_.
 
 .. _single_mol_smirks: ../../examples/single_mol_smirks.ipynb
 
-Here is a brief usage example for creating the SMIRKS pattern
-for the bond between the two carbon atoms in ethene including
-atoms one bond away from the indexed atoms. The indexed atoms
-are the two carbon atoms at indices 0 and 1 in the molecule, which are
-specified with the tuple `(0,1)`.
-These atoms are assigned to SMIRKS indices ``:1`` and ``:2`` respectively.
-The variable `layers` tells `ChemPerGraph` to include atoms up to 1 bond away
-from the indexed atoms.
+Here is a brief usage example for using ``ChemPerGraph`` to create a SMIRKS pattern.
+In this case, we want to create a pattern for the carbon-carbon bond in ethene.
+The carbon atoms have the indices 0 and 1 in the molecule, specified using the tuple `(0,1)`.
+These atoms are assigned to SMIRKS indices `:1` and `:2` respectively.
+In this example, we also include atoms up to one bond away from the indexed atoms by specifying
+the variable ``layers`` be set to `1`.
 
 .. literalinclude:: fragment_example.py
     :language: python
@@ -66,8 +64,8 @@ parameters for each molecule (for example bond lengths and force constants)
 could be clustered by fragment. Then we could generate a hierarchical
 list of SMIRKS patterns that maintain those clusters for typing purposes.
 However, you could imagine other reasons
-for wanting to store how you clustered groups of atoms.
-For example, using atom or bond types in a machine learning model.
+for wanting to store how you clustered groups of atoms --
+for example, using atom or bond types in a machine learning model.
 
 For more detailed examples and illustration of how this works see
 smirks_from_molecules_ example.
@@ -96,7 +94,7 @@ thus there are two possible SMIRKS patterns for atom ``:1``
 SMIRKSifier
 ------------
 
-Lets assume you have a few clusters of fragments that you want
+Let's assume you have a few clusters of fragments that you want
 assigned the same force field parameter. For example, you could
 have clusters of carbon-carbon bonds based on the type of bond
 between them (single, double, etc).

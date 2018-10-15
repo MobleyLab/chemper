@@ -48,12 +48,6 @@ from chemper.chemper_utils import ImproperDict, ValenceDict, \
 import numpy
 from numpy import random
 
-
-# ==============================================================================
-# PRIVATE SUBROUTINES
-# TODO: determine which private subroutines are necessary in the new approach
-# ==============================================================================
-
 # =============================================================================================
 # SMIRKSifier
 # =============================================================================================
@@ -70,7 +64,7 @@ class SMIRKSifier(object):
         ----------
         mols: list of chemper Mols
         cluster_list: list of labels and smirks_atom_lists
-            For each label the user should provide a list tuple for atom indices
+            For each label the user should provide a list tuples for atom indices
             in each molecule you want included in that cluster.
 
             For example, if you wanted all atoms with indices (0,1) and (1,2) to be in cluster 'c1'

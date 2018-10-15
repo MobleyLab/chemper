@@ -358,24 +358,26 @@ class ClusterGraph(ChemPerGraph):
         """
         Initialize a ChemPerGraph from a molecule and list of indexed atoms
 
+        For the example, imagine we wanted to get a SMIRKS that
+        would match the carbon-carbon bonds in ethane and propane.
+        The carbon atoms are have indices (0,1) in ethane and (0,1) and (1,2)
+        in propane. For this example, we will assume we also want to include
+        the atoms one bond away from the indexed atoms (1 layer away).
+
         Parameters
         ----------
-        mols: list of chemper Mols
-            (optional) molecules to initiate ClusterGraph
-        smirks_atoms_lists: list of list of tuples
-            (optional) atom indices by smirks index for each molecule
-            required if a list of molecules is provided.
-            For each molecule there should be a list of tuples.
-            Each tuple specifies atom indices which should be
-            used to generate indexed SMIRKS atoms, that is they have a `:n` at the end
-
-            For example, if you want to specify atoms 0 and 1 in two molecules this list
-            would look like
-            [ [ (0,1) ], [ (0,1) ] ]
-        layers: int
-            (optional) currently only 0 is supported
-            how many atoms out from the smirks indexed atoms do you wish save (default=0)
-            'all' will lead to all atoms in the molecule being specified (not recommended)
+        mols: list of chemper Mols (optional)
+        smirks_atoms_lists: list of list of tuples (optional)
+            There is a list of tuples for each molecule, where each tuple specifies
+            a molecular fragment using the atoms' indices.
+            In the ethane and propane example, the `smirks_atoms_lists` would be
+                [ [ (0,1) ], [ (0,1), (1,2) ] ]
+            with one carbon-carbon bond in ethane and two carbon-carbon bonds in propane
+        layers: int (optional, default=0)
+            layers specifies how many bonds away from the indexed atoms should be included in the
+            the SMIRKS patterns.
+            Instead of an int, the string 'all' would lead to all atoms in the molecules
+            being included in the SMIRKS (not recommended)
         """
         ChemPerGraph.__init__(self)
 
@@ -416,9 +418,7 @@ class ClusterGraph(ChemPerGraph):
         ----------
         mol: chemper Mol object
         smirks_atoms_list: list of tuples
-            This is a list of tuples with atom indices [ (indices), (...]
-            each atom (by index) in the tuple will be added the relevant
-            AtomStorage by smirks index
+            This is a list of tuples with atom indices [ (indices), ... ]
         """
         if len(smirks_atoms_list) == 0:
             return
