@@ -261,15 +261,12 @@ class ChemPerGraph(object):
             This graph as a SMIRKS string
         """
         smirks = init_atom.as_smirks(compress)
-        #print('current smirks: ', smirks)
-        #print('len neigh: ', len(neighbors))
         for idx, neighbor in enumerate(neighbors):
             bond = self.get_connecting_bond(init_atom, neighbor)
             bond_smirks = bond.as_smirks()
 
             new_neighbors = sorted(self.get_neighbors(neighbor))
             new_neighbors.remove(init_atom)
-            #print('len new neigh: ', len(neighbors))
 
             atom_smirks = self._as_smirks(neighbor, new_neighbors,compress)
 
@@ -378,8 +375,10 @@ class ChemPerGraphFromMol(ChemPerGraph):
         Parameters
         ----------
         mol: chemper Mol
-        smirks_atoms: dict
-            dictionary of the form {smirks index: atom index}
+        smirks_atoms: tuple of integers
+            This is a tuple of the atom indices which will have SMIRKS indices.
+            For example, if (1,2) is provided then the atom in molecule with indices
+            1 and 2 will be used to create a SMIRKS with two indexed atoms.
         layers: int or 'all'
             how many atoms out from the smirks indexed atoms do you wish save (default=0)
             'all' will lead to all atoms in the molecule being specified
@@ -400,18 +399,18 @@ class ChemPerGraphFromMol(ChemPerGraph):
 
         Parameters
         ----------
-        smirks_atoms: dict
-            dictionary of the form {smirks index: atom index}
+        smirks_atoms: tuple of integers
+            This is a tuple of the atom indices which will have SMIRKS indices.
         """
         # add all smirks atoms to the graph
-        for key, atom_index in smirks_atoms.items():
+        for key, atom_index in enumerate(smirks_atoms, 1):
             atom1 = self.mol.get_atom_by_index(atom_index)
             new_atom_storage = self.AtomStorage(atom1, key)
             self._graph.add_node(new_atom_storage)
             self.atom_by_label[key] = new_atom_storage
             self.atom_by_index[atom_index] = new_atom_storage
             # Check for bonded atoms already in the graph
-            for neighbor_key, neighbor_index in smirks_atoms.items():
+            for neighbor_key, neighbor_index in enumerate(smirks_atoms, 1):
                 if not neighbor_key in self.atom_by_label:
                     continue
 

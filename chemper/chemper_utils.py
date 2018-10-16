@@ -333,18 +333,38 @@ def get_typed_molecules(smirks_list, molecules):
     return type_dict
 
 
-def create_dictionaries_for_clusters(smirks_list, molecules):
+def create_tuples_for_clusters(smirks_list, molecules):
     """
-    This is temporary, I think the better way to do this is to just use atom
-    indice tuples in the chemper cluster graphs since expecting the user to know the
-    smirks index is a little ridiculous
+    This function is used to get clusters of molecular fragments based
+    on input SMIRKS.
 
-    This converts the type_dict such as the one in get_typed molecules
-    assuming the smirks_index were assigned in that order
-    so smirks_index = tuple index + 1
+    For example, lets assume you wanted to find all of the
+    atoms that match this SMIRKS list
+    'any', '[*:1]~[*:2]'
+    'single', '[*:1]-[*:2]'
 
-    So this will return something in the form:
-    [ (label, [ [ {smirks_idx: atom_idx}, {...} ] ] ), ...]
+    In this case, the "any" bond would match all bonds, but then
+    the "single" would match all single bonds.
+    If you were typing Ethene (C=C) then you expect the double bond
+    between atoms 0 and 1 to match any bond and all C-H bonds to match single.
+
+    The output in this case would be:
+    [ ('any', [[ (0, 1) ]] ),
+      ('single', [[ (0, 2), (0, 3), (1,4), (1,5) ]] )
+    ]
+
+    Parameters
+    ----------
+    smirks_list: list of tuples
+        This is a list of tuples with the form (label, SMIRKS)
+    molecules: list of ChemPer Mols
+        This is a list of ChemPer molecules you want to type with this list of SMIRKS
+
+    Returns
+    -------
+    type_list: list of atom index tuples for each molecule for each type
+        These are a list of tuples with the form (label, [ [ (atom indices by molecule)], ]),...
+
     """
     ordered_labels = [l for l, s in smirks_list]
     type_dict = get_typed_molecules(smirks_list, molecules)
@@ -354,27 +374,12 @@ def create_dictionaries_for_clusters(smirks_list, molecules):
     for mol_idx, mol_dict in type_dict.items():
         for match, label in mol_dict.items():
             if label not in label_dict:
-                label_dict[label] = dict()
-            if mol_idx not in label_dict[label]:
-                label_dict[label][mol_idx] = list()
+                label_dict[label] = [list() for i in range(len(molecules))]
 
-            smirks_dict = {s+1:a for s,a in enumerate(match)}
-            label_dict[label][mol_idx].append(smirks_dict)
+            label_dict[label][mol_idx].append(match)
 
-    final_list = list()
-    mols_idx = range(len(molecules))
-    for label in ordered_labels:
-        if label not in label_dict:
-            continue
-        mols = label_dict[label]
-        mol_list = list()
-        for idx in mols_idx:
-            if idx in mols:
-                mol_list.append(mols[idx])
-            else:
-                mol_list.append(list())
-        final_list.append( (label, mol_list) )
-
+    # now we need to resort the mol_lists
+    final_list = [ (l, label_dict[l]) for l in ordered_labels if l in label_dict]
     return final_list
 
 
@@ -393,7 +398,7 @@ def get_smirks_matches(mol, smirks):
     matches: list of tuples
         atom indices for labeled atom in the smirks
     """
-    from chemper.optimize_smirks.environment import ChemicalEnvironment
+    from chemper.graphs.environment import ChemicalEnvironment
 
     env = ChemicalEnvironment(smirks)
     if env.getType().lower() == 'impropertorsion':

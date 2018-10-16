@@ -3,7 +3,7 @@ This script is used to test the SMIRKSifier Class and the class methods it conta
 """
 
 from chemper.mol_toolkits import mol_toolkit
-from chemper.optimize_smirks.smirksify import SMIRKSifier
+from chemper.smirksify import SMIRKSifier
 import pytest
 
 smiles_list = ['C', 'N', 'C=C', 'C#C' 'c1ccccc1']
@@ -14,7 +14,7 @@ def test_max_reduction(smiles):
     you should get [*:1] in a minimum of 7 steps
     """
     mol = mol_toolkit.MolFromSmiles(smiles)
-    cluster_lists = [('1', [[{1:0}]])]
+    cluster_lists = [('1', [[(0,)]])]
     # create reducer
     red = SMIRKSifier([mol], cluster_lists, layers=0)
     smirks_list = red.reduce(10)
@@ -27,8 +27,8 @@ def test_more_complex_reducer():
     """
     smiles = ['CC', 'C=C', 'C#C']
     mols = [mol_toolkit.MolFromSmiles(s) for s in smiles]
-    c1 = [[{1:0, 2:1}]]*len(smiles)
-    c2 = [[{1:0, 2:2}]]*len(smiles)
+    c1 = [[(0, 1)]]*len(smiles)
+    c2 = [[(0, 2)]]*len(smiles)
     cluster_lists = [('1', c1), ('2', c2)]
     # create reducer
     red = SMIRKSifier(mols, cluster_lists, verbose=False)
@@ -44,7 +44,7 @@ def test_explicitly_check_methods():
     """
     # practice reducer
     mol = mol_toolkit.MolFromSmiles('C')
-    cluster_lists = [('1', [[{1:0}]])]
+    cluster_lists = [('1', [[(0,)]])]
     # create reducer
     red = SMIRKSifier([mol], cluster_lists, layers=0)
     red.print_smirks()
@@ -75,7 +75,7 @@ expected_change = [("[#6:1]~[*:2]", "[*:1]~[*:2]" ),
 @pytest.mark.parametrize('in_smirks, out_smirks', expected_change)
 def check_expected_removal(in_smirks, out_smirks):
     mol = mol_toolkit.MolFromSmiles('C')
-    cluster_lists = [('1', [[{1:0}]])]
+    cluster_lists = [('1', [[(0,)]])]
     # create reducer
     red = SMIRKSifier([mol], cluster_lists, layers=0)
 

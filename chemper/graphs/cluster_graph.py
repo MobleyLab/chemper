@@ -358,24 +358,26 @@ class ClusterGraph(ChemPerGraph):
         """
         Initialize a ChemPerGraph from a molecule and list of indexed atoms
 
+        For the example, imagine we wanted to get a SMIRKS that
+        would match the carbon-carbon bonds in ethane and propane.
+        The carbon atoms are have indices (0,1) in ethane and (0,1) and (1,2)
+        in propane. For this example, we will assume we also want to include
+        the atoms one bond away from the indexed atoms (1 layer away).
+
         Parameters
         ----------
-        mols: list of chemper Mols
-            (optional) molecules to initiate ClusterGraph
-        smirks_atoms_lists: list of list of dict
-            (optional) atom indices by smirks index for each molecule
-            required if a list of molecules is provided.
-            This is a list of dictionaries of the form [{smirks index: atom index}]
-            for each molecule provided
-            # TODO: not now, but I would like to rework this to just use a tuple of
-            # atom indices instead of knowing the SMIRKS, where the smirks index
-            # would be tuple index + 1 so it would be a list of list of tuples where
-            # [ [ (0,1) ] ] would indicate that for molecule 0 smirks atom 1 label go to
-            # atom with index 0 and smirks atom 2 label go to atom with index 1
-        layers: int
-            (optional) currently only 0 is supported
-            how many atoms out from the smirks indexed atoms do you wish save (default=0)
-            'all' will lead to all atoms in the molecule being specified (not recommended)
+        mols: list of chemper Mols (optional)
+        smirks_atoms_lists: list of list of tuples (optional)
+            There is a list of tuples for each molecule, where each tuple specifies
+            a molecular fragment using the atoms' indices.
+            In the ethane and propane example, the `smirks_atoms_lists` would be
+                [ [ (0,1) ], [ (0,1), (1,2) ] ]
+            with one carbon-carbon bond in ethane and two carbon-carbon bonds in propane
+        layers: int (optional, default=0)
+            layers specifies how many bonds away from the indexed atoms should be included in the
+            the SMIRKS patterns.
+            Instead of an int, the string 'all' would lead to all atoms in the molecules
+            being included in the SMIRKS (not recommended)
         """
         ChemPerGraph.__init__(self)
 
@@ -415,10 +417,8 @@ class ClusterGraph(ChemPerGraph):
         Parameters
         ----------
         mol: chemper Mol object
-        smirks_atoms_list: list of dicts
-            This is a list of dictionaries of the form [{smirks index: atom index}]
-            each atom (by index) in the dictionary will be added the relevant
-            AtomStorage by smirks index
+        smirks_atoms_list: list of tuples
+            This is a list of tuples with atom indices [ (indices), ... ]
         """
         if len(smirks_atoms_list) == 0:
             return
@@ -440,13 +440,11 @@ class ClusterGraph(ChemPerGraph):
         Parameters
         ----------
         mol: chemper Mol
-        smirks_atoms: dict
-            dictionary for first atoms to add to the graph in the form {smirks index: atom index}
+        smirks_atoms: tuple
+            tuple of atom indices for the first atoms to add to the graph. i.e. (0, 1)
         """
         atom_dict = dict()
-        sorted_keys = sorted(list(smirks_atoms.keys()))
-        for key in sorted_keys:
-            atom_index = smirks_atoms[key]
+        for key, atom_index in enumerate(smirks_atoms, 1):
             atom_dict[atom_index] = key
 
             atom1 = mol.get_atom_by_index(atom_index)
@@ -455,7 +453,7 @@ class ClusterGraph(ChemPerGraph):
             self.atom_by_label[key] = new_atom_storage
 
             # Check for bonded atoms already in the graph
-            for neighbor_key in reversed(sorted_keys):
+            for neighbor_key in range(len(smirks_atoms), 0, -1):
                 if neighbor_key not in self.atom_by_label:
                     continue
 
@@ -465,7 +463,7 @@ class ClusterGraph(ChemPerGraph):
                     continue
 
                 # check if atoms are connected in the molecule
-                atom2 = mol.get_atom_by_index(smirks_atoms[neighbor_key])
+                atom2 = mol.get_atom_by_index(smirks_atoms[neighbor_key-1])
                 bond = mol.get_bond_by_atoms(atom1, atom2)
 
                 if bond is not None: # Atoms are connected add edge
@@ -476,7 +474,7 @@ class ClusterGraph(ChemPerGraph):
                                          neighbor_storage,
                                          bond=bond_storage)
 
-        for atom_label, atom_index in smirks_atoms.items():
+        for atom_label, atom_index in enumerate(smirks_atoms, 1):
             atom = mol.get_atom_by_index(atom_index)
             storage = self.atom_by_label[atom_label]
             self._add_layers(mol, atom, storage, self.layers, atom_dict)
@@ -639,12 +637,12 @@ class ClusterGraph(ChemPerGraph):
         """
         for smirks_atoms in smirks_atoms_list:
             atom_dict = dict()
-            for key, atom_index in smirks_atoms.items():
+            for key, atom_index in enumerate(smirks_atoms, 1):
                 atom_dict[atom_index] = key
                 atom1 = mol.get_atom_by_index(atom_index)
                 self.atom_by_label[key].add_atom(atom1)
 
-                for neighbor_key, neighbor_index in smirks_atoms.items():
+                for neighbor_key, neighbor_index in enumerate(smirks_atoms, 1):
                     # check for connecting bond
                     atom2 = mol.get_atom_by_index(neighbor_index)
                     bond = mol.get_bond_by_atoms(atom1, atom2)
@@ -652,7 +650,7 @@ class ClusterGraph(ChemPerGraph):
                         bond_smirks = (neighbor_key, key)
                         self.bond_by_label[bond_smirks].add_bond(bond)
 
-            for atom_label, atom_index in smirks_atoms.items():
+            for atom_label, atom_index in enumerate(smirks_atoms, 1):
                 atom = mol.get_atom_by_index(atom_index)
                 storage = self.atom_by_label[atom_label]
                 self._add_layers(mol, atom, storage, self.layers, atom_dict)

@@ -12,6 +12,7 @@ on github so you can try them out yourself.
 
     ../examples/single_mol_smirks.ipynb
     ../examples/smirks_from_molecules.ipynb
+    ../examples/general_smirks_for_clusters.ipynb
 
 Let us know if you have any problems or suggestions through the ``chemper``
 `issue tracker <https://github.com/MobleyLab/chemper/issues>`_.

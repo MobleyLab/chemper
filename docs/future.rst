@@ -23,6 +23,6 @@ objects could be used to determine the correct SMIRKS
 patterns. Thus, the next step is to essentially find the
 similarities and differences in ``ClusterGraph`` so that the
 most general SMIRKS can be used to maintain clustering as
-the user innputs, but not specify more information than
+the user inputs, but not specify more information than
 necessary.
 
