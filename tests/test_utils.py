@@ -55,6 +55,8 @@ def test_failing_files():
     with pytest.raises(IOError):
         chemper_utils.get_data_path(fn)
 
+
+# Test comparing SMIRKS labels
 smirks1 = [
     ('any', "[*:1]~[*:2]"),
     ('single', "[*:1]-[*:2]"),

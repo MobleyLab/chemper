@@ -6,7 +6,6 @@ This file provides simple functions that might be of use to people using the che
 """
 
 import os
-from chemper.mol_toolkits import mol_toolkit
 
 def get_data_path(relative_path, package='chemper'):
     """
