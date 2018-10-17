@@ -190,7 +190,7 @@ def create_tuples_for_clusters(smirks_list, molecules):
     This function is used to get clusters of molecular fragments based
     on input SMIRKS.
 
-    For example, lets assume you wanted to find all of the
+    For example, let's assume you wanted to find all of the
     atoms that match this SMIRKS list
     'any', '[*:1]~[*:2]'
     'single', '[*:1]-[*:2]'
