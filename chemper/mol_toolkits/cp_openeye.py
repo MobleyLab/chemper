@@ -30,7 +30,7 @@ class Mol(MolAdapter):
         mol: openeye OEMol object
             openeye molecule to convert to chemper Mol object
         """
-        if type(mol) != oechem.OEMol:
+        if not isinstance(mol, oechem.OEMolBase):
             raise Exception("Expecting an OEMol object instead of %s" % type(mol))
         self.mol = mol
 
@@ -176,7 +176,7 @@ class Atom(AtomAdapter):
         atom: OEAtomBase
             Atom object from an OpenEye molecule
         """
-        if type(atom) != oechem.OEAtomBase:
+        if not isinstance(atom, oechem.OEAtomBase):
             raise Exception("Expecting an OEAtomBase object instead of %s" % type(atom))
         self.atom = atom
         self._index = self.atom.GetIdx()
@@ -332,7 +332,7 @@ class Bond(BondAdapter):
         bond: OEBondBase
             Bond object from an OpenEye molecule
         """
-        if type(bond) != oechem.OEBondBase:
+        if not isinstance(bond, oechem.OEBondBase):
             raise Exception("Expecting an OEBondBase object instead of %s" % type(bond))
         self.bond = bond
         self._order = self.bond.GetOrder()
@@ -427,3 +427,53 @@ class Bond(BondAdapter):
             index of this bond in its parent molecule
         """
         return self._idx
+
+# =====================================================================
+# functions for importing molecules from files
+# =====================================================================
+
+def mols_from_mol2(mol2_file):
+    return mols_from_file(mol2_file)
+
+def mols_from_file(mol_file):
+    """
+    Parses a standard molecule file into chemper molecules using OpenEye toolkits
+
+    Parameters
+    ----------
+    mol_file: str
+              relative or full path to molecule containing the molecule file
+              that is accessible from the current working directory
+
+    Returns
+    -------
+    mols: list of chemper Mols
+          list of molecules in the mol2 file as chemper Mols
+    """
+    import os
+    if not os.path.exists(mol_file):
+        from chemper.chemper_utils import get_data_path
+        mol_path = get_data_path(os.path.join('molecules', mol_file))
+
+        if not os.path.exists(mol_path):
+            raise IOError("File '%s' not found locally or in chemper/data/molecules." % mol_file)
+        else:
+            mol_file = mol_path
+
+    molecules = list()
+
+    # make Openeye input file stream
+    ifs = oechem.oemolistream(mol_file)
+
+    oemol = oechem.OECreateOEGraphMol()
+    while oechem.OEReadMolecule(ifs, oemol):
+        # if an SD file, the molecule name may be in the SD tags
+        if oemol.GetTitle() == '':
+            name = oechem.OEGetSDData(oemol, 'name').strip()
+            oemol.SetTitle(name)
+        # Append to list.
+        molecules.append(Mol(oechem.OEMol(oemol)))
+    ifs.close()
+
+    return molecules
+

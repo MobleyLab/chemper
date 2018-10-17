@@ -432,3 +432,63 @@ class Bond(BondAdapter):
         """
         return self.bond.GetIdx()
 
+def mols_from_mol2(mol2_file):
+    """
+    Parses a mol2 file into chemper molecules using RDKit
+
+    This is a hack for separating mol2 files taken from a Source Forge discussion here:
+    https://www.mail-archive.com/rdkit-discuss@lists.sourceforge.net/msg01510.html
+    It splits up a mol2 file into blocks and then uses RDKit to parse those blocks
+
+    Parameters
+    ----------
+    mol2_file: str
+               relative or absolute path to a mol2 file you want to parse
+               accessible form the current directory
+
+    Returns
+    -------
+    mols: list of chemper Mols
+          list of molecules in the mol2 file as chemper molecules
+    """
+    # TODO: check that this works with mol2 files with a single molecule
+    # TODO: figure out if @<TRIPOS>MOLECULE is the only delimiter acceptable in this file type
+    import os
+
+    if not os.path.exists(mol2_file):
+        from chemper.chemper_utils import get_data_path
+        mol_path = get_data_path(os.path.join('molecules', mol2_file))
+
+        if not os.path.exists(mol_path):
+            raise IOError("File '%s' not found locally or in chemper/data/molecules." % mol_file)
+        else:
+            mol2_file = mol_path
+
+    delimiter="@<TRIPOS>MOLECULE"
+
+    if mol2_file.split('.')[-1] != "mol2":
+        raise IOError("File '%s' is not a mol2 file" % mol2_file)
+
+    if not os.path.exists(mol2_file):
+        raise IOError("File '%s' not found." % mol2_file)
+
+    molecules = list()
+    mol2_block = list()
+
+    file_open = open(mol2_file, 'r')
+
+    for line in file_open:
+        if line.startswith(delimiter) and mol2_block:
+            rdmol = Chem.MolFromMol2Block("".join(mol2_block))
+            if rdmol is not None:
+                molecules.append(Mol(rdmol))
+            mol2_block = []
+        mol2_block.append(line)
+    if mol2_block:
+        rdmol = Chem.MolFromMol2Block("".join(mol2_block))
+        if rdmol is not None:
+            molecules.append(Mol(rdmol))
+
+    file_open.close()
+    return molecules
+

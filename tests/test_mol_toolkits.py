@@ -6,14 +6,28 @@ print which one it is using
 """
 
 from chemper.mol_toolkits import mol_toolkit
-print('testing mol_toolkits %s' % mol_toolkit.__name__)
+from chemper import chemper_utils
 import pytest
+import itertools
 
-def test_molecule():
+# make a list of mol toolkits
+mts = list()
+if mol_toolkit.HAS_RDK:
+    from chemper.mol_toolkits import cp_rdk
+    mts.append(cp_rdk)
+if mol_toolkit.HAS_OE:
+    from chemper.mol_toolkits import cp_openeye
+    mts.append(cp_openeye)
+
+if mol_toolkit.HAS_RDK or mol_toolkit.HAS_OE:
+    mts.append(mol_toolkit)
+
+@pytest.mark.parametrize('toolkit', mts)
+def test_molecule(toolkit):
     """
     Test MolOE functions
     """
-    mol = mol_toolkit.MolFromSmiles('C')
+    mol = toolkit.MolFromSmiles('C')
 
     atoms = 0
     for a in mol.get_atoms():
@@ -32,11 +46,12 @@ def test_molecule():
     assert smiles == "C"
 
 
-def test_smirks_search():
+@pytest.mark.parametrize('toolkit', mts)
+def test_smirks_search(toolkit):
     """
     test SMIRKS searching
     """
-    mol = mol_toolkit.MolFromSmiles('C')
+    mol = toolkit.MolFromSmiles('C')
 
     # smirks for C-H bond
     smirks = "[#6:1]-[#1:2]"
@@ -49,23 +64,27 @@ def test_smirks_search():
         assert 1 in match
         assert 2 in match
 
-def test_bad_smirks():
+@pytest.mark.parametrize('toolkit', mts)
+def test_bad_smirks(toolkit):
     """
     Check a ValueError is raised with improper SMIRKS
     """
-    mol = mol_toolkit.MolFromSmiles('C')
+    mol = toolkit.MolFromSmiles('C')
+
     with pytest.raises(ValueError):
         mol.smirks_search(']X[')
 
-def test_bad_smiles():
+@pytest.mark.parametrize('toolkit', mts)
+def test_bad_smiles(toolkit):
     """
     Check a ValueError is raised with a bad SMILES
     """
     with pytest.raises(ValueError):
-        mol = mol_toolkit.MolFromSmiles('ZZZ')
+        mol = toolkit.MolFromSmiles('ZZZ')
 
-def test_bond():
-    mol = mol_toolkit.MolFromSmiles('C')
+@pytest.mark.parametrize('toolkit', mts)
+def test_bond(toolkit):
+    mol = toolkit.MolFromSmiles('C')
     print('made molecule')
     bond = mol.get_bond_by_index(0)
 
@@ -93,8 +112,9 @@ def test_bond():
     print('past bond index')
 
 
-def test_atom():
-    mol = mol_toolkit.MolFromSmiles('C')
+@pytest.mark.parametrize('toolkit', mts)
+def test_atom(toolkit):
+    mol = toolkit.MolFromSmiles('C')
     atom = mol.get_atom_by_index(0)
 
     assert atom.atomic_number() == 6
@@ -130,14 +150,72 @@ def test_atom():
     smiles = mol.get_smiles()
     assert smiles == "C"
 
-def test_atom_exception():
+@pytest.mark.parametrize('toolkit', mts)
+def test_atom_exception(toolkit):
     with pytest.raises(Exception):
-        mol_toolkit.Atom(None)
+        toolkit.Atom(None)
 
-def test_bond_exception():
+@pytest.mark.parametrize('toolkit', mts)
+def test_bond_exception(toolkit):
     with pytest.raises(Exception):
-        mol_toolkit.Bond(None)
+        toolkit.Bond(None)
 
-def test_mol_exception():
+@pytest.mark.parametrize('toolkit', mts)
+def test_mol_exception(toolkit):
     with pytest.raises(Exception):
-        mol_toolkit.Mol(None)
+        toolkit.Mol(None)
+
+
+# -------------------------------
+# check molecule file parsers
+# -------------------------------
+
+mol2_abs_file = chemper_utils.get_data_path('molecules/MiniDrugBank_tripos.mol2')
+mol2_rel_path = 'MiniDrugBank_tripos.mol2'
+paths = [mol2_abs_file, mol2_rel_path]
+
+# For the following functions, we will test default behavior and
+# look for exceptions based on the available mol toolkit
+
+@pytest.mark.parametrize('toolkit,path', itertools.product(mts, paths))
+def test_file_parsing(toolkit,path):
+    mols = toolkit.mols_from_mol2(path)
+    assert len(mols) == 363
+
+@pytest.mark.parametrize('path', paths)
+def test_mols_specified_toolkit(path):
+    if mol_toolkit.HAS_OE:
+        mols = mol_toolkit.mols_from_mol2(path, toolkit='openeye')
+        assert len(mols) == 363
+    else:
+        with pytest.raises(ImportError):
+            mols = mol_toolkit.mols_from_mol2(path, toolkit='openeye')
+
+    if mol_toolkit.HAS_RDK:
+        mols = mol_toolkit.mols_from_mol2(path, toolkit='rdkit')
+        assert len(mols) == 363
+    else:
+        with pytest.raises(ImportError):
+            mols = mol_toolkit.mols_from_mol2(path, toolkit='rdkit')
+
+
+# -------------------------------
+# check functions for checking
+# -------------------------------
+tk_fails = ['babel']
+if not mol_toolkit.HAS_OE:
+    tk_fails.append('openeye')
+if not mol_toolkit.HAS_RDK:
+    tk_fails.append('rdkit')
+
+@pytest.mark.parametrize('tks', tk_fails)
+def test_fake_toolkit(tks):
+    with pytest.raises(ImportError):
+        mol_toolkit.check_toolkit(tks)
+
+def test_default_toolkit():
+    tk = mol_toolkit.check_toolkit(None)
+    if mol_toolkit.HAS_OE:
+        assert tk == 'openeye'
+    else:
+        assert tk == 'rdkit'

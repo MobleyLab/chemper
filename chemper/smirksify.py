@@ -62,7 +62,10 @@ class SMIRKSifier(object):
         """
         Parameters
         ----------
-        mols: list of chemper Mols
+        molecules: list of Mols
+            These can be chemper Mols or molecules from any supported toolkit
+            (currently OpenEye or RDKit)
+
         cluster_list: list of labels and smirks_atom_lists
             For each label the user should provide a list tuples for atom indices
             in each molecule you want included in that cluster.
@@ -79,11 +82,12 @@ class SMIRKSifier(object):
         layers: int (optional)
             how many atoms away from the indexed atoms should we consider
             default = 2
+
         verbose: boolean (optional)
             If true information is printed to the command line during reducing
             default = True
         """
-        self.molecules = molecules
+        self.molecules = [mol_toolkit.Mol(m) for m in molecules]
         self.cluster_list = cluster_list
         self.layers = layers
         self.verbose = verbose

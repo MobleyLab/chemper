@@ -14,7 +14,9 @@ Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvi
 """
 
 import networkx as nx
+from chemper.mol_toolkits.adapters import MolAdapter
 from chemper.graphs.fragment_graph import ChemPerGraph
+from chemper.mol_toolkits import mol_toolkit
 
 
 class ClusterGraph(ChemPerGraph):
@@ -366,13 +368,17 @@ class ClusterGraph(ChemPerGraph):
 
         Parameters
         ----------
-        mols: list of chemper Mols (optional)
+        mols: list of molecules (optional)
+            these can be ChemPer mol's or molecule objects from
+            any supported toolkit (current OpenEye or RDKit)
+
         smirks_atoms_lists: list of list of tuples (optional)
             There is a list of tuples for each molecule, where each tuple specifies
             a molecular fragment using the atoms' indices.
             In the ethane and propane example, the `smirks_atoms_lists` would be
                 [ [ (0,1) ], [ (0,1), (1,2) ] ]
             with one carbon-carbon bond in ethane and two carbon-carbon bonds in propane
+
         layers: int (optional, default=0)
             layers specifies how many bonds away from the indexed atoms should be included in the
             the SMIRKS patterns.
@@ -386,10 +392,11 @@ class ClusterGraph(ChemPerGraph):
         self.layers = layers
 
         if mols is not None:
-            if len(mols) != len(smirks_atoms_lists):
+            temp_mols = [mol_toolkit.Mol(m) for m in mols]
+            if len(temp_mols) != len(smirks_atoms_lists):
                 raise Exception('Number of molecules and smirks dictionaries should be equal')
 
-            for idx, mol in enumerate(mols):
+            for idx, mol in enumerate(temp_mols):
                 self.add_mol(mol, smirks_atoms_lists[idx])
 
     def as_smirks(self, compress=False):
@@ -410,16 +417,18 @@ class ClusterGraph(ChemPerGraph):
         """
         return ChemPerGraph.as_smirks(self, compress)
 
-    def add_mol(self, mol, smirks_atoms_list):
+    def add_mol(self, input_mol, smirks_atoms_list):
         """
         Expand the information in this graph by adding a new molecule
 
         Parameters
         ----------
-        mol: chemper Mol object
+        input_mol: chemper Mol object
         smirks_atoms_list: list of tuples
             This is a list of tuples with atom indices [ (indices), ... ]
         """
+        mol = mol_toolkit.Mol(input_mol)
+
         if len(smirks_atoms_list) == 0:
             return
 
@@ -629,7 +638,7 @@ class ClusterGraph(ChemPerGraph):
 
         Parameters
         ----------
-        mol: chemper Mol
+        mol: any Mol
         smirks_atoms_list: list of dicts
             This is a list of dictionaries of the form [{smirks index: atom index}]
             each atom (by index) in the dictionary will be added the relevant
