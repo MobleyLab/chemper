@@ -26,6 +26,7 @@ AUTHORS:
 Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
+from chemper.mol_toolkits import mol_toolkit
 import networkx as nx
 
 
@@ -374,7 +375,9 @@ class ChemPerGraphFromMol(ChemPerGraph):
         """
         Parameters
         ----------
-        mol: chemper Mol
+        mol: Mol
+            this can be a chemper mol or a molecule from any supported toolkit
+            (currently OpenEye or RDKit)
         smirks_atoms: tuple of integers
             This is a tuple of the atom indices which will have SMIRKS indices.
             For example, if (1,2) is provided then the atom in molecule with indices
@@ -385,7 +388,7 @@ class ChemPerGraphFromMol(ChemPerGraph):
         """
         ChemPerGraph.__init__(self)
 
-        self.mol = mol
+        self.mol = mol_toolkit.Mol(mol)
         self.atom_by_index = dict()
         self._add_smirks_atoms(smirks_atoms)
         keys = list(self.atom_by_label.keys())
