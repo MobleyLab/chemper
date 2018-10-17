@@ -2,6 +2,7 @@
 This script provides tests for all functions in chemper_utils
 """
 from chemper import chemper_utils
+from chemper.mol_toolkits import mol_toolkit
 import pytest
 
 # -----------------------
@@ -54,4 +55,24 @@ def test_failing_files():
     with pytest.raises(IOError):
         chemper_utils.get_data_path(fn)
 
+def test_matching_smirks():
+    path = chemper_utils.get_data_path('molecules/MiniDrugBank_tripos.mol2')
+    mols = mol_toolkit.mols_from_mol2(path)
+    smirks1 = [
+        ('any', "[*:1]~[*:2]"),
+        ('single', "[*:1]-[*:2]"),
+        ('double', "[*:1]=[*:2]"),
+        ('aromatic', "[*:1]:[*:2]"),
+        ('triple', "[*:1]#[*:2]")
+    ]
+
+    smirks2 = [
+        ('any2', "[a,A:1]~[a,A:2]"),
+        ('single2', "[a,A:1]-[a,A:2]"),
+        ('double2', "[a,A:1]=[a,A:2]"),
+        ('aromatic2', "[a:1]:[a:2]"),
+        ('triple2', "[!#5:1]#[!#5:2]")
+    ]
+
+    assert chemper_utils.check_smirks_agree(smirks1, smirks2, mols)
 
