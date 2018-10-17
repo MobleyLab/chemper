@@ -274,21 +274,37 @@ def get_smirks_matches(mol, smirks):
 
 def match_reference(current_assignments, ref_assignments):
     """
-    Determine best match for each parameter with reference types
+    Determine if two sets of labels agree.
+    This could be used to test if two sets of SMIRKS type a set of molecules
+    in exactly the same way.
+
+    This starts with two sets of "assignments" which are dictionaries
+    like those created with get_typed_molecules.
+
+    Let's imagine you wanted to type the molecule CF and CCl
+    where most bonds are assigned X, but one bond in each molecule is
+    assigned 'Y'. Then the reference_assignments would be:
+    { 0: (0,1): 'X', (0,2): 'X', (0,3): 'X', (0,4): 'Y'},
+      1: (0,1): 'X', (0,2): 'X', (0,3): 'X', (0,4): 'Y'},
+    }
+
+    Then you discover a set of SMIRKS patterns which match
+    C-H bonds with one type and C-halogen have another.
+    Then your current_assignments would be:
+    { 0: (0,1): 'C-H', (0,2): 'C-H', (0,3): 'C-H', (0,4): 'C-hal.'},
+      1: (0,1): 'C-H', (0,2): 'C-H', (0,3): 'C-H', (0,4): 'C-hal.'},
+    }
+    This would return a set tuples for the corresponding labels
+    [('C-H', 'X'), ('C-hal.', 'Y')] and True for the two assigments matching.
+
+    However, if your current set assigned different types to the two
+    different carbon halogen bonds (C-F and C-Cl) then these two
+    sets of assignments would not match and the result would be an empty set and False
 
     Parameters
     ----------
     current_assignments : dictionary of indices with current types
     ref_assignments : dictionary of indices with reference types
-
-    These are intended to refer to a typed set of molecules so if
-    on molecule 1 you had four bonds two assigned type 'a' and two assigned 'b'
-    the current_assignements dictionary would look like:
-    {1: {(0,1): 'a',
-         (0,2): 'b',
-         (0,3): 'a',
-         (0,4): 'b'}
-         }
 
     Returns
     -------
