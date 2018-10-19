@@ -45,7 +45,7 @@ from chemper.mol_toolkits import mol_toolkit
 from chemper.chemper_utils import ImproperDict, ValenceDict, \
     get_typed_molecules, is_valid_smirks, match_reference
 
-import numpy
+import numpy as np
 from numpy import random
 
 # =============================================================================================
@@ -223,44 +223,80 @@ class SMIRKSifier(object):
         all_ands.remove(random.choice(all_ands))
         return all_ands, True
 
+    def _get_item_and_remove_options(self, env):
+        """
+        Parameters
+        ----------
+        env: ChemicalEnvironment
+
+        Returns
+        -------
+        item: an Atom or Bond from the Chemical Environment
+        dec_opts: list
+            0 = has OR decorators to remove
+            1 = has AND decorators to remove
+            2 = is an atom that could be removed
+        """
+        items = list()
+        odds = list()
+        for a_b in env.getAtoms() + env.getBonds():
+            count = len(a_b.getANDtypes())
+            for o in a_b.getORtypes():
+                count += len(o[1])
+
+            # a wild card, unidexed atom ([*])
+            # should also be on this list so it can be removed
+            if isinstance(a_b, ChemicalEnvironment.Atom) and env.isUnindexed(a_b):
+                count += 1
+
+            items.append(a_b)
+            odds.append(count)
+
+        # normalize odds to weights
+        odds = np.array(odds)
+        weights = odds / np.sum(odds)
+
+        # choose an atom or bond with the probabilities:
+        item = random.choice(items, p=weights)
+        dec_opts = list()
+        if len(item.getORtypes()) > 0:
+            dec_opts.append(0)
+        if len(item.getANDtypes()) > 0:
+            dec_opts.append(1)
+
+        if isinstance(item, ChemicalEnvironment.Atom):
+            if env.getValence(item) == 1 and env.isUnindexed(item):
+                dec_opts.append(2)
+
+        return item, dec_opts
+
     def remove_decorator(self, smirks):
         """
         Chose an atom or bond in the input smirks pattern
         and then remove one decorator from it.
         """
         env = ChemicalEnvironment(smirks)
-        subs = list()
-        # change atom or bond with equal probability
-        # also chose type of decorator removal
-        # TODO: figure out a better probability or how to learn it
-        if random.random() > 0.0005:
-            sub = random.choice(env.getAtoms())
-        else: # chose a bond
-            sub = random.choice(env.getBonds())
+        sub, dec_opts = self._get_item_and_remove_options(env)
 
-        no_ors = True
-        no_ands = True
-        dec_opts = list()
-        if len(sub.getORtypes()) > 0:
-            dec_opts.append(0)
-            no_ors = False
-        if len(sub.getANDtypes()) > 0:
-            dec_opts.append(1)
-            no_ands = False
-
-        if no_ands and no_ors:
+        # note this should be impossible
+        if len(dec_opts) == 0:
             return smirks, False
 
-        if random.choice(dec_opts) == 0:
+        change = random.choice(dec_opts)
+        if change == 0:
             new_or_types, changed = self.remove_or(sub.getORtypes())
             if not changed:
                 return smirks, False
             sub.setORtypes(new_or_types)
-        else:
+        elif change == 1:
             new_and_types, changed = self.remove_and(sub.getANDtypes())
             if not changed:
                 return smirks, False
             sub.setANDtypes(new_and_types)
+        else:
+            remove = env.removeAtom(sub)
+            if not remove:
+                return smirks, False
 
         return env.asSMIRKS(), True
 
@@ -291,7 +327,6 @@ class SMIRKSifier(object):
 
             proposed_smirks = copy.deepcopy(self.current_smirks)
             # chose a SMIRKS to change
-            # TODO: set a criteria for chosing smirks and atoms/bonds that won't chose "empty" ones
             change_idx = random.randint(len(proposed_smirks))
             change_entry = proposed_smirks[change_idx]
 
