@@ -149,18 +149,16 @@ class SMIRKSifier(object):
         # make SMIRKS patterns for input clusters
         self.current_smirks, self.layers = self.make_smirks(max_layers)
         if self.verbose: print_smirks(self.current_smirks)
+        # check SMIRKS and save the matches to input clusters
+        self.type_matches, checks = self.types_match_reference()
 
-        if self.current_smirks is None:
-            # TODO: make this a custom exception
+        if not checks:
             msg = """
                   SMIRKSifier was not able to create SMIRKS for the provided
                   clusters with %i layers. Try increasing the number of layers
                   or changing your clusters
                   """ % max_layers
             raise ClusteringError(msg)
-
-        # save matches and score
-        self.type_matches, checks = self.types_match_reference()
 
     def make_smirks(self, max_layers):
         """
