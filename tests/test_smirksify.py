@@ -32,7 +32,7 @@ def test_more_complex_reducer():
     c2 = [[(0, 2)]]*len(smiles)
     cluster_lists = [('1', c1), ('2', c2)]
     # create reducer
-    red = SMIRKSifier(mols, cluster_lists, verbose=True)
+    red = SMIRKSifier(mols, cluster_lists, verbose=False)
     # make sure printing runs:
     print_smirks(red.current_smirks)
     # run for a long time (assumed to hit all possible methods)

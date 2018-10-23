@@ -398,13 +398,13 @@ class SMIRKSifier(object):
         item = random.choice(items, p=weights)
         dec_opts = list()
         if len(item.getORtypes()) > 0:
-            dec_opts.append(0)
+            dec_opts.append('remove_ors')
         if len(item.getANDtypes()) > 0:
-            dec_opts.append(1)
+            dec_opts.append('remove_ands')
 
-        if isinstance(item, CE.Atom) and not isinstance(item, CE.Bond):
+        if not isinstance(item, CE.Bond): # then it is an atom
             if env.getValence(item) == 1 and env.isUnindexed(item):
-                dec_opts.append(2)
+                dec_opts.append('remove_atom')
 
         return item, dec_opts
 
@@ -421,22 +421,22 @@ class SMIRKSifier(object):
             return smirks, False
 
         change = random.choice(dec_opts)
-        if change == 0:
+        if change == 'remove_ors':
             new_or_types, changed = self.remove_or(sub.getORtypes(), isinstance(sub, CE.Bond))
             if not changed:
                 return smirks, False
             sub.setORtypes(new_or_types)
-        elif change == 1:
+        elif change == 'remove_ands':
             new_and_types, changed = self.remove_and(sub.getANDtypes())
             if not changed:
                 return smirks, False
             sub.setANDtypes(new_and_types)
-        else:
-            remove = env.removeAtom(sub)
-            if not remove:
-                return smirks, False
 
-        return env.asSMIRKS(), True
+        # change == 'remove_atom'
+        remove = env.removeAtom(sub)
+        if not remove:
+            return smirks, False
+
 
     def reduce(self, max_its=1000, verbose=None):
         """
