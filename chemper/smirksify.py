@@ -43,7 +43,7 @@ import time
 from chemper.graphs.environment import ChemicalEnvironment
 from chemper.mol_toolkits import mol_toolkit
 from chemper.chemper_utils import ImproperDict, ValenceDict, \
-    get_typed_molecules, is_valid_smirks
+    get_typed_molecules, is_valid_smirks, match_reference
 
 import numpy
 from numpy import random
@@ -121,7 +121,7 @@ class SMIRKSifier(object):
                     self.cluster_dict[mol_idx][atom_tuple] = label
 
         # save matches and score
-        self.type_matches, self.score = self.best_match_reference()
+        self.type_matches, checks = self.types_match_reference()
         # TODO: figure out how to test score if less than 100% raise error? or maintain that score?
         # TODO: we will include this in the PR handling internal layer management
 
@@ -145,7 +145,7 @@ class SMIRKSifier(object):
 
         return smirks_list
 
-    def best_match_reference(self, current_types=None):
+    def types_match_reference(self, current_types=None):
         """
         Determine best match for each parameter with reference types
 
@@ -157,87 +157,14 @@ class SMIRKSifier(object):
         -------
         type_matches : list of tuples (current_label, reference_label, counts)
             pair of current and reference labels with the number of fragments that match it
-        score : int
-            Fraction of fragments where the current and reference types agree
-
-        Contributor:
-        * Josh Fass <josh.fass@choderalab.org> contributed this scoring algorithm using the bipartite graph.
-
         """
         if current_types is None:
             current_types = self.current_smirks
 
         current_assignments = get_typed_molecules(current_types, self.molecules)
 
-        # check for missing tuples in dictionaries
-        for mol_idx, current_dict in current_assignments.items():
-            cur_keys = set(current_dict.keys())
-            ref_keys = set(self.cluster_dict[mol_idx].keys())
-            # check if there are indice sets in references not in current
-            if ref_keys - cur_keys:
-                return None, -1
-
-        # Create bipartite graph (U,V,E) matching current types U with
-        # reference types V via edges E with weights equal to number of types in common.
-        if self.verbose: print('Creating graph matching current types with reference types...\n')
-        initial_time = time.time()
-
-        # Get current types
-        cur_labels = [ lab for (lab, smirks) in current_types ]
-
-        # create a dictionary for each possible pair of current and reference labels
-        types_in_common = dict()
-        for c_lab in cur_labels:
-            for r_lab in self.ref_labels:
-                types_in_common[(c_lab, r_lab)] = 0
-
-        # up the count by +1 for each time a current and reference type matches the same set of atoms
-        for mol_idx, index_dict in self.cluster_dict.items():
-            for indices, r_lab in index_dict.items():
-                c_lab = current_assignments[mol_idx][indices]
-                types_in_common[(c_lab, r_lab)] += 1
-
-        # Actually make the graph
-        graph = nx.Graph()
-        # Add current types
-        for c_lab in cur_labels:
-            graph.add_node(c_lab, bipartite=0)
-        # add reference types
-        for r_lab in self.ref_labels:
-            graph.add_node(r_lab, bipartite=1)
-        # add edges
-        for c_lab in cur_labels:
-            for r_lab in self.ref_labels:
-                weight = types_in_common[(c_lab, r_lab)]
-                graph.add_edge(c_lab, r_lab, weight=weight)
-
-        elapsed_time = time.time() - initial_time
-        if self.verbose:
-            print('Graph creation took %.3f s\n' % elapsed_time)
-            print('Computing maximum weight match...\n')
-
-        initial_time = time.time()
-        mate = nx.algorithms.max_weight_matching(graph, maxcardinality=False)
-        elapsed_time = time.time() - initial_time
-
-        if self.verbose: print('Maximum weight match took %.3f s\n' % elapsed_time)
-
-        # Compute match dictionary and total number of matches.
-        type_matches = list()
-        total_type_matches = 0
-        for lab1, lab2 in mate:
-            counts = graph[lab1][lab2]['weight']
-            total_type_matches += counts
-            # labels come back in an arbitrary order, so determine if which is current/reference
-            if lab1 in cur_labels:
-                type_matches.append(( lab1, lab2, counts))
-            else:
-                type_matches.append( (lab2, lab1, counts))
-
-        # compute fractional score:
-        score = total_type_matches / self.total
-
-        return type_matches, score
+        type_matches, checks_pass = match_reference(current_assignments, self.cluster_dict)
+        return type_matches, checks_pass
 
     def print_smirks(self, smirks_list=None):
         """
@@ -378,15 +305,14 @@ class SMIRKSifier(object):
                     print('-'*90)
                 continue
 
-            # update and score proposed list
+            # update proposed list and check if it still matches the reference
             proposed_smirks[change_idx] = (change_entry[0], new_smirks)
-            proposed_type_matches, proposed_score = self.best_match_reference(proposed_smirks)
+            proposed_type_matches, proposed_checks = self.types_match_reference(proposed_smirks)
 
-            if proposed_score == 1.0:
+            if proposed_checks:
                 if self.verbose: print("Accepted! ")
                 self.current_smirks = copy.deepcopy(proposed_smirks)
                 self.type_matches = copy.deepcopy(proposed_type_matches)
-                self.score = proposed_score
             else:
                 if self.verbose: print("Rejected!\n proposed SMIRKS changed the way fragments are clustered")
             if self.verbose: print('-'*90)

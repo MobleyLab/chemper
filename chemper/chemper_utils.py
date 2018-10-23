@@ -6,6 +6,7 @@ This file provides simple functions that might be of use to people using the che
 """
 
 import os
+from chemper.mol_toolkits import mol_toolkit
 
 def get_data_path(relative_path, package='chemper'):
     """
@@ -78,8 +79,6 @@ def is_valid_smirks(smirks):
     is_valid: boolean
               is the provided SMIRKS a valid pattern
     """
-    from chemper.mol_toolkits import mol_toolkit
-
     mol = mol_toolkit.MolFromSmiles('C')
     try:
         mol.smirks_search(smirks)
@@ -159,7 +158,7 @@ class ImproperDict(TransformedDict):
         return key
 
 
-def get_typed_molecules(smirks_list, molecules):
+def get_typed_molecules(smirks_list, input_molecules):
     """
     Creates a dictionary assigning a typename
     for each set of atom indices in each molecule
@@ -167,7 +166,8 @@ def get_typed_molecules(smirks_list, molecules):
     Parameters
     ----------
     smirks_list: list of tuples in the form (label, smirks)
-    molecules: list of chemper Mols
+    input_molecules: list of Mols
+        These can be molecules from OpenEye, RDKit, or ChemPer
 
     Returns
     -------
@@ -175,6 +175,7 @@ def get_typed_molecules(smirks_list, molecules):
         keys: SMILES string for each molecule
             keys: tuple of indices assigned a parameter type
     """
+    molecules = [mol_toolkit.Mol(m) for m in input_molecules]
     type_dict = dict()
     for mol_idx, mol in enumerate(molecules):
         type_dict[mol_idx] = {}
@@ -184,7 +185,6 @@ def get_typed_molecules(smirks_list, molecules):
                 type_dict[mol_idx][match] = label
 
     return type_dict
-
 
 def create_tuples_for_clusters(smirks_list, molecules):
     """
@@ -210,8 +210,9 @@ def create_tuples_for_clusters(smirks_list, molecules):
     ----------
     smirks_list: list of tuples
         This is a list of tuples with the form (label, SMIRKS)
-    molecules: list of ChemPer Mols
-        This is a list of ChemPer molecules you want to type with this list of SMIRKS
+    molecules: list of Mols
+        This is a list of molecules you want to type with this list of SMIRKS
+        They can be from any toolkit chemper supports (currently OpenEye and RDKit)
 
     Returns
     -------
@@ -267,4 +268,115 @@ def get_smirks_matches(mol, smirks):
     return matches.keys()
 
 
+# ===================================================================
+# classes for evaluating lists of SMIRKS patterns
+# ===================================================================
+
+def match_reference(current_assignments, ref_assignments):
+    """
+    Determine if two sets of labels agree.
+    This could be used to test if two sets of SMIRKS type a set of molecules
+    in exactly the same way.
+
+    This starts with two sets of "assignments" which are dictionaries
+    like those created with get_typed_molecules.
+
+    Let's imagine you wanted to type the molecule CF and CCl
+    where most bonds are assigned X, but one bond in each molecule is
+    assigned 'Y'. Then the reference_assignments would be:
+    { 0: (0,1): 'X', (0,2): 'X', (0,3): 'X', (0,4): 'Y'},
+      1: (0,1): 'X', (0,2): 'X', (0,3): 'X', (0,4): 'Y'},
+    }
+
+    Then you discover a set of SMIRKS patterns which match
+    C-H bonds with one type and C-halogen have another.
+    Then your current_assignments would be:
+    { 0: (0,1): 'C-H', (0,2): 'C-H', (0,3): 'C-H', (0,4): 'C-hal.'},
+      1: (0,1): 'C-H', (0,2): 'C-H', (0,3): 'C-H', (0,4): 'C-hal.'},
+    }
+    This would return a set tuples for the corresponding labels
+    [('C-H', 'X'), ('C-hal.', 'Y')] and True for the two assigments matching.
+
+    However, if your current set assigned different types to the two
+    different carbon halogen bonds (C-F and C-Cl) then these two
+    sets of assignments would not match and the result would be an empty set and False
+
+    Parameters
+    ----------
+    current_assignments : dictionary of indices with current types
+    ref_assignments : dictionary of indices with reference types
+
+    Returns
+    -------
+    type_matches : set of tuples (current_label, reference_label)
+        pair of current and reference labels, None if the sets don't match
+    is_match : boolean
+        Does the current assignment exactly match the reference?
+    """
+    import networkx as nx
+
+    graph = nx.Graph()
+    matches = set()
+    r_labs = set()
+    c_labs = set()
+
+    for mol_idx, index_dict in ref_assignments.items():
+        # check that mol_idx is in current_assignments
+        if mol_idx not in current_assignments:
+            return set(), False
+
+        for indices, r_label in index_dict.items():
+            # check this set of indices is in the current set
+            if indices not in current_assignments[mol_idx]:
+                return set(), False
+
+            c_label = current_assignments[mol_idx][indices]
+            # check if nodes exist for the two labels (and make them)
+            if c_label not in graph:
+                graph.add_node(c_label)
+                c_labs.add('current_'+c_label)
+
+            if r_label not in graph:
+                graph.add_node(r_label)
+                r_labs.add(r_label)
+
+            # create an edge connecting the reference and current type
+            graph.add_edge('current_'+c_label, r_label)
+            matches.add((c_label, r_label))
+
+    for c_label in c_labs:
+        if len(graph.edges(c_label)) != 1:
+            return set(), False
+
+    for r_label in r_labs:
+        if len(graph.edges(r_label)) != 1:
+            return set(), False
+
+    return matches, True
+
+def check_smirks_agree(current_types, reference_types, molecules):
+    """
+    Checks if two lists of SMIRKS patterns type a list of molecules in the same way.
+
+    Parameters
+    ----------
+    current_types: list of tuples
+        SMIRKS types in the form (label, smirks)
+    reference_types: list of tuples
+        SMIRKS types in the form (label, smirks)
+    molecules: list of molecules
+        molecules to be typed with this patterns
+        Can be any molecule type chemper supports (OpenEye, RDKit, or Chemper)
+
+    Returns
+    -------
+    match: boolean
+        True if the two sets of SMIRKS match the set of molecules in the exact same way
+    """
+    current_assignments = get_typed_molecules(current_types, molecules)
+    reference_assignments = get_typed_molecules(reference_types, molecules)
+
+    # check if they agree
+    type_matches, matched = match_reference(current_assignments, reference_assignments)
+    return matched
 
