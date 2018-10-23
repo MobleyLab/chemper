@@ -431,12 +431,12 @@ class SMIRKSifier(object):
             if not changed:
                 return smirks, False
             sub.setANDtypes(new_and_types)
+        else: # change == 'remove_atom'
+            remove = env.removeAtom(sub)
+            if not remove:
+                return smirks, False
 
-        # change == 'remove_atom'
-        remove = env.removeAtom(sub)
-        if not remove:
-            return smirks, False
-
+        return env.asSMIRKS(), True
 
     def reduce(self, max_its=1000, verbose=None):
         """
