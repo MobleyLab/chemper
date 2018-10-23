@@ -3,7 +3,7 @@ This script is used to test the SMIRKSifier Class and the class methods it conta
 """
 
 from chemper.mol_toolkits import mol_toolkit
-from chemper.smirksify import SMIRKSifier, print_smirks
+from chemper.smirksify import SMIRKSifier, print_smirks, ClusteringError
 import pytest
 import copy
 
@@ -91,8 +91,8 @@ expected_change = ["[#6:1]~[*:2]",
                    "[*:1]#[*:2]",
                    "[*:1]~[*:2]~[*]",
                    ]
-@pytest.mark.parametrize('in_smirks, out_smirks', expected_change)
-def check_expected_removal(in_smirks, out_smirks):
+@pytest.mark.parametrize('in_smirks', expected_change)
+def test_expected_removal(in_smirks):
     mol = mol_toolkit.MolFromSmiles('C')
     cluster_lists = [('1', [[(0,)]])]
     # create reducer
@@ -103,3 +103,4 @@ def check_expected_removal(in_smirks, out_smirks):
     while not changed:
         red_smirks, changed = red.remove_decorator(in_smirks)
     assert red_smirks == "[*:1]~[*:2]"
+
