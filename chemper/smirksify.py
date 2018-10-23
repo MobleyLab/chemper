@@ -142,7 +142,7 @@ class SMIRKSifier(object):
         # save matches and score
         self.type_matches, checks = self.types_match_reference()
         # TODO: if not checks: raise error?
-        # TODO: we will include this in the PR handling internal layer management
+        # TODO: handle number of layers internally
 
     def make_cluster_graphs(self):
         """
