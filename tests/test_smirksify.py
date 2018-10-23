@@ -17,7 +17,7 @@ def test_max_reduction(smiles):
     mol = mol_toolkit.MolFromSmiles(smiles)
     cluster_lists = [('1', [[(0,)]])]
     # create reducer
-    red = SMIRKSifier([mol], cluster_lists, layers=0)
+    red = SMIRKSifier([mol], cluster_lists, max_layers=0)
     smirks_list = red.reduce(10)
     final_smirks = smirks_list[0][1]
     assert final_smirks == '[*:1]'
@@ -47,7 +47,7 @@ def test_explicitly_check_methods():
     mol = mol_toolkit.MolFromSmiles('C')
     cluster_lists = [('1', [[(0,)]])]
     # create reducer
-    red = SMIRKSifier([mol], cluster_lists, layers=0)
+    red = SMIRKSifier([mol], cluster_lists, max_layers=0)
     print_smirks(red.current_smirks)
 
     # check generic SMIRKS output
@@ -85,20 +85,21 @@ def test_explicitly_check_methods():
         assert output == expected
 
 
-expected_change = [("[#6:1]~[*:2]", "[*:1]~[*:2]" ),
-                   ("[#6X4:1]~[*:2]", "[#6:1]~[*:2]"),
-                   ("[*;A:1]~[*:2]", "[*:1]~[*:2]"),
-                   ("[*:1]#[*:2]", "[*:1]~[*:2]")
+expected_change = ["[#6:1]~[*:2]",
+                   "[*X4:1]~[*:2]",
+                   "[*;A:1]~[*:2]",
+                   "[*:1]#[*:2]",
+                   "[*:1]~[*:2]~[*]",
                    ]
 @pytest.mark.parametrize('in_smirks, out_smirks', expected_change)
 def check_expected_removal(in_smirks, out_smirks):
     mol = mol_toolkit.MolFromSmiles('C')
     cluster_lists = [('1', [[(0,)]])]
     # create reducer
-    red = SMIRKSifier([mol], cluster_lists, layers=0)
+    red = SMIRKSifier([mol], cluster_lists, max_layers=0)
 
     # check only OR base to remove
     red_smirks, changed = red.remove_decorator(in_smirks)
     while not changed:
         red_smirks, changed = red.remove_decorator(in_smirks)
-    assert red_smirks == out_smirks
+    assert red_smirks == "[*:1]~[*:2]"
