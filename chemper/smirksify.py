@@ -51,7 +51,7 @@ from numpy import random
 #
 # private subroutines
 #
-def print_smirks(self, smirks_list):
+def print_smirks(smirks_list):
     """
     Prints out the current or provided smirks list
     in a table like format
@@ -141,7 +141,7 @@ class SMIRKSifier(object):
 
         # save matches and score
         self.type_matches, checks = self.types_match_reference()
-        # TODO: figure out how to test score if less than 100% raise error? or maintain that score?
+        # TODO: if not checks: raise error?
         # TODO: we will include this in the PR handling internal layer management
 
     def make_cluster_graphs(self):
@@ -185,7 +185,75 @@ class SMIRKSifier(object):
         type_matches, checks_pass = match_reference(current_assignments, self.cluster_dict)
         return type_matches, checks_pass
 
-    def _remove_or_atom(self, input_all_ors, or_idx):
+    def remove_one_sub_dec(self, input_ors, ref_idx):
+        """
+        Remove one ORdecorator from the specified index
+        # i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#6, [+0]), (#7, [X3]) ]
+        """
+        ors = copy.deepcopy(input_ors)
+        # remove one or decorator from a single type
+        ref_or = ors[ref_idx]
+        decs = ref_or[1]
+        decs.remove(random.choice(decs))
+        ors[ref_idx] = (ref_or[0], decs)
+        return ors
+
+    def remove_ref_sub_decs(self, input_ors, ref_idx):
+        """
+        Remove all of the ORdecorators at the specified index
+        i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#6, []), (#7, [X3]) ]
+        """
+        ors = copy.deepcopy(input_ors)
+        # remove all decorators on one OR type
+        ref_or = ors[ref_idx]
+        ors[ref_idx] = (ref_or[0], list())
+        return ors
+
+    def remove_ref(self, input_decs, ref_idx):
+        """
+        Remove the decorator at the referenced index
+        i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#7, [X3])]
+        """
+        decs = copy.deepcopy(input_decs)
+        # remove the single OR type at or_idx
+        ref = decs[ref_idx]
+        decs.remove(ref)
+        return decs
+
+    def remove_all_bases(self, input_ors):
+        """
+        convert all bases to [*]
+        i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(*, [X4, +0]), (*, [X3]) ]
+        """
+        new_all_ors = [('*', d) for b, d in input_ors]
+        return new_all_ors
+
+    def remove_all_dec_type(self, input_ors):
+        """
+        remove all decorators of the same type, like all 'X' decorators
+        i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#6, [+0]), (#7, []) ]
+        """
+        all_decs = set([d for b,decs in input_ors for d in decs])
+        remove_dec = random.choice(list(all_decs))
+
+        # we start by defining a criteria for when the decorator
+        # should not be removed.
+        def criteria(x): return remove_dec[0] not in x
+
+        if '+' in remove_dec or '-' in remove_dec:
+            def criteria(x): return not ('+' in x or '-' in x)
+        elif remove_dec in ['a', 'A']:
+            def criteria(x): return x.lower() != 'a'
+        elif 'r' in remove_dec:
+            def criteria(x): return 'r' not in x
+
+        new_ors = list()
+        for b, decs in input_ors:
+            new_decs = [d for d in decs if criteria(d)]
+            new_ors.append((b, new_decs))
+        return new_ors
+
+    def remove_or_atom(self, input_all_ors, or_idx):
         """
         makes specific types of changes based on atom OR decorators
 
@@ -202,13 +270,18 @@ class SMIRKSifier(object):
         # are there non-generic bases? If so removing all bases is an option
         if list(set([b for b,ds in input_all_ors])) != ['*']:
             choices.append('gen_base')
-        # there are two options if the ref has OR decorators
+        # there are two options if the ref type has OR decorators
         if len(ref_or[1]) > 0:
+            # remove all OR decorators (#6, [X4, +0]) --> (#6, [])
             choices.append('all_ref_decs')
             if len(ref_or[1]) > 1:
+                # remove one OR decorator (#6, [X4, +0]) --> (#6, [+0])
                 choices.append('one_dec')
+        # if there are more than one or type
         if len(input_all_ors) > 1:
+            # you can remove just one ORtype (the reference)
             choices.append('remove_ref')
+            # you can remove 1 type of decorator, i.e. all 'Xn' decorators
             choices.append('all_one_dec')
 
         change = random.choice(choices)
@@ -216,58 +289,33 @@ class SMIRKSifier(object):
         if change == 'all':
             # remove ALL OR decorators
             # i.e.[(  # 6, [X4, +0]), (#7, [X3]) ] --> []
-            return list(), True
+            return list()
 
         if change == 'remove_ref':
-            # remove the single OR type at or_idx
-            # i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#7, [X3])]
-            input_all_ors.remove(ref_or)
-            return input_all_ors, True
+            return self.remove_ref(input_all_ors, or_idx)
 
         if change == 'all_ref_decs':
-            # remove all decorators on one OR type
-            # i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#6, []), (#7, [X3]) ]
-            input_all_ors[or_idx] = (ref_or[0], list())
-            return input_all_ors, True
+            return self.remove_ref_sub_decs(input_all_ors, or_idx)
 
         if change == 'one_dec':
-            # remove one or decorator from a single type
-            # i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#6, [+0]), (#7, [X3]) ]
-            decs = ref_or[1]
-            decs.remove(random.choice(decs))
-            input_all_ors[or_idx] = (ref_or[0], decs)
-            return input_all_ors, True
+            return self.remove_one_sub_dec(input_all_ors, or_idx)
 
         if change == 'gen_base':
-            # convert all bases to [*]
-            # i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(*, [X4, +0]), (*, [X3]) ]
-            new_all_ors = [('*', d) for b, d in input_all_ors]
-            return new_all_ors, True
+            return self.remove_all_bases(input_all_ors)
 
         # change = 'all_one_dec'
-        # remove all decorators of the same type, like all 'X' decorators
-        # i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#6, [+0]), (#7, []) ]
-        all_decs = set([d for b,dec in input_all_ors for d in decs])
-        remove_dec = random.choice(list(all_decs))
-        def criteria(x): return True
+        return self.remove_all_dec_type(input_all_ors)
 
-        if '+' in remove_dec or '-' in remove_dec:
-            def criteria(x): return not ('+' in x or '-' in x)
-        elif remove_dec in ['a', 'A']:
-            def criteria(x): return x.lower() == 'a'
-        else:
-            def criteria(x): return remove_dec[0] in x
-        new_all_ors = list()
-        for b, decs in input_all_ors:
-            new_decs = [d for d in decs if criteria(d)]
-            new_all_ors.append((b, new_decs))
-        return new_all_ors, True
-
-
-
-    def remove_or(self, input_all_ors, is_bond=True):
+    def remove_or(self, input_all_ors, is_bond=False):
         """
         Changes the OR decorators by removing some of them
+
+        Parameters
+        -----------
+        input_all_ors: list of tuples
+            these are the ORdecorators from a ChemicalEnvironment
+        is_bond: boolean
+            are these decorators from from a bond (False for atom)
         """
         if len(input_all_ors) == 0:
             return input_all_ors, False
@@ -277,16 +325,16 @@ class SMIRKSifier(object):
         all_ors = copy.deepcopy(input_all_ors)
         or_idx = random.randint(len(all_ors))
 
+        # atoms have more ORdecorators and therefore more options for
+        # how they can be removed
         if not is_bond:
-            return self._remove_or_atom(all_ors, or_idx)
+            return self.remove_or_atom(all_ors, or_idx), True
 
-        change_or = all_ors[or_idx]
-        # temporarily remove the change OR from the list
-        all_ors.remove(change_or)
-
-        # remove just one or type
+        # For a bond, either one ORtype is removed
+        # or they are all removed.
         if random.rand() > 0.5:
-            return all_ors, True
+            # remove just one or type
+            return self.remove_ref(all_ors, or_idx), True
         # remove all ors
         return list(), True
 
@@ -323,19 +371,15 @@ class SMIRKSifier(object):
         items = list()
         odds = list()
         for a_b in env.getAtoms() + env.getBonds():
-            print("item: ", a_b.asSMIRKS())
             count = len(a_b.getANDtypes())
-            print(a_b.getANDtypes())
             for o in a_b.getORtypes():
                 if o[0] != '*':
                     count += 1
                 count += len(o[1])
-                print(o[1])
 
             # a wild card, atom with no index should be considered ([*])
             # should also be on this list so it can be removed
             if isinstance(a_b, CE.Atom) and not isinstance(a_b, CE.Bond) and env.isUnindexed(a_b):
-                print("unindexed atom")
                 count += 1
 
             items.append(a_b)
@@ -348,7 +392,6 @@ class SMIRKSifier(object):
         if odds.sum() == 0:
             return None, list()
 
-        print("ODDS!!!", odds, odds.sum(), env.asSMIRKS())
         weights = odds / odds.sum()
 
         # choose an atom or bond with the probabilities:
