@@ -104,3 +104,28 @@ def test_expected_removal(in_smirks):
         red_smirks, changed = red.remove_decorator(in_smirks)
     assert red_smirks == "[*:1]~[*:2]"
 
+def test_failed_layers():
+    mol1 = mol_toolkit.MolFromSmiles('CCC')
+    mol2 = mol_toolkit.MolFromSmiles('CCCC')
+    # cluster 1 has bond 0-1 in mol1
+    # cluster 2 has bond 0-1 and 2-3 in mol2
+    # the only way to distinguish these is
+    # with more than 1 layer so max_layers = 0 will fail
+    clusters = [('1', [[(0,1)], []]),
+                ('2', [[], [(0,1), (3,2)]])]
+    with pytest.raises(ClusteringError):
+        red = SMIRKSifier([mol1, mol2], clusters, max_layers=0)
+        print(red.current_smirks)
+        print_smirks(red.current_smirks)
+
+@pytest.mark.parametrize('layers',[1,2,3,5,10,100])
+def test_layer_choice(layers):
+    mol1 = mol_toolkit.MolFromSmiles('CCC')
+    mol2 = mol_toolkit.MolFromSmiles('CCCC')
+    # cluster 1 has bond 0-1 in mol1
+    # cluster 2 has bond 0-1 and 2-3 in mol2
+    # this should always need 1 layer to work
+    clusters = [('1', [[(0,1)], []]),
+                ('2', [[], [(0,1), (2,3)]])]
+    red = SMIRKSifier([mol1, mol2], clusters, max_layers=layers)
+    assert red.layers == 1
