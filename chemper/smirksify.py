@@ -325,8 +325,11 @@ class SMIRKSifier(object):
         if len(input_all_ors) > 1:
             # you can remove just one ORtype (the reference)
             choices.append('remove_ref')
-            # you can remove 1 type of decorator, i.e. all 'Xn' decorators
-            choices.append('all_one_dec')
+            # check that there are decorators
+            all_decs = set([d for b, decs in input_all_ors for d in decs])
+            if len(all_decs) > 0:
+                # you can remove 1 type of decorator, i.e. all 'Xn' decorators
+                choices.append('all_one_dec')
 
         change = random.choice(choices)
 
