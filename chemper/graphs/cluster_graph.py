@@ -14,8 +14,8 @@ Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvi
 """
 
 import networkx as nx
-from chemper.mol_toolkits.adapters import MolAdapter
 from chemper.graphs.fragment_graph import ChemPerGraph
+from chemper.graphs.environment import ChemicalEnvironment as CE
 from chemper.mol_toolkits import mol_toolkit
 
 
@@ -390,6 +390,7 @@ class ClusterGraph(ChemPerGraph):
         self.mols = list()
         self.smirks_atoms_lists = list()
         self.layers = layers
+        self._symmetry_funct = self._no_symmetry
 
         if mols is not None:
             temp_mols = [mol_toolkit.Mol(m) for m in mols]
@@ -417,6 +418,31 @@ class ClusterGraph(ChemPerGraph):
         """
         return ChemPerGraph.as_smirks(self, compress)
 
+    def assign_symmetry_funct(self, sym_label):
+        """
+        Parameters
+        ----------
+        sym_label: str or None
+            type of symmetry, options which will change the way symmetry is
+            handled in the graph are "bond", "angle", "ProperTorsion", and "ImproperTorsion"
+
+        Returns
+        -------
+        symmetry_funct: function
+            returns the function that should be used to handle the appropriate symmetry
+        """
+        if sym_label is None:
+            return self._no_symmetry
+        if sym_label.lower() == 'bond':
+            return self._bond_symmetry
+        if sym_label.lower() == 'angle':
+            return self._angle_symmetry
+        if sym_label.lower() == 'propertorsion':
+            return self._proper_torsion_symmetry
+        if sym_label.lower() == 'impropertorsion':
+            return self._improper_torsion_symmetry
+        return self._no_symmetry
+
     def add_mol(self, input_mol, smirks_atoms_list):
         """
         Expand the information in this graph by adding a new molecule
@@ -434,6 +460,7 @@ class ClusterGraph(ChemPerGraph):
 
         if len(self.mols) == 0:
             self._add_first_smirks_atoms(mol, smirks_atoms_list[0])
+            self._symmetry_funct = self.assign_symmetry_funct(CE(self.as_smirks()).getType())
             self._add_mol(mol, smirks_atoms_list[1:])
         else:
             self._add_mol(mol, smirks_atoms_list)
@@ -476,7 +503,7 @@ class ClusterGraph(ChemPerGraph):
                 bond = mol.get_bond_by_atoms(atom1, atom2)
 
                 if bond is not None: # Atoms are connected add edge
-                    bond_smirks = (neighbor_key, key)
+                    bond_smirks = tuple(sorted([neighbor_key, key]))
                     bond_storage = self.BondStorage([bond], bond_smirks)
                     self.bond_by_label[bond_smirks] = bond_storage
                     self._graph.add_edge(new_atom_storage,
@@ -490,7 +517,6 @@ class ClusterGraph(ChemPerGraph):
 
     def _add_layers(self, mol, atom, storage, layers, idx_dict):
         """
-
         Parameters
         ----------
         mol: chemper Mol
@@ -528,7 +554,7 @@ class ClusterGraph(ChemPerGraph):
                 min_smirks = min_smirks * -1
 
             for a, b in atom_neighbors:
-                new_bond_smirks = (storage.label, min_smirks)
+                new_bond_smirks = tuple(sorted([storage.label, min_smirks]))
 
                 adding_new_storage = self.add_atom(a,b,storage,
                                                    min_smirks, new_bond_smirks)
@@ -582,7 +608,7 @@ class ClusterGraph(ChemPerGraph):
         -------
         pairs: list of tuples
             pairs of atoms and storage objects that are most similar,
-            note these are only the Atom and AtomStorage objects since the bonds and
+            with tuples in the form (Atom, Bond, AtomStorage, BondStorage)
         """
         pairs = list()
 
@@ -646,7 +672,8 @@ class ClusterGraph(ChemPerGraph):
         """
         for smirks_atoms in smirks_atoms_list:
             atom_dict = dict()
-            for key, atom_index in enumerate(smirks_atoms, 1):
+            sorted_smirks_atoms = self._symmetry_funct(mol, smirks_atoms)
+            for key, atom_index in enumerate(sorted_smirks_atoms, 1):
                 atom_dict[atom_index] = key
                 atom1 = mol.get_atom_by_index(atom_index)
                 self.atom_by_label[key].add_atom(atom1)
@@ -656,7 +683,7 @@ class ClusterGraph(ChemPerGraph):
                     atom2 = mol.get_atom_by_index(neighbor_index)
                     bond = mol.get_bond_by_atoms(atom1, atom2)
                     if bond is not None and (neighbor_key, key) in self.bond_by_label:
-                        bond_smirks = (neighbor_key, key)
+                        bond_smirks = tuple(sorted([neighbor_key, key]))
                         self.bond_by_label[bond_smirks].add_bond(bond)
 
             for atom_label, atom_index in enumerate(smirks_atoms, 1):
@@ -664,3 +691,112 @@ class ClusterGraph(ChemPerGraph):
                 storage = self.atom_by_label[atom_label]
                 self._add_layers(mol, atom, storage, self.layers, atom_dict)
 
+    def _no_symmetry(self, mol, smirks_atoms):
+        return smirks_atoms
+
+    def _bond_symmetry(self, mol, smirks_atoms):
+        """
+        Returns a tuple of two atom indices in the order that
+        leads to the atoms that match with previously stored atoms.
+        """
+        # pair atoms and bonds
+        atom1 = mol.get_atom_by_index(smirks_atoms[0])
+        atom2 = mol.get_atom_by_index(smirks_atoms[1])
+        bond = mol.get_bond_by_atoms(atom1, atom2)
+        if bond is None:
+            return smirks_atoms
+        # Find potential storages for those atoms and bonds
+        atoms_and_bonds = [(atom1, bond), (atom2, bond)]
+        bond_storage = self.bond_by_label[(1,2)]
+        storages = [
+            (self.atom_by_label[1], bond_storage),
+            (self.atom_by_label[2], bond_storage)
+        ]
+        pairs = self.find_pairs(atoms_and_bonds, storages)
+        ordered_smirks_atoms = [p[0].get_index() for p in sorted(pairs, key=lambda x: x[2].label)]
+        return tuple(ordered_smirks_atoms)
+
+    def _angle_symmetry(self, mol, smirks_atoms):
+        """
+        Returns a tuple of three atom indices in the order that
+        leads to the atoms that match with previously stored atoms.
+        """
+        # get all three atoms
+        atom1 = mol.get_atom_by_index(smirks_atoms[0])
+        atom2 = mol.get_atom_by_index(smirks_atoms[1])
+        atom3 = mol.get_atom_by_index(smirks_atoms[2])
+        # get both bonds
+        bond1 = mol.get_bond_by_atoms(atom1, atom2)
+        bond2 = mol.get_bond_by_atoms(atom2, atom3)
+        if None in (bond1, bond2):
+            return smirks_atoms
+        # save atom and bond pairs that could be reordered
+        atoms_and_bonds = [(atom1, bond1), (atom3, bond2)]
+        # find current atom and bond storage
+        storages = [
+            (self.atom_by_label[1], self.bond_by_label[(1,2)]),
+            (self.atom_by_label[3], self.bond_by_label[(2,3)])
+        ]
+        pairs = self.find_pairs(atoms_and_bonds, storages)
+        order = [p[0].get_index() for p in sorted(pairs, key=lambda x: x[2].label)]
+        return tuple((order[0], smirks_atoms[1], order[1]))
+
+    def _proper_torsion_symmetry(self, mol, smirks_atoms):
+        """
+        Returns a tuple of four atom indices for a proper torsion
+        reordered to match with previously stored atoms.
+        """
+        # get all four atoms
+        atom1 = mol.get_atom_by_index(smirks_atoms[0])
+        atom2 = mol.get_atom_by_index(smirks_atoms[1])
+        atom3 = mol.get_atom_by_index(smirks_atoms[2])
+        atom4 = mol.get_atom_by_index(smirks_atoms[3])
+        # get two relevant bonds
+        bond1 = mol.get_bond_by_atoms(atom1, atom2)
+        bond3 = mol.get_bond_by_atoms(atom3, atom4)
+        if None in (bond1, bond3):
+            return smirks_atoms
+        # make pairs
+        atoms_and_bonds = [ (atom2, bond1), (atom3, bond3) ]
+        # get atom and bond storages
+        storages = [
+            (self.atom_by_label[2], self.bond_by_label[(1,2)]),
+            (self.atom_by_label[3], self.bond_by_label[(3,4)])
+        ]
+        pairs = self.find_pairs(atoms_and_bonds, storages)
+        order = [p[0].get_index() for p in sorted(pairs, key=lambda x: x[2].label)]
+        if order[0] == smirks_atoms[1]:
+            return smirks_atoms
+        temp = list(smirks_atoms)
+        temp.reverse()
+        return tuple(temp)
+
+    def _improper_torsion_symmetry(self, mol, smirks_atoms):
+        """
+        Returns a tuple of four atom indices for an improper torsion
+        reordered to match with previously stored atoms.
+        """
+        # get all four atoms
+        atom1 = mol.get_atom_by_index(smirks_atoms[0])
+        atom2 = mol.get_atom_by_index(smirks_atoms[1])
+        atom3 = mol.get_atom_by_index(smirks_atoms[2])
+        atom4 = mol.get_atom_by_index(smirks_atoms[3])
+        # get all three bonds
+        bond1 = mol.get_bond_by_atoms(atom1, atom2)
+        bond2 = mol.get_bond_by_atoms(atom2, atom3)
+        bond3 = mol.get_bond_by_atoms(atom2, atom4)
+        if None in (bond1, bond2, bond3):
+            return smirks_atoms
+        # make pairs of atoms and bonds to be reordered
+        atoms_and_bonds = [
+            (atom1, bond1), (atom3, bond2), (atom4, bond3)
+        ]
+        # find current atom and bond storages
+        storages = [
+            (self.atom_by_label[1], self.bond_by_label[(1,2)]),
+            (self.atom_by_label[3], self.bond_by_label[(2,3)]),
+            (self.atom_by_label[4], self.bond_by_label[(2,4)])
+        ]
+        pairs = self.find_pairs(atoms_and_bonds, storages)
+        order = [p[0].get_index() for p in sorted(pairs, key=lambda x: x[2].label)]
+        return tuple((order[0], smirks_atoms[1], order[1], order[2]))
