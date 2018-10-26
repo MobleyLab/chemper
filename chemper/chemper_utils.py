@@ -354,6 +354,36 @@ def match_reference(current_assignments, ref_assignments):
 
     return matches, True
 
+
+def check_smirks_to_reference(current_types, reference_assignments, molecules):
+    """
+
+    Parameters
+    ----------
+    current_types: list of tuples
+        SMIRKS types in the form (label, smirks)
+    reference_assignments: dictionary of tuples and labels
+        This could be the output from get_typed_molecules
+        the dictionary has the form:
+        {mol_idx: {(atom indices tuple): label}, mol_idx2: {} }
+    molecules: list of molecules
+        These can be OpenEye, RDKit, or ChemPer molecules
+
+    Returns
+    -------
+    agree: boolean
+        Returns True if the SMIRKS type the molecules in the same way
+        as the reference assignments
+    """
+    r_labs = [l for m,d in reference_assignments.items() for a,l in d.items()]
+    if len(current_types) != len(set(r_labs)):
+        return False
+
+    current_assignments = get_typed_molecules(current_types, molecules)
+    type_matches, matched = match_reference(current_assignments, reference_assignments)
+    return matched
+
+
 def check_smirks_agree(current_types, reference_types, molecules):
     """
     Checks if two lists of SMIRKS patterns type a list of molecules in the same way.
@@ -373,6 +403,9 @@ def check_smirks_agree(current_types, reference_types, molecules):
     match: boolean
         True if the two sets of SMIRKS match the set of molecules in the exact same way
     """
+    if len(current_types) != len(reference_types):
+        return False
+
     current_assignments = get_typed_molecules(current_types, molecules)
     reference_assignments = get_typed_molecules(reference_types, molecules)
 

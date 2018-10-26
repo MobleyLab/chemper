@@ -227,6 +227,9 @@ class SMIRKSifier(object):
         if current_types is None:
             current_types = self.current_smirks
 
+        if len(current_types) != len(self.ref_labels):
+            return set(), False
+
         current_assignments = get_typed_molecules(current_types, self.molecules)
 
         type_matches, checks_pass = match_reference(current_assignments, self.cluster_dict)
