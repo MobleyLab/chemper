@@ -418,7 +418,7 @@ class ClusterGraph(ChemPerGraph):
         """
         return ChemPerGraph.as_smirks(self, compress)
 
-    def assign_symmetry_funct(self, sym_label):
+    def get_symmetry_funct(self, sym_label):
         """
         Parameters
         ----------
@@ -460,7 +460,7 @@ class ClusterGraph(ChemPerGraph):
 
         if len(self.mols) == 0:
             self._add_first_smirks_atoms(mol, smirks_atoms_list[0])
-            self._symmetry_funct = self.assign_symmetry_funct(CE(self.as_smirks()).getType())
+            self._symmetry_funct = self.get_symmetry_funct(CE(self.as_smirks()).getType())
             self._add_mol(mol, smirks_atoms_list[1:])
         else:
             self._add_mol(mol, smirks_atoms_list)
@@ -678,7 +678,7 @@ class ClusterGraph(ChemPerGraph):
                 atom1 = mol.get_atom_by_index(atom_index)
                 self.atom_by_label[key].add_atom(atom1)
 
-                for neighbor_key, neighbor_index in enumerate(smirks_atoms, 1):
+                for neighbor_key, neighbor_index in enumerate(sorted_smirks_atoms, 1):
                     # check for connecting bond
                     atom2 = mol.get_atom_by_index(neighbor_index)
                     bond = mol.get_bond_by_atoms(atom1, atom2)
@@ -686,7 +686,7 @@ class ClusterGraph(ChemPerGraph):
                         bond_smirks = tuple(sorted([neighbor_key, key]))
                         self.bond_by_label[bond_smirks].add_bond(bond)
 
-            for atom_label, atom_index in enumerate(smirks_atoms, 1):
+            for atom_label, atom_index in enumerate(sorted_smirks_atoms, 1):
                 atom = mol.get_atom_by_index(atom_index)
                 storage = self.atom_by_label[atom_label]
                 self._add_layers(mol, atom, storage, self.layers, atom_dict)
