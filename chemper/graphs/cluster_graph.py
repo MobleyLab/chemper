@@ -630,7 +630,7 @@ class ClusterGraph(ChemPerGraph):
         for a_idx, (a, b) in atom_dict.items():
             for s_idx, (sa, sb) in storage_dict.items():
                 score = sa.compare_atom(a)
-                score += sb.compare_bond(b) / 10.
+                score += sb.compare_bond(b)
                 g.add_edge(a_idx,s_idx,weight=score+1)
 
         # calculate maximum matching, that is the pairing of atoms/bonds to
