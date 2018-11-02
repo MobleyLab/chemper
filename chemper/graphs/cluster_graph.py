@@ -183,6 +183,15 @@ class ClusterGraph(ChemPerGraph):
             for d_set in set_decs:
                 ands = ands & d_set
 
+            # check for atomic number in the "ands"
+            atomic = [a for a in ands if '#' in a]
+            if len(atomic) == 1:
+                # remove from and
+                ands.remove(atomic[0])
+                # put in all sets
+                for s in set_decs:
+                    s.add(atomic[0])
+
             or_sets = [self._sort_decs(d.difference(ands)) for d in set_decs]
             ors = [''.join(o) for o in or_sets]
 
