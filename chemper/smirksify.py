@@ -312,7 +312,7 @@ class SMIRKSifier(object):
         # it is always an option
         choices = ['all']
         # are there non-generic bases? If so removing all bases is an option
-        if list(set([b for b,ds in input_all_ors])) != ['*']:
+        if len(set([b for b,ds in input_all_ors])) > 1:
             choices.append('gen_base')
         # there are two options if the ref type has OR decorators
         if len(ref_or[1]) > 0:
