@@ -761,7 +761,8 @@ into ChemicalEnvironments." % smirks)
         smarts: optional, boolean
             if True, returns a SMARTS instead of SMIRKS without index labels
         """
-        return self._asSMIRKS(None, None, smarts)
+        init_atom = self.selectAtom(1)
+        return self._asSMIRKS(init_atom, None, smarts)
 
     def _asSMIRKS(self, initialAtom = None, neighbors = None, smarts = False):
         """Return a SMIRKS representation of the chemical environment.

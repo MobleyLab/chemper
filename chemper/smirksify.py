@@ -44,6 +44,7 @@ from chemper.graphs.environment import ChemicalEnvironment as CE
 from chemper.mol_toolkits import mol_toolkit
 from chemper.chemper_utils import ImproperDict, ValenceDict, \
     get_typed_molecules, is_valid_smirks, match_reference
+from chemper.graphs.cluster_graph import ClusterGraph
 
 import numpy as np
 from numpy import random
@@ -67,6 +68,15 @@ def print_smirks(smirks_list):
     print()
 
 
+class ClusteringError(Exception):
+    """
+    Exception for cases where smirks are inappropriate
+    for the environment type they are being parsed into
+    """
+    def __init__(self, msg):
+        Exception.__init__(self, msg)
+        self.msg = msg
+
 # =============================================================================================
 # SMIRKSifier
 # =============================================================================================
@@ -77,7 +87,7 @@ class SMIRKSifier(object):
     and then reduces the decorators in those smirks
     """
     def __init__(self, molecules, cluster_list,
-                 layers=2, verbose=True):
+                 max_layers=5, verbose=True):
         """
         Parameters
         ----------
@@ -98,9 +108,9 @@ class SMIRKSifier(object):
             To see an example of this in action checkout
             https://github.com/MobleyLab/chemper/tree/master/examples
 
-        layers: int (optional)
-            how many atoms away from the indexed atoms should we consider
-            default = 2
+        max_layers: int (optional)
+            how many atoms away from the indexed atoms should we consider at the maximum
+            default = 5
 
         verbose: boolean (optional)
             If true information is printed to the command line during reducing
@@ -108,15 +118,12 @@ class SMIRKSifier(object):
         """
         self.molecules = [mol_toolkit.Mol(m) for m in molecules]
         self.cluster_list = cluster_list
-        self.layers = layers
         self.verbose = verbose
 
-        # TODO: internally determine the number of layers!!!
-        self.current_smirks = self.make_cluster_graphs()
-        print_smirks(self.current_smirks)
-
         # determine the type of SMIRKS for symmetry in indices purposes
-        test_smirks = self.current_smirks[0][1]
+        # This is done by making a test SMIRKS
+        graph = ClusterGraph(self.molecules, cluster_list[0][1], 0)
+        test_smirks = graph.as_smirks(compress=True)
         env = CE(test_smirks)
         if env.getType().lower() == 'impropertorsion':
             self.dict_type = ImproperDict
@@ -139,24 +146,61 @@ class SMIRKSifier(object):
                     self.total += 1
                     self.cluster_dict[mol_idx][atom_tuple] = label
 
-        # save matches and score
+        # make SMIRKS patterns for input clusters
+        self.current_smirks, self.layers = self.make_smirks(max_layers)
+        if self.verbose: print_smirks(self.current_smirks)
+        # check SMIRKS and save the matches to input clusters
         self.type_matches, checks = self.types_match_reference()
-        # TODO: if not checks: raise error?
-        # TODO: handle number of layers internally
 
-    def make_cluster_graphs(self):
+        if not checks:
+            msg = """
+                  SMIRKSifier was not able to create SMIRKS for the provided
+                  clusters with %i layers. Try increasing the number of layers
+                  or changing your clusters
+                  """ % max_layers
+            raise ClusteringError(msg)
+
+    def make_smirks(self, max_layers):
+        """
+        Create a list of SMIRKS patterns for the input clusters.
+        This includes a determining how far away from the indexed atom should
+        be included in the SMIRKS (or the number of layers
+
+        Parameters
+        ----------
+        max_layers: int
+            maximum number of bonds away from the indexed atoms should be included
+
+        Returns
+        -------
+        smirks_list: list of tuples
+            list of tuples in the form (label, smirks)
+        layers: int
+            number of layers actually used to specify the set clusters
+        """
+        layers = 0
+        smirks_list = self.make_cluster_graphs(layers)
+        _, checks = self.types_match_reference(current_types=smirks_list)
+
+        while not checks and (layers < max_layers):
+            layers += 1
+            smirks_list = self.make_cluster_graphs(layers)
+            _, checks = self.types_match_reference(current_types=smirks_list)
+
+        return smirks_list, layers
+
+    def make_cluster_graphs(self, layers):
         """
         Creates a dictionary of SMIRKS with the form
         {label: SMIRKS}
         using the stored molecules and cluster_list
         """
-        from chemper.graphs.cluster_graph import ClusterGraph
         smirks_list = list()
 
         # loop through the list of fragment clusters
         for label, smirks_atom_list in self.cluster_list:
             # make a ClusterGraph for that label
-            graph = ClusterGraph(self.molecules, smirks_atom_list, self.layers)
+            graph = ClusterGraph(self.molecules, smirks_atom_list, layers)
 
             # extract and save the SMIRKS for the cluster
             smirks = graph.as_smirks(compress=True)
@@ -281,8 +325,11 @@ class SMIRKSifier(object):
         if len(input_all_ors) > 1:
             # you can remove just one ORtype (the reference)
             choices.append('remove_ref')
-            # you can remove 1 type of decorator, i.e. all 'Xn' decorators
-            choices.append('all_one_dec')
+            # check that there are decorators
+            all_decs = set([d for b, decs in input_all_ors for d in decs])
+            if len(all_decs) > 0:
+                # you can remove 1 type of decorator, i.e. all 'Xn' decorators
+                choices.append('all_one_dec')
 
         change = random.choice(choices)
 
