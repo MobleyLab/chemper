@@ -125,7 +125,10 @@ class SMIRKSifier(object):
         graph = ClusterGraph(self.molecules, cluster_list[0][1], 0)
         test_smirks = graph.as_smirks(compress=True)
         env = CE(test_smirks)
-        if env.getType().lower() == 'impropertorsion':
+        if env.getType() is None:
+            # corresponds to an unknown chemical pattern
+            self.dict_type = dict
+        elif env.getType().lower() == 'impropertorsion':
             self.dict_type = ImproperDict
         else:
             self.dict_type = ValenceDict
