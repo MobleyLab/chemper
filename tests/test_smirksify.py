@@ -67,7 +67,6 @@ def test_explicitly_check_methods():
     new, changed = red.remove_or([('-', [])], True)
     assert changed
     assert new == []
-
     # check top method
     new, changed = red.remove_or([('#6', ['X4'])])
     assert changed
