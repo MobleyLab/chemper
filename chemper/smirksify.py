@@ -361,6 +361,7 @@ class SMIRKSifier(object):
 
     def remove_or(self, input_all_ors, is_bond=False):
         """
+>>>>>>> 8f4b1d7e33f53e354e3d4facbf25c382ae32a9eb
         Changes the OR decorators by removing some of them
 
         Parameters
