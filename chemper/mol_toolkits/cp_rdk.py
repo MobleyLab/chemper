@@ -36,6 +36,13 @@ class Mol(MolAdapter):
 
     def __str__(self): return self.get_smiles()
 
+    def set_aromaticity_mdl(self):
+        """
+        Sets the aromaticity flags in this molecule to use the MDL model
+        """
+        Chem.SanitizeMol(self.mol, Chem.SANITIZE_ALL^Chem.SANITIZE_SETAROMATICITY)
+        Chem.SetAromaticity(self.mol, Chem.AromaticityModel.AROMATICITY_MDL)
+
     def get_atoms(self):
         """
         Returns
@@ -99,7 +106,7 @@ class Mol(MolAdapter):
             return None
         return Bond(self.mol.GetBondBetweenAtoms(atom1.get_index(), atom2.get_index()))
 
-    def smirks_search(self, smirks):
+    def smirks_search(self, smirks, use_mdl=False):
         """
         Performs a substructure search on the molecule with the provided
         SMIRKS pattern. Note - this function expects SMIRKS patterns with indexed atoms
@@ -109,12 +116,16 @@ class Mol(MolAdapter):
         ----------
         smirks: str
             SMIRKS pattern with indexed atoms (:n)
+        use_mdl: boolean (optional)
+            Use MDL aromaticity model for this substructure search
 
         Returns
         -------
         matches: list of dictionaries
             dictionary for each match with the form {smirks index: atom index}
         """
+        cmol = Chem.Mol(self.mol)
+
         matches = list()
 
         ss = Chem.MolFromSmarts(smirks)
@@ -128,7 +139,7 @@ class Mol(MolAdapter):
             if smirks_idx != 0:
                 maps[smirks_idx] = qatom.GetIdx()
 
-        for match in self.mol.GetSubstructMatches(ss, False):
+        for match in cmol.GetSubstructMatches(ss, False):
             d = {k:self.get_atom_by_index(match[e]) for k,e in maps.items()}
             matches.append(d)
 

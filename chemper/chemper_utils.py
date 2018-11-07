@@ -6,7 +6,6 @@ This file provides simple functions that might be of use to people using the che
 """
 
 import os
-from chemper.mol_toolkits import mol_toolkit
 
 def get_data_path(relative_path, package='chemper'):
     """
@@ -79,7 +78,8 @@ def is_valid_smirks(smirks):
     is_valid: boolean
               is the provided SMIRKS a valid pattern
     """
-    mol = mol_toolkit.MolFromSmiles('C')
+    from chemper.mol_toolkits.mol_toolkit import MolFromSmiles
+    mol = MolFromSmiles('C')
     try:
         mol.smirks_search(smirks)
         return True
@@ -175,7 +175,8 @@ def get_typed_molecules(smirks_list, input_molecules):
         keys: SMILES string for each molecule
             keys: tuple of indices assigned a parameter type
     """
-    molecules = [mol_toolkit.Mol(m) for m in input_molecules]
+    from chemper.mol_toolkits.mol_toolkit import Mol
+    molecules = [Mol(m) for m in input_molecules]
     type_dict = dict()
     for mol_idx, mol in enumerate(molecules):
         type_dict[mol_idx] = {}

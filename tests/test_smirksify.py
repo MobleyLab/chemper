@@ -3,7 +3,7 @@ This script is used to test the SMIRKSifier Class and the class methods it conta
 """
 
 from chemper.mol_toolkits import mol_toolkit
-from chemper.smirksify import SMIRKSifier, print_smirks, ClusteringError
+from chemper.smirksify import SMIRKSifier, print_smirks, ClusteringError, Reducer
 import pytest
 import copy
 
@@ -38,17 +38,14 @@ def test_more_complex_reducer():
     # run for a long time (assumed to hit all possible methods)
     smirks_list = red.reduce(2000)
 
-def test_explicitly_check_methods():
+def test_reducer_methods():
     """
     Due to the random nature of this method, we should
     explicitly check each method
     """
     # practice reducer
     mol = mol_toolkit.MolFromSmiles('C')
-    cluster_lists = [('1', [[(0,)]])]
-    # create reducer
-    red = SMIRKSifier([mol], cluster_lists, max_layers=0)
-    print_smirks(red.current_smirks)
+    red = Reducer([('a','[*:1]~[*:2]')], [mol])
 
     # check generic SMIRKS output
     out_smirks, changed = red.remove_decorator("[*:1]~[*:2]")
@@ -93,10 +90,10 @@ expected_change = ["[#6:1]~[*:2]",
                    ]
 @pytest.mark.parametrize('in_smirks', expected_change)
 def test_expected_removal(in_smirks):
-    mol = mol_toolkit.MolFromSmiles('C')
-    cluster_lists = [('1', [[(0,)]])]
     # create reducer
-    red = SMIRKSifier([mol], cluster_lists, max_layers=0)
+    mol = mol_toolkit.MolFromSmiles('C')
+    smirks_list = [('a', '[#6AH4X4x0!r+0:1]-;!@[#1AH0X1x0!r+0:2]')]
+    red = Reducer(smirks_list, [mol])
 
     # check only OR base to remove
     red_smirks, changed = red.remove_decorator(in_smirks)

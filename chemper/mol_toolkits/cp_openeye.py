@@ -36,6 +36,14 @@ class Mol(MolAdapter):
 
     def __str__(self): return self.get_smiles()
 
+    def set_aromaticity_mdl(self):
+        """
+        Sets the aromaticity flags in this molecule to use the MDL model
+        """
+        oechem.OEClearAromaticFlags(self.mol)
+        oechem.OEAssignAromaticFlags(self.mol, oechem.OEAroModel_MDL)
+        oechem.OEAssignHybridization(self.mol)
+
     def get_atoms(self):
         """
         Returns
@@ -109,19 +117,20 @@ class Mol(MolAdapter):
         ----------
         smirks: str
             SMIRKS pattern with indexed atoms (:n)
-
         Returns
         -------
         matches: list of dictionaries
             dictionary for each match with the form {smirks index: atom index}
         """
+        cmol = oechem.OEMol(self.mol)
+
         matches = list()
 
         ss = oechem.OESubSearch()
         if not ss.Init(smirks):
             raise ValueError("Error parsing SMIRKS %s" % smirks)
 
-        for match in ss.Match(self.mol, False):
+        for match in ss.Match(cmol, False):
             d = dict()
             for ma in match.GetAtoms():
                 smirks_idx = ma.pattern.GetMapIdx()

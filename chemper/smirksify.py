@@ -26,11 +26,7 @@ rely on a reference force field.
 
 AUTHORS
 
-Caitlin Bannan <bannanc@uci.edu>, UC Irvine
-Additional contributions from the Mobley lab, UC Irvine,
-including David Mobley, and Camila Zanette
-and from the Chodera lab, John Chodera and Josh Fass
-
+Caitlin Bannan <bannanc@uci.edu>, UC Irvine, Mobley Group
 """
 #=============================================================================================
 # GLOBAL IMPORTS
@@ -49,9 +45,11 @@ from chemper.graphs.cluster_graph import ClusterGraph
 import numpy as np
 from numpy import random
 
-#
+
+# =============================================================================================
 # private subroutines
-#
+# =============================================================================================
+
 def print_smirks(smirks_list):
     """
     Prints out the current or provided smirks list
@@ -87,7 +85,7 @@ class SMIRKSifier(object):
     and then reduces the decorators in those smirks
     """
     def __init__(self, molecules, cluster_list,
-                 max_layers=5, verbose=True):
+                 max_layers=5, verbose=True, strict_smirks=True):
         """
         Parameters
         ----------
@@ -115,10 +113,16 @@ class SMIRKSifier(object):
         verbose: boolean (optional)
             If true information is printed to the command line during reducing
             default = True
+
+        strict_smirks: boolean (optional)
+            If False it will not raise an error when incapable of making SMIRKS letting
+            a master user trouble shoot
         """
         self.molecules = [mol_toolkit.Mol(m) for m in molecules]
+        self.intermediate_smirks = dict()
         self.cluster_list = cluster_list
         self.verbose = verbose
+        self.strict_smirks = strict_smirks
 
         # determine the type of SMIRKS for symmetry in indices purposes
         # This is done by making a test SMIRKS
@@ -153,15 +157,18 @@ class SMIRKSifier(object):
         self.current_smirks, self.layers = self.make_smirks(max_layers)
         if self.verbose: print_smirks(self.current_smirks)
         # check SMIRKS and save the matches to input clusters
-        self.type_matches, checks = self.types_match_reference()
+        self.type_matches, self.checks = self.types_match_reference()
 
-        if not checks:
+        if not self.checks:
             msg = """
-                  SMIRKSifier was not able to create SMIRKS for the provided
-                  clusters with %i layers. Try increasing the number of layers
-                  or changing your clusters
-                  """ % max_layers
-            raise ClusteringError(msg)
+                      SMIRKSifier was not able to create SMIRKS for the provided
+                      clusters with %i layers. Try increasing the number of layers
+                      or changing your clusters
+                      """ % max_layers
+            if self.strict_smirks:
+                raise ClusteringError(msg)
+            else:
+                print("WARNING!", msg)
 
     def make_smirks(self, max_layers):
         """
@@ -182,20 +189,26 @@ class SMIRKSifier(object):
             number of layers actually used to specify the set clusters
         """
         layers = 0
-        smirks_list = self.make_cluster_graphs(layers)
+        # try generating smirks with no layers
+        smirks_list = self._make_cluster_graphs(layers)
+        # store intermediate smirks and check them
+        self.intermediate_smirks[layers] = smirks_list
         _, checks = self.types_match_reference(current_types=smirks_list)
 
         while not checks and (layers < max_layers):
             layers += 1
-            smirks_list = self.make_cluster_graphs(layers)
+            smirks_list = self._make_cluster_graphs(layers)
+            # store intermediate smirks
+            self.intermediate_smirks[layers] = smirks_list
+            # check current smirks patterns
             _, checks = self.types_match_reference(current_types=smirks_list)
 
         return smirks_list, layers
 
-    def make_cluster_graphs(self, layers):
+    def _make_cluster_graphs(self, layers):
         """
-        Creates a dictionary of SMIRKS with the form
-        {label: SMIRKS}
+        Creates a list of SMIRKS with the form
+        [ (label: SMIRKS), ]
         using the stored molecules and cluster_list
         """
         smirks_list = list()
@@ -234,6 +247,58 @@ class SMIRKSifier(object):
 
         type_matches, checks_pass = match_reference(current_assignments, self.cluster_dict)
         return type_matches, checks_pass
+
+    def reduce(self, max_its=1000, verbose=None):
+        """
+        Reduce the SMIRKS decorators for a number of iterations
+
+        Parameters
+        ----------
+        max_its : int
+            The specified number of iterations
+        verbose: boolean
+            will set the verboseness while running
+            (if None, the current verbose variable will be used)
+
+        Returns
+        ----------
+        final_smirks: list of tuples
+            list of final smirks patterns after reducing in the form
+            [(label, smirks)]
+        """
+        if not self.checks:
+            print("Cannot reduce since unable to create reliable SMIRKS")
+            return self.current_smirks
+
+        red = Reducer(self.current_smirks, self.molecules, verbose)
+        self.current_smirks = red.run(max_its)
+        return self.current_smirks
+
+
+# ==================================================================================
+# Reducer class
+# ==================================================================================
+
+class Reducer():
+    """
+    # TODO: add a description
+    """
+    def __init__(self, smirks_list, mols, verbose=False):
+        """
+        Parameters
+        ----------
+        smirks_list: list of tuples
+            set of SMIRKS patterns in the form (label, smirks)
+        mols: list of molecules
+            Any chemper compatible molecules accepted
+        """
+        self.verbose = verbose
+        self.current_smirks = copy.deepcopy(smirks_list)
+
+        # make reference clusters
+        ref_smirks = [('ref_%s' % l, smirks) for l, smirks in smirks_list]
+        self.molecules = [mol_toolkit.Mol(m) for m in mols]
+        self.cluster_dict = get_typed_molecules(ref_smirks, self.molecules)
 
     def remove_one_sub_dec(self, input_ors, ref_idx):
         """
@@ -361,7 +426,6 @@ class SMIRKSifier(object):
 
     def remove_or(self, input_all_ors, is_bond=False):
         """
->>>>>>> 8f4b1d7e33f53e354e3d4facbf25c382ae32a9eb
         Changes the OR decorators by removing some of them
 
         Parameters
@@ -492,7 +556,7 @@ class SMIRKSifier(object):
 
         return env.asSMIRKS(), True
 
-    def reduce(self, max_its=1000, verbose=None):
+    def run(self, max_its=1000, verbose=None):
         """
         Reduce the SMIRKS decorators for a number of iterations
 
@@ -534,12 +598,13 @@ class SMIRKSifier(object):
 
             # update proposed list and check if it still matches the reference
             proposed_smirks[change_idx] = (change_entry[0], new_smirks)
-            proposed_type_matches, proposed_checks = self.types_match_reference(proposed_smirks)
+
+            current_assignments = get_typed_molecules(proposed_smirks, self.molecules)
+            _, proposed_checks = match_reference(current_assignments, self.cluster_dict)
 
             if proposed_checks:
                 if self.verbose: print("Accepted! ")
                 self.current_smirks = copy.deepcopy(proposed_smirks)
-                self.type_matches = copy.deepcopy(proposed_type_matches)
             else:
                 if self.verbose: print("Rejected!\n proposed SMIRKS changed the way fragments are clustered")
             if self.verbose: print('-'*90)
