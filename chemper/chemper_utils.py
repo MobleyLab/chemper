@@ -273,6 +273,88 @@ def get_smirks_matches(mol, smirks):
 # classes for evaluating lists of SMIRKS patterns
 # ===================================================================
 
+def score_match_reference(current_assignments, ref_assignments):
+    """
+
+    Acknowledgement:
+    Josh Fass <josh.fass@choderalab.org>
+    created this scoring algorithm using the bipartite graph for smarty,
+    which has been published (doi: ...) # TODO: add DOI
+    """
+    import networkx as nx
+    total_counts = dict()
+    total = 0
+    for mol_idx, ref_dict in ref_assignments.items():
+        for indices, label in ref_dict.items():
+            if label not in total_counts:
+                total_counts[label] = 0
+            total += 1
+            total_counts[label] +=1
+
+    cur_labels = set()
+    ref_labels = set()
+    # check for missing tuples in dictionaries
+    for mol_idx, current_dict in current_assignments.items():
+        cur_keys = set(current_dict.keys())
+        ref_keys = set(ref_assignments[mol_idx].keys())
+        # check if there are atom index sets in references not in current
+        if ref_keys - cur_keys:
+            # TODO:
+            return None, -1
+
+        # store a set of labels
+        c_labs = [e for k,e in current_dict.items()]
+        r_labs = [e for k,e in ref_assignments[mol_idx].items()]
+        cur_labels = cur_labels.union(set(c_labs))
+        ref_labels = ref_labels.union(set(r_labs))
+
+    # Create bipartite graph (U,V,E) matching current types U with
+    # reference types V via edges E with weights equal to number of types in common.
+    # create a dictionary for each possible pair of current and reference labels
+    types_in_common = dict()
+    for c_lab in cur_labels:
+        for r_lab in ref_labels:
+            types_in_common[(c_lab, r_lab)] = 0
+
+    # up the count by +1 for each time a current and reference type matches the same set of atoms
+    for mol_idx, index_dict in ref_assignments.items():
+        for indices, r_lab in index_dict.items():
+            c_lab = current_assignments[mol_idx][indices]
+            types_in_common[(c_lab, r_lab)] += 1
+
+    # Actually make the graph
+    graph = nx.Graph()
+    # Add current types
+    for c_lab in cur_labels:
+        graph.add_node(c_lab, bipartite=0)
+    # add reference types
+    for r_lab in ref_labels:
+        graph.add_node(r_lab, bipartite=1)
+    # add edges
+    for c_lab in cur_labels:
+        for r_lab in ref_labels:
+            weight = types_in_common[(c_lab, r_lab)]
+            graph.add_edge(c_lab, r_lab, weight=weight)
+
+    mate = nx.algorithms.max_weight_matching(graph, maxcardinality=False)
+
+    # Compute match dictionary and total number of matches.
+    type_matches = list()
+    total_type_matches = 0
+    for lab1, lab2 in mate:
+        counts = graph[lab1][lab2]['weight']
+        total_type_matches += counts
+        # labels come back in an arbitrary order, so determine if which is current/reference
+        if lab1 in cur_labels:
+            type_matches.append(( lab1, lab2, counts, total_counts[lab2]))
+        else:
+            type_matches.append( (lab2, lab1, counts, total_counts[lab1]))
+
+    # compute fractional score:
+    score = total_type_matches / total
+
+    return type_matches, score
+
 def match_reference(current_assignments, ref_assignments):
     """
     Determine if two sets of labels agree.
