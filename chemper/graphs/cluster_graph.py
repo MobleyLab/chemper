@@ -378,8 +378,8 @@ class ClusterGraph(ChemPerGraph):
         Parameters
         ----------
         mols: list of molecules (optional)
-            these can be ChemPer mol's or molecule objects from
-            any supported toolkit (current OpenEye or RDKit)
+            these can be ChemPer Mols or molecule objects from
+            any supported toolkit (currently OpenEye or RDKit)
 
         smirks_atoms_lists: list of list of tuples (optional)
             There is a list of tuples for each molecule, where each tuple specifies
@@ -519,12 +519,13 @@ class ClusterGraph(ChemPerGraph):
                                          neighbor_storage,
                                          bond=bond_storage)
 
+        # for each indexed atoms add unindexed atoms for the number of specified layers
         for atom_label, atom_index in enumerate(smirks_atoms, 1):
             atom = mol.get_atom_by_index(atom_index)
             storage = self.atom_by_label[atom_label]
-            self._add_layers(mol, atom, storage, self.layers, atom_dict)
+            self._add_layers(mol, atom, storage, self.layers, atom_dict, is_first=True)
 
-    def _add_layers(self, mol, atom, storage, layers, idx_dict):
+    def _add_layers(self, mol, atom, storage, layers, idx_dict, is_first=False):
         """
         Parameters
         ----------
@@ -536,7 +537,7 @@ class ClusterGraph(ChemPerGraph):
         layers: int or 'all'
             number of layers left to add (or all)
         idx_dict: dict
-            form {atom index: label} for this molecule
+            form {atom index: label} for this smirks_list in this molecule
         """
         # if layers is 0 there are no more atoms to add so end the recursion
         if layers == 0:
@@ -555,9 +556,9 @@ class ClusterGraph(ChemPerGraph):
                              if s.label not in storage_labels]
 
         new_pairs = list()
-        # If the storage doesn't have any neighbors, add storage
-        # Make new storages for all neighbors
-        if len(storage_neighbors) == 0:
+        # if this is the first set of atoms added, just make a new
+        # storage for all neighboring atoms
+        if is_first:
             min_smirks = storage.label * 10
             if min_smirks > 0:
                 min_smirks = min_smirks * -1
@@ -573,12 +574,14 @@ class ClusterGraph(ChemPerGraph):
                 min_smirks -= 1
                 new_pairs.append((a, adding_new_storage))
 
-        else:
+        else: # this isn't the first set of atoms so you need to
             # pair up the atoms with their storage
             pairs = self.find_pairs(atom_neighbors, storage_neighbors)
             for new_atom, new_bond, new_storage_atom, new_storage_bond in pairs:
+                # if no storage is paired to this atom skip it
                 if new_storage_atom is None:
                     continue
+                # if there is no atom paired to a storage remove that branch
                 if new_atom is None:
                     self.remove_atom(new_storage_atom)
                     continue
@@ -597,7 +600,7 @@ class ClusterGraph(ChemPerGraph):
                 return
 
         for new_atom, new_storage in new_pairs:
-            self._add_layers(mol, new_atom, new_storage, new_layers, idx_dict)
+            self._add_layers(mol, new_atom, new_storage, new_layers, idx_dict, is_first)
 
     def find_pairs(self, atoms_and_bonds, storages):
         """
