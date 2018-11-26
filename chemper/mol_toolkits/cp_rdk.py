@@ -106,7 +106,7 @@ class Mol(MolAdapter):
             return None
         return Bond(self.mol.GetBondBetweenAtoms(atom1.get_index(), atom2.get_index()))
 
-    def smirks_search(self, smirks, use_mdl=False):
+    def smirks_search(self, smirks):
         """
         Performs a substructure search on the molecule with the provided
         SMIRKS pattern. Note - this function expects SMIRKS patterns with indexed atoms
@@ -116,8 +116,6 @@ class Mol(MolAdapter):
         ----------
         smirks: str
             SMIRKS pattern with indexed atoms (:n)
-        use_mdl: boolean (optional)
-            Use MDL aromaticity model for this substructure search
 
         Returns
         -------
