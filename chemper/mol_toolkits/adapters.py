@@ -27,6 +27,13 @@ class MolAdapter(ABC):
     Currently we support OpenEye toolkits and RDKit
     """
     @abstractmethod
+    def set_aromaticity_mdl(self):
+        """
+        Sets the aromaticity flags in this molecule to use the MDL model
+        """
+        return
+
+    @abstractmethod
     def get_atoms(self):
         """
         Returns

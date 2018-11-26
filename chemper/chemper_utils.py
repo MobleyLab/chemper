@@ -6,7 +6,6 @@ This file provides simple functions that might be of use to people using the che
 """
 
 import os
-from chemper.mol_toolkits import mol_toolkit
 
 def get_data_path(relative_path, package='chemper'):
     """
@@ -79,7 +78,8 @@ def is_valid_smirks(smirks):
     is_valid: boolean
               is the provided SMIRKS a valid pattern
     """
-    mol = mol_toolkit.MolFromSmiles('C')
+    from chemper.mol_toolkits.mol_toolkit import MolFromSmiles
+    mol = MolFromSmiles('C')
     try:
         mol.smirks_search(smirks)
         return True
@@ -175,7 +175,8 @@ def get_typed_molecules(smirks_list, input_molecules):
         keys: SMILES string for each molecule
             keys: tuple of indices assigned a parameter type
     """
-    molecules = [mol_toolkit.Mol(m) for m in input_molecules]
+    from chemper.mol_toolkits.mol_toolkit import Mol
+    molecules = [Mol(m) for m in input_molecules]
     type_dict = dict()
     for mol_idx, mol in enumerate(molecules):
         type_dict[mol_idx] = {}
@@ -272,6 +273,88 @@ def get_smirks_matches(mol, smirks):
 # classes for evaluating lists of SMIRKS patterns
 # ===================================================================
 
+def score_match_reference(current_assignments, ref_assignments):
+    """
+
+    Acknowledgement:
+    Josh Fass <josh.fass@choderalab.org>
+    created this scoring algorithm using the bipartite graph for smarty,
+    which has been published (doi: ...) # TODO: add DOI
+    """
+    import networkx as nx
+    total_counts = dict()
+    total = 0
+    for mol_idx, ref_dict in ref_assignments.items():
+        for indices, label in ref_dict.items():
+            if label not in total_counts:
+                total_counts[label] = 0
+            total += 1
+            total_counts[label] +=1
+
+    cur_labels = set()
+    ref_labels = set()
+    # check for missing tuples in dictionaries
+    for mol_idx, current_dict in current_assignments.items():
+        cur_keys = set(current_dict.keys())
+        ref_keys = set(ref_assignments[mol_idx].keys())
+        # check if there are atom index sets in references not in current
+        if ref_keys - cur_keys:
+            # TODO:
+            return None, -1
+
+        # store a set of labels
+        c_labs = [e for k,e in current_dict.items()]
+        r_labs = [e for k,e in ref_assignments[mol_idx].items()]
+        cur_labels = cur_labels.union(set(c_labs))
+        ref_labels = ref_labels.union(set(r_labs))
+
+    # Create bipartite graph (U,V,E) matching current types U with
+    # reference types V via edges E with weights equal to number of types in common.
+    # create a dictionary for each possible pair of current and reference labels
+    types_in_common = dict()
+    for c_lab in cur_labels:
+        for r_lab in ref_labels:
+            types_in_common[(c_lab, r_lab)] = 0
+
+    # up the count by +1 for each time a current and reference type matches the same set of atoms
+    for mol_idx, index_dict in ref_assignments.items():
+        for indices, r_lab in index_dict.items():
+            c_lab = current_assignments[mol_idx][indices]
+            types_in_common[(c_lab, r_lab)] += 1
+
+    # Actually make the graph
+    graph = nx.Graph()
+    # Add current types
+    for c_lab in cur_labels:
+        graph.add_node(c_lab, bipartite=0)
+    # add reference types
+    for r_lab in ref_labels:
+        graph.add_node(r_lab, bipartite=1)
+    # add edges
+    for c_lab in cur_labels:
+        for r_lab in ref_labels:
+            weight = types_in_common[(c_lab, r_lab)]
+            graph.add_edge(c_lab, r_lab, weight=weight)
+
+    mate = nx.algorithms.max_weight_matching(graph, maxcardinality=False)
+
+    # Compute match dictionary and total number of matches.
+    type_matches = list()
+    total_type_matches = 0
+    for lab1, lab2 in mate:
+        counts = graph[lab1][lab2]['weight']
+        total_type_matches += counts
+        # labels come back in an arbitrary order, so determine if which is current/reference
+        if lab1 in cur_labels:
+            type_matches.append(( lab1, lab2, counts, total_counts[lab2]))
+        else:
+            type_matches.append( (lab2, lab1, counts, total_counts[lab1]))
+
+    # compute fractional score:
+    score = total_type_matches / total
+
+    return type_matches, score
+
 def match_reference(current_assignments, ref_assignments):
     """
     Determine if two sets of labels agree.
@@ -354,6 +437,36 @@ def match_reference(current_assignments, ref_assignments):
 
     return matches, True
 
+
+def check_smirks_to_reference(current_types, reference_assignments, molecules):
+    """
+
+    Parameters
+    ----------
+    current_types: list of tuples
+        SMIRKS types in the form (label, smirks)
+    reference_assignments: dictionary of tuples and labels
+        This could be the output from get_typed_molecules
+        the dictionary has the form:
+        {mol_idx: {(atom indices tuple): label}, mol_idx2: {} }
+    molecules: list of molecules
+        These can be OpenEye, RDKit, or ChemPer molecules
+
+    Returns
+    -------
+    agree: boolean
+        Returns True if the SMIRKS type the molecules in the same way
+        as the reference assignments
+    """
+    r_labs = [l for m,d in reference_assignments.items() for a,l in d.items()]
+    if len(current_types) != len(set(r_labs)):
+        return False
+
+    current_assignments = get_typed_molecules(current_types, molecules)
+    type_matches, matched = match_reference(current_assignments, reference_assignments)
+    return matched
+
+
 def check_smirks_agree(current_types, reference_types, molecules):
     """
     Checks if two lists of SMIRKS patterns type a list of molecules in the same way.
@@ -373,6 +486,9 @@ def check_smirks_agree(current_types, reference_types, molecules):
     match: boolean
         True if the two sets of SMIRKS match the set of molecules in the exact same way
     """
+    if len(current_types) != len(reference_types):
+        return False
+
     current_assignments = get_typed_molecules(current_types, molecules)
     reference_assignments = get_typed_molecules(reference_types, molecules)
 

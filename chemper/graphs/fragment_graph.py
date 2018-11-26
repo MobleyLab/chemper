@@ -326,6 +326,30 @@ class ChemPerGraph(object):
         """
         return list(self._graph.neighbors(atom))
 
+    def remove_atom(self, atom):
+        """
+        Removes the provided atom and all connected atoms
+        """
+        # if atom isn't in the graph, it can't be removed
+        if atom not in self._graph.nodes():
+            return False
+        # if atom is "indexed" that is has a SMIRKS index > 0 it can't be removed
+        if atom.label > 0:
+            return False
+        # remove specified atom
+        self._graph.remove_node(atom)
+        # find atoms on that "branch" of the molecule
+        # we do this by looking for atoms that are no longer connected to
+        # the base of the graph, where we consider the base a positively indexed atom
+        ref_atom = [n for n in self._graph.nodes if n.label > 0][0]
+        remove_atoms_list = list()
+        for n in self._graph.nodes:
+            if not nx.has_path(self._graph, n, ref_atom):
+                remove_atoms_list.append(n)
+        # remove the disconnected atoms
+        self._graph.remove_nodes_from(remove_atoms_list)
+        return True
+
     def add_atom(self, new_atom, new_bond=None, bond_to_atom=None,
                  new_label=None, new_bond_label=None):
         """
