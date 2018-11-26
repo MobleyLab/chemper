@@ -579,6 +579,9 @@ class ClusterGraph(ChemPerGraph):
             for new_atom, new_bond, new_storage_atom, new_storage_bond in pairs:
                 if new_storage_atom is None:
                     continue
+                if new_atom is None:
+                    self.remove_atom(new_storage_atom)
+                    continue
                 # add atom and bond information to the storage
                 new_storage_atom.add_atom(new_atom)
                 new_storage_bond.add_bond(new_bond)
@@ -648,20 +651,27 @@ class ClusterGraph(ChemPerGraph):
         # track the atoms assigned a paired storage object
         pair_set = set()
 
+        # store all pairs
         for idx_1, idx_2 in matching:
+            pair_set.add(idx_1)
+            pair_set.add(idx_2)
             if idx_1 in atom_dict:
                 (a,b) = atom_dict[idx_1]
                 (sa,sb) = storage_dict[idx_2]
-                pair_set.add(idx_1)
             else:
                 (a,b) = atom_dict[idx_2]
                 (sa,sb) = storage_dict[idx_1]
-                pair_set.add(idx_2)
             pairs.append((a, b, sa, sb))
 
+        # check for missing atom storages
         for a_idx, (a,b) in atom_dict.items():
             if a_idx not in pair_set:
                 pairs.append((a, b, None, None))
+
+        # check for missing atoms
+        for s_idx, (sa, sb) in storage_dict.items():
+            if s_idx not in pair_set:
+                pairs.append((None, None, sa, sb))
 
         return pairs
 
