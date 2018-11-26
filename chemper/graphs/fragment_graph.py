@@ -326,6 +326,18 @@ class ChemPerGraph(object):
         """
         return list(self._graph.neighbors(atom))
 
+    def remove_atom(self, atom):
+        """
+        Removes the provided atom and all connected atoms
+        """
+        if atom not in self._graph.nodes():
+            return False
+        # neighbors to be removed
+        neighs = [a for a in self.get_neighbors(atom) if a.label < atom.label]
+        self._graph.remove_node(atom)
+        self._graph.remove_nodes_from(neighs)
+        return True
+
     def add_atom(self, new_atom, new_bond=None, bond_to_atom=None,
                  new_label=None, new_bond_label=None):
         """
