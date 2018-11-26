@@ -100,15 +100,10 @@ graph_data = [
      ),
     # 10
     (make_cluster_graph(['C1CCCC1', 'C1=CNC=C1', 'CO'], layers=2),
-     "[#6AH2X4x2r5+0,#6aH1X3x2r5+0,#8AH1X2x0!r+0:1](-;!@[#1AH0X1x0!r+0])(-;!@[#1AH0X1x0!r+0])" \
-     "(-,:;@[#6AH2X4x2r5+0,#6aH1X3x2r5+0](-;!@[#1AH0X1x0!r+0])(-;!@[#1AH0X1x0!r+0])-,:;@" \
-     "[#6AH2X4x2r5+0,#6aH1X3x2r5+0])-,:[#6AH2X4x2r5+0,#6AH3X4x0!r+0,#6aH1X3x2r5+0:2]" \
-     "(-,:[#1AH0X1x0!r+0,#6AH2X4x2r5+0,#7aH1X3x2r5+0](-;!@[#1AH0X1x0!r+0])-;!@[#1AH0X1x0!r+0])" \
-     "(-;!@[#1AH0X1x0!r+0])-;!@[#1AH0X1x0!r+0]",
-     "[#6AH2X4r5x2,#6H1X3ar5x2,#8!rAH1X2x0;+0:1](-;!@[#1AH0X1x0!r+0])(-;!@[#1AH0X1x0!r+0])" \
-     "(-,:;@[#6AH2X4,#6H1X3a;+0;r5;x2](-;!@[#1AH0X1x0!r+0])(-;!@[#1AH0X1x0!r+0])-,:;@" \
-     "[#6AH2X4,#6H1X3a;+0;r5;x2])-,:[#6!rAH3X4x0,#6AH2X4r5x2,#6H1X3ar5x2;+0:2](-,:[#1!rAH0X1x0," \
-     "#6AH2X4r5x2,#7H1X3ar5x2;+0](-;!@[#1AH0X1x0!r+0])-;!@[#1AH0X1x0!r+0])(-;!@[#1AH0X1x0!r+0])-;!@[#1AH0X1x0!r+0]",
+     "[#6AH2X4x2r5+0,#6aH1X3x2r5+0,#8AH1X2x0!r+0:1](-;!@[#1AH0X1x0!r+0])-,:[#6AH2X4x2r5+0," \
+     "#6AH3X4x0!r+0,#6aH1X3x2r5+0:2](-,:[#1AH0X1x0!r+0,#6AH2X4x2r5+0,#7aH1X3x2r5+0])-;!@[#1AH0X1x0!r+0]",
+     "[#6AH2X4r5x2,#6H1X3ar5x2,#8!rAH1X2x0;+0:1](-;!@[#1AH0X1x0!r+0])-,:[#6!rAH3X4x0," \
+     "#6AH2X4r5x2,#6H1X3ar5x2;+0:2](-,:[#1!rAH0X1x0,#6AH2X4r5x2,#7H1X3ar5x2;+0])-;!@[#1AH0X1x0!r+0]"
      ),
     # Make single molecule ChemPerGraphs
     # 11
