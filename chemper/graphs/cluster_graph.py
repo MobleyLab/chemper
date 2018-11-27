@@ -616,16 +616,49 @@ class ClusterGraph(ChemPerGraph):
 
         Parameters
         ----------
-        atoms_and_bonds: list of tuples in form (chemper Atom, chemper Bond)
-        storages: list of tuples in form (AtomStorage, BondStorage)
+        atoms_and_bonds: list of tuples in form (chemper Atom, chemper Bond, ...)
+        storages: list of tuples in form (AtomStorage, BondStorage, ...)
+
+        Tuples can be of any length as long as they are the same, so for example, in
+        a bond you might only care about the outer atoms for comparison so you would compare
+        (atom1,) and (atom2,) with (atom_storage1,) and (atom_storage2,)
+        However, in a torsion, you might want the atoms and bonds for each outer bond
+        so in that case you would compare
+        (atom1, bond1, atom2) and (atom4, bond3, atom3)
+        with the corresponding storage objects.
 
         Returns
         -------
-        pairs: list of tuples
+        pairs: list of lists
             pairs of atoms and storage objects that are most similar,
-            with tuples in the form (Atom, Bond, AtomStorage, BondStorage)
+            these lists always come in the form (all atom/bonds, all storage objects)
+            for the bond example above you might get
+            [ [atom1, storage1], [atom2, storage2] ]
+            for the torsion example you might get
+            [ [atom4, bond4, atom3, atom_storage1, bond_storage1, atom_storage2],
+              [atom1, bond1, atom2, atom_storage4, bond_storage3, atom_storage3]
+
         """
+        # store paired stets of atoms/bonds and corresponding storages
         pairs = list()
+        # check for odd cases
+        combo = atoms_and_bonds + storages
+        # 1. both lists are empty
+        if len(combo) == 0:
+            return pairs
+
+        nones = [None] * len(combo[0])
+        # 2. no atom/bond storage
+        if len(atoms_and_bonds) == 0:
+            for storage_set in storages:
+                pairs.append(nones + list(storage_set))
+            return pairs
+
+        # 3. no storages
+        if len(storages) == 0:
+            for atom_set in atoms_and_bonds:
+                pairs.append(list(atom_set) + nones)
+            return pairs
 
         g = nx.Graph()
 
@@ -633,19 +666,25 @@ class ClusterGraph(ChemPerGraph):
         storage_dict = dict()
 
         # create a bipartite graph with atoms/bonds on one side
-        for idx, (a, b) in enumerate(atoms_and_bonds):
+        for idx, atom_set in enumerate(atoms_and_bonds):
             g.add_node(idx+1, bipartite=0)
-            atom_dict[idx+1] = (a,b)
+            atom_dict[idx+1] = atom_set
         # and atom/bond storage objects on the other
-        for idx, (s,sb) in enumerate(storages):
+        for idx, storage_set in enumerate(storages):
             g.add_node((idx*-1)-1, bipartite=1)
-            storage_dict[(idx*-1)-1] = (s,sb)
+            storage_dict[(idx*-1)-1] = storage_set
 
         # Fill in the weight on each edge of the graph using the compare_atom/bond functions
-        for a_idx, (a, b) in atom_dict.items():
-            for s_idx, (sa, sb) in storage_dict.items():
-                score = sa.compare_atom(a)
-                score += sb.compare_bond(b)
+        for a_idx, atom_set in atom_dict.items():
+            for s_idx, storage_set in storage_dict.items():
+                # sum up score for every entry in the atom and storage set
+                score = 0
+                for sa, a in zip(storage_set, atom_set):
+                    if isinstance(sa, self.BondStorage):
+                        score += sa.compare_bond(a)
+                    else:
+                        score += sa.compare_atom(a)
+                # score can't be zero so save score+1
                 g.add_edge(a_idx,s_idx,weight=score+1)
 
         # calculate maximum matching, that is the pairing of atoms/bonds to
@@ -659,22 +698,22 @@ class ClusterGraph(ChemPerGraph):
             pair_set.add(idx_1)
             pair_set.add(idx_2)
             if idx_1 in atom_dict:
-                (a,b) = atom_dict[idx_1]
-                (sa,sb) = storage_dict[idx_2]
+                atom_set = atom_dict[idx_1]
+                storage_set = storage_dict[idx_2]
             else:
-                (a,b) = atom_dict[idx_2]
-                (sa,sb) = storage_dict[idx_1]
-            pairs.append((a, b, sa, sb))
+                atom_set = atom_dict[idx_2]
+                storage_set = storage_dict[idx_1]
+            pairs.append(list(atom_set) + list(storage_set))
 
         # check for missing atom storages
-        for a_idx, (a,b) in atom_dict.items():
+        for a_idx, atom_set in atom_dict.items():
             if a_idx not in pair_set:
-                pairs.append((a, b, None, None))
+                pairs.append(list(atom_set) + nones)
 
         # check for missing atoms
-        for s_idx, (sa, sb) in storage_dict.items():
+        for s_idx, storage_set in storage_dict.items():
             if s_idx not in pair_set:
-                pairs.append((None, None, sa, sb))
+                pairs.append(nones + list(storage_set))
 
         return pairs
 
@@ -724,18 +763,14 @@ class ClusterGraph(ChemPerGraph):
         # pair atoms and bonds
         atom1 = mol.get_atom_by_index(smirks_atoms[0])
         atom2 = mol.get_atom_by_index(smirks_atoms[1])
-        bond = mol.get_bond_by_atoms(atom1, atom2)
-        if bond is None:
-            return smirks_atoms
         # Find potential storages for those atoms and bonds
-        atoms_and_bonds = [(atom1, bond), (atom2, bond)]
-        bond_storage = self.bond_by_label[(1,2)]
+        atoms_and_bonds = [(atom1,), (atom2,)]
         storages = [
-            (self.atom_by_label[1], bond_storage),
-            (self.atom_by_label[2], bond_storage)
+            (self.atom_by_label[1],),
+            (self.atom_by_label[2],)
         ]
         pairs = self.find_pairs(atoms_and_bonds, storages)
-        ordered_smirks_atoms = [p[0].get_index() for p in sorted(pairs, key=lambda x: x[2].label)]
+        ordered_smirks_atoms = [p[0].get_index() for p in sorted(pairs, key=lambda x: x[1].label)]
         return tuple(ordered_smirks_atoms)
 
     def _angle_symmetry(self, mol, smirks_atoms):
@@ -779,14 +814,14 @@ class ClusterGraph(ChemPerGraph):
         if None in (bond1, bond3):
             return smirks_atoms
         # make pairs
-        atoms_and_bonds = [ (atom2, bond1), (atom3, bond3) ]
+        atoms_and_bonds = [ (atom2, bond1, atom1), (atom3, bond3, atom4) ]
         # get atom and bond storages
         storages = [
-            (self.atom_by_label[2], self.bond_by_label[(1,2)]),
-            (self.atom_by_label[3], self.bond_by_label[(3,4)])
+            (self.atom_by_label[2], self.bond_by_label[(1,2)], self.atom_by_label[1]),
+            (self.atom_by_label[3], self.bond_by_label[(3,4)], self.atom_by_label[4])
         ]
         pairs = self.find_pairs(atoms_and_bonds, storages)
-        order = [p[0].get_index() for p in sorted(pairs, key=lambda x: x[2].label)]
+        order = [p[0].get_index() for p in sorted(pairs, key=lambda x: x[3].label)]
         if order[0] == smirks_atoms[1]:
             return smirks_atoms
         temp = list(smirks_atoms)
