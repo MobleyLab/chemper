@@ -115,12 +115,12 @@ class ClusterGraph(ChemPerGraph):
 
             return (
                 '#%i' % atom.atomic_number(),
-                aromatic,
                 'H%i' % atom.hydrogen_count(),
                 'X%i' % atom.connectivity(),
                 'x%i' % atom.ring_connectivity(),
                 ring,
-                charge
+                charge,
+                aromatic,
                 )
 
         def as_smirks(self, compress=False):
@@ -157,17 +157,25 @@ class ClusterGraph(ChemPerGraph):
             ----------
             dec_set: list like
                 single set of atom decorators
+            wild: boolean
+                insert * for decorator lists with no #n decorator
 
             Returns
             -------
             sorted_dec_set: list
                 same set of decorators sorted with atomic number or * first
             """
-            atom_num = [i for i in dec_set if '#' in i]
+            temp_dec_set = list(dec_set)
+            atom_num = [i for i in temp_dec_set if '#' in i]
             if len(atom_num) == 0 and wild:
                 atom_num = ["*"]
 
-            return atom_num + sorted(list(set(dec_set) - set(atom_num)))
+            temp_dec_set = set(temp_dec_set) - set(atom_num)
+
+            aro = [i for i in temp_dec_set if 'a' in i.lower()]
+            temp_dec_set = set(temp_dec_set) - set(aro)
+
+            return atom_num + sorted(list(temp_dec_set)) + aro
 
         def _compress_smirks(self):
             """
