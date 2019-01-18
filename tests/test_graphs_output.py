@@ -46,80 +46,80 @@ def make_cluster_graph(smiles_list, layers=0):
 # These have the form (graph, long expected, short expected
 graph_data = [
     # 0
-    (make_cluster_graph(['CC']), "[#6AH3X4x0!r+0:1]-;!@[#6AH3X4x0!r+0:2]",
+    (make_cluster_graph(['CC']), "[#6H3X4x0!r+0A:1]-;!@[#6H3X4x0!r+0A:2]",
      "[#6H3X4x0!r+0A:1]-;!@[#6H3X4x0!r+0A:2]"),
     # 1
     (make_cluster_graph(['CC', 'C=C']),
      "[#6H2X3x0!r+0A,#6H3X4x0!r+0A:1]-,=;!@[#6H2X3x0!r+0A,#6H3X4x0!r+0A:2]",
      "[#6H2X3,#6H3X4;!r;+0;x0;A:1]-,=;!@[#6H2X3,#6H3X4;!r;+0;x0;A:2]"
      ),
-    # 3
+    # 2
     (make_cluster_graph(['CC', 'C=C', 'C1CC1']),
      "[#6H2X3x0!r+0A,#6H2X4x2r3+0A,#6H3X4x0!r+0A:1]-,=[#6H2X3x0!r+0A,#6H2X4x2r3+0A,#6H3X4x0!r+0A:2]",
      "[#6!rH2X3x0,#6!rH3X4x0,#6H2X4r3x2;+0;A:1]-,=[#6!rH2X3x0,#6!rH3X4x0,#6H2X4r3x2;+0;A:2]"
      ),
-    # 4
+    # 3
     (make_cluster_graph(['CC'], layers=1),
      "[#6H3X4x0!r+0A:1](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])" \
      "-;!@[#6H3X4x0!r+0A:2](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])-;!@[#1H0X1x0!r+0A]",
      "[#6H3X4x0!r+0A:1](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])" \
      "-;!@[#6H3X4x0!r+0A:2](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])-;!@[#1H0X1x0!r+0A]"
      ),
-    # 5
+    # 4
     (make_cluster_graph(['CC'], layers='all'),
      "[#6H3X4x0!r+0A:1](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])" \
      "-;!@[#6H3X4x0!r+0A:2](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])-;!@[#1H0X1x0!r+0A]",
      "[#6H3X4x0!r+0A:1](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])" \
      "-;!@[#6H3X4x0!r+0A:2](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])-;!@[#1H0X1x0!r+0A]"
      ),
-    # 6
+    # 5
     (make_cluster_graph(['C#C'], 1), # one layer
      '[#6H1X2x0!r+0A:1](-;!@[#1H0X1x0!r+0A])#;!@[#6H1X2x0!r+0A:2]-;!@[#1H0X1x0!r+0A]',
      '[#6H1X2x0!r+0A:1](-;!@[#1H0X1x0!r+0A])#;!@[#6H1X2x0!r+0A:2]-;!@[#1H0X1x0!r+0A]'
      ),
-    # 7
+    # 6
     (make_cluster_graph(['CO'], 'all'), # infinite layers
      '[#6H3X4x0!r+0A:1](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])' \
      '-;!@[#8H1X2x0!r+0A:2]-;!@[#1H0X1x0!r+0A]',
      '[#6H3X4x0!r+0A:1](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])' \
      '-;!@[#8H1X2x0!r+0A:2]-;!@[#1H0X1x0!r+0A]'
      ),
-    # 8
+    # 7
     (make_cluster_graph(['C#CC'], 3), # one layer
      '[#6H1X2x0!r+0A:1](-;!@[#1H0X1x0!r+0A])#;!@[#6H0X2x0!r+0A:2]-;!@[#6H3X4x0!r+0A]' \
      "(-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])-;!@[#1H0X1x0!r+0A]",
      "[#6H1X2x0!r+0A:1](-;!@[#1H0X1x0!r+0A])#;!@[#6H0X2x0!r+0A:2]-;!@[#6H3X4x0!r+0A]" \
      "(-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])-;!@[#1H0X1x0!r+0A]"
      ),
-    # 9
+    # 8
     (make_cluster_graph(['CC', 'CCC'], layers=1),
      '[#6H2X4x0!r+0A,#6H3X4x0!r+0A:1](-;!@[#1H0X1x0!r+0A,#6H3X4x0!r+0A])(-;!@[#1H0X1x0!r+0A])' \
      '(-;!@[#1H0X1x0!r+0A])-;!@[#6H3X4x0!r+0A:2](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])-;!@[#1H0X1x0!r+0A]',
      '[#6H2,#6H3;!r;+0;X4;x0;A:1](-;!@[#1H0X1,#6H3X4;!r;+0;x0;A])(-;!@[#1H0X1x0!r+0A])' \
      '(-;!@[#1H0X1x0!r+0A])-;!@[#6H3X4x0!r+0A:2](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])-;!@[#1H0X1x0!r+0A]'
      ),
-    # 10
+    # 9
     (make_cluster_graph(['C1CCCC1', 'C1=CNC=C1', 'CO'], layers=2),
-     "[#6H2X4x2r5+0A,#6H1X3x2r5+0a,#8H1X2x0!r+0A:1](-;!@[#1H0X1x0!r+0A])-,:[#6H2X4x2r5+0A," \
-     "#6H3X4x0!r+0A,#6H1X3x2r5+0a:2](-,:[#1H0X1x0!r+0A,#6H2X4x2r5+0A,#7H1X3x2r5+0a])-;!@[#1H0X1x0!r+0A]",
-     "[#6H2X4r5x2A,#6H1X3r5x2a,#8!rH1X2x0A;+0:1](-;!@[#1H0X1x0!r+0A])-,:[#6!rH3X4x0A," \
-     "#6H2X4r5x2A,#6H1X3r5x2a;+0:2](-,:[#1!rH0X1x0A,#6H2X4r5x2A,#7H1X3r5x2a;+0])-;!@[#1H0X1x0!r+0A]"
+     "[#6H1X3x2r5+0a,#6H2X4x2r5+0A,#8H1X2x0!r+0A:1](-;!@[#1H0X1x0!r+0A])-,:[#6H1X3x2r5+0a," \
+     "#6H2X4x2r5+0A,#6H3X4x0!r+0A:2](-,:[#1H0X1x0!r+0A,#6H2X4x2r5+0A,#7H1X3x2r5+0a])-;!@[#1H0X1x0!r+0A]",
+     "[#6H1X3r5x2a,#6H2X4r5x2A,#8!rH1X2x0A;+0:1](-;!@[#1H0X1x0!r+0A])-,:[#6!rH3X4x0A," \
+     "#6H1X3r5x2a,#6H2X4r5x2A;+0:2](-,:[#1!rH0X1x0A,#6H2X4r5x2A,#7H1X3r5x2a;+0])-;!@[#1H0X1x0!r+0A]"
      ),
     # Make single molecule ChemPerGraphs
-    # 11
+    # 10
     (make_frag_graph('C', 0), '[#6AH4X4x0!r+0:1]-!@[#1AH0X1x0!r+0:2]', "[#6:1]-!@[#1:2]"), # no layers
-    # 12
+    # 11
     (make_frag_graph('C#C', 1), # one layer
      '[#6AH1X2x0!r+0:1](-!@[#1AH0X1x0!r+0])#!@[#6AH1X2x0!r+0:2]-!@[#1AH0X1x0!r+0]',
      "[#6:1](-!@[#1])#!@[#6:2]-!@[#1]"
      ),
-    # 13
+    # 12
     (make_frag_graph('C#CC', 3), # three layers
      '[#6AH1X2x0!r+0:1](-!@[#1AH0X1x0!r+0])#!@[#6AH0X2x0!r+0:2]-!@[#6AH3X4x0!r+0]' \
      "(-!@[#1AH0X1x0!r+0])(-!@[#1AH0X1x0!r+0])-!@[#1AH0X1x0!r+0]",
      "[#6:1](-!@[#1])#!@[#6:2]-!@[#6](-!@[#1])(-!@[#1])-!@[#1]"
      ),
-    # 14
+    # 13
     (make_frag_graph('CO', 'all'), # infinite layers
      '[#6AH3X4x0!r+0:1](-!@[#1AH0X1x0!r+0])(-!@[#1AH0X1x0!r+0])(-!@[#1AH0X1x0!r+0])' \
      '-!@[#8AH1X2x0!r+0:2]-!@[#1AH0X1x0!r+0]',
@@ -127,8 +127,10 @@ graph_data = [
      ),
 ]
 
-graphes = [(g,g) for g, e1, e2 in graph_data]
-@pytest.mark.parametrize('graph1, graph2', graphes )
+graphs = [(g,g) for g, e1, e2 in graph_data]
+
+
+@pytest.mark.parametrize('graph1, graph2', graphs )
 def test_other_cluster_graph(graph1, graph2):
     """
     Check graphs build successfully by looking at minimal examples
@@ -145,6 +147,7 @@ def test_other_cluster_graph(graph1, graph2):
 
     # check graph makes a valid smirks
     assert is_valid_smirks(graph1.as_smirks())
+
 
 @pytest.mark.parametrize('graph,expected,expected_compressed', graph_data)
 def test_smirks_frag_graph(graph, expected, expected_compressed):
