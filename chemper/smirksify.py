@@ -34,7 +34,6 @@ Caitlin Bannan <bannanc@uci.edu>, UC Irvine, Mobley Group
 
 import copy
 
-import time
 from chemper.graphs.environment import ChemicalEnvironment as CE
 from chemper.mol_toolkits import mol_toolkit
 from chemper.chemper_utils import ImproperDict, ValenceDict, \
