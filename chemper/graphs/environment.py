@@ -839,13 +839,13 @@ into ChemicalEnvironments." % smirks)
         a single Atom object fitting the description
         or None if no such atom exists
         """
-        if descriptor == None:
+        if descriptor is None:
             return random.choice(self._graph_nodes())
 
         try: descriptor = int(descriptor)
-        except: descriptor = descriptor
+        except ValueError: pass
 
-        if type(descriptor) is int:
+        if isinstance(descriptor, int):
             for atom in self.getAtoms():
                 if atom.index == descriptor:
                     return atom
@@ -923,7 +923,7 @@ into ChemicalEnvironments." % smirks)
         or None if no such atom exists
         """
         try: descriptor = int(descriptor)
-        except: descriptor = descriptor
+        except ValueError: pass
 
         if type(descriptor) is int:
             for bond in self.getBonds():
