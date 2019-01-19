@@ -24,7 +24,7 @@ class ClusterGraph(ChemPerGraph):
     ChemPerGraphs are a graph based class for storing atom and bond information.
     They use the chemper.mol_toolkits Atoms, Bonds, and Mols
     """
-    class AtomStorage(object):
+    class AtomStorage(ChemPerGraph.AtomStorage):
         """
         AtomStorage tracks information about an atom
         """
@@ -49,44 +49,6 @@ class ClusterGraph(ChemPerGraph):
                 for atom in atoms:
                     self.decorators.add(self.make_atom_decorators(atom))
             self.label = label
-
-        def __str__(self): return self.as_smirks()
-
-        def __lt__(self, other):
-            """
-            Overrides the default implementation
-            This method was primarily written for making SMIRKS patterns predictable.
-            If atoms are sortable, then the SMIRKS patterns are always the same making
-            tests easier to write. However, the specific sorting was created to also make SMIRKS
-            output as human readable as possible, that is to at least make it easier for a
-            human to see how the indexed atoms are related to each other.
-            It is typically easier for humans to read SMILES/SMARTS/SMIRKS with less branching (indicated with ()).
-
-            For example in:
-            [C:1]([H])([H])~[N:2]([C])~[O:3]
-            it is easier to see that the atoms C~N~O are connected in a "line" instead of:
-            [C:1]([N:2]([O:3])[C])([H])[H]
-            which is equivalent, but with all the () it is hard for a human to read the branching
-
-            Parameters
-            ----------
-            other: AtomStorage
-
-            Returns
-            -------
-            is_less_than: boolean
-                self is less than other
-            """
-            # if either smirks index is None, then you can't directly compare
-            # make a temporary index that is negative if it was None
-            self_index = self.label if self.label is not None else -1000
-            other_index = other.label if other.label is not None else -1000
-            # if either index is greater than 0, the one that is largest should go at the end of the list
-            if self_index > 0 or other_index > 0:
-                return self_index < other_index
-
-            # Both SMIRKS indices are not positive or None so compare the SMIRKS patterns instead
-            return self.as_smirks() < other.as_smirks()
 
         def make_atom_decorators(self, atom):
             """
@@ -251,7 +213,6 @@ class ClusterGraph(ChemPerGraph):
 
             for ref in self.decorators:
                 # get atomic number for this set of decorators
-                ref_atomic = int(ref[0][1:])
                 current = len(set(ref) & set(decs))
 
                 # if atomic numbers don't agree, get the number of common decorators / 10
@@ -265,7 +226,7 @@ class ClusterGraph(ChemPerGraph):
 
             return score
 
-    class BondStorage(object):
+    class BondStorage(ChemPerGraph.BondStorage):
         """
         BondStorage tracks information about a bond
         """
@@ -290,24 +251,6 @@ class ClusterGraph(ChemPerGraph):
                     self.ring.add(bond.is_ring())
 
             self.label = label
-
-        def __str__(self): return self.as_smirks()
-
-        def __lt__(self, other):
-            """
-            Overrides the default implementation
-            Used for sorting, while I don't know why you would want to sort Bond Storage
-            it seemed like a good idea to add this one when I added the sorting for Atom Storage
-            Parameters
-            ----------
-            other: BondStorage object
-
-            Returns
-            -------
-            is_less_than: boolean
-                self is less than other
-            """
-            return self.as_smirks() < other.as_smirks()
 
         def as_smirks(self):
             """

@@ -34,7 +34,6 @@ import networkx as nx
 import re
 import copy
 
-import numpy as np
 from numpy import random
 
 
@@ -281,7 +280,7 @@ class ChemicalEnvironment(object):
             smirks = self.asSMARTS()
 
             # No index specified so SMIRKS = SMARTS
-            if self.index == None:
+            if self.index is None:
                 return smirks
 
             # Add label to the end of SMARTS
@@ -696,7 +695,7 @@ into ChemicalEnvironments." % smirks)
         # Separate ORtypes into bases and decorators
         for OR in ORList:
             ORbase, ORdecors = self._separateORtypes(OR)
-            if ORbase != None:
+            if ORbase is not None:
                 ORtypes.append( (ORbase, ORdecors) )
 
         return ORtypes, ANDtypes, index
@@ -782,7 +781,7 @@ into ChemicalEnvironments." % smirks)
         if len(self._graph_nodes()) == 0:
             return ""
 
-        if initialAtom == None:
+        if initialAtom is None:
             initialAtom = self.getAtoms()[0]
 
         if neighbors is None:
@@ -937,7 +936,7 @@ into ChemicalEnvironments." % smirks)
 
         return random.choice(bonds)
 
-    def addAtom(self, bondToAtom, bondORtypes= None, bondANDtypes = None,
+    def addAtom(self, bondToAtom, bondORtypes = None, bondANDtypes = None,
             newORtypes = None, newANDtypes = None, newAtomIndex = None,
             newAtomRing = None, beyondBeta = False):
         """Add an atom to the specified target atom.
@@ -963,11 +962,11 @@ into ChemicalEnvironments." % smirks)
         --------
         newAtom: atom object for the newly created atom
         """
-        if bondToAtom == None:
+        if bondToAtom is None:
             if len(self._graph_nodes()) > 0:
                 return None
             newType = newAtomIndex
-            if newType == None:
+            if newType is None:
                 newType = 0
 
             newAtom = self.Atom(newORtypes, newANDtypes, newAtomIndex, newAtomRing)
@@ -980,7 +979,7 @@ into ChemicalEnvironments." % smirks)
             return None
 
         # determine the type integer for the new atom and bond
-        if newAtomIndex != None:
+        if newAtomIndex is not None:
             newType = newAtomIndex
             bondType = max(newType, bondToType) - 1
         else:
@@ -1005,7 +1004,7 @@ into ChemicalEnvironments." % smirks)
 
         return newAtom
 
-    def removeAtom(self, atom, onlyEmpty = False):
+    def removeAtom(self, atom, onlyEmpty=False):
         """Remove the specified atom from the chemical environment.
         if the atom is not indexed for the SMIRKS string or
         used to connect two other atoms.
@@ -1050,7 +1049,7 @@ into ChemicalEnvironments." % smirks)
         """
         return self._graph_nodes()
 
-    def getBonds(self, atom = None):
+    def getBonds(self, atom=None):
         """
         Parameters
         ----------
@@ -1061,7 +1060,7 @@ into ChemicalEnvironments." % smirks)
         --------
         a complete list of bonds in the fragment
         """
-        if atom == None:
+        if atom is None:
             edge_list = self._graph_edges(data=True)
             bonds = [data['bond'] for a1, a2, data in edge_list]
         else:
@@ -1189,7 +1188,7 @@ into ChemicalEnvironments." % smirks)
         returns True if the atom or bond is not indexed
         """
         if component._atom:
-            return component.index == None
+            return component.index is None
         else:
             return component._bond_type < 1
 
@@ -1198,7 +1197,7 @@ into ChemicalEnvironments." % smirks)
         returns True if the atom or bond is indexed
         """
         if component._atom:
-            return component.index != None
+            return component.index is not None
         else:
             return component._bond_type > 0
 
@@ -1237,7 +1236,7 @@ into ChemicalEnvironments." % smirks)
             atom2 = self.selectAtom(2)
             atom4 = self.selectAtom(4)
             bond24 = self.getBond(atom2, atom4)
-            if bond24 != None:
+            if bond24 is not None:
                 return "ImproperTorsion"
             return "ProperTorsion"
         else:
