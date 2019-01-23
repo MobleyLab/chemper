@@ -44,13 +44,12 @@ install:
   - conda info -a
     # creates environment for the given python version
   - conda create -q -n test python=$TRAVIS_PYTHON_VERSION numpy pytest
-  - conda install -c conda-forge codecov pytest-cov nbval
   - source activate test
 
     # install anything not in conda
-  # - pip install codecov
-  # - pip install pytest-cov
-  # - pip install nbval
+  - pip install codecov
+  - pip install pytest-cov
+  - pip install nbval
   - conda list
 
 before_script:
