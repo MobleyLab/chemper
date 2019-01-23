@@ -115,6 +115,8 @@ class ChemPerGraph(object):
 
         def __eq__(self, other): return self.as_smirks() == other.as_smirks()
 
+        def __hash__(self): return id(self)
+
         def __str__(self): return self.as_smirks()
 
         def as_smirks(self, compress=False):
@@ -189,6 +191,8 @@ class ChemPerGraph(object):
         def __eq__(self, other):
             return self.label == self.label
 
+        def __hash__(self): return id(self)
+
         def as_smirks(self):
             """
             Returns
@@ -221,7 +225,7 @@ class ChemPerGraph(object):
 
     def __eq__(self, other): return self.as_smirks() == self.as_smirks()
 
-    def __hash__(self): return hash(self.as_smirks()) # eq function uses hash function
+    def __hash__(self): return id(self)
 
     def as_smirks(self, compress=False):
         """

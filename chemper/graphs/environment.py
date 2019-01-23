@@ -461,9 +461,9 @@ class ChemicalEnvironment(object):
         # a or A w/ or w/o a ! in front 'A'
         aro_ali = "!?[aA]"
         # the decorators (D,H,j,r,V,X,^) followed by one or more integers
-        needs_int = "!?[DHjrVX^]\d+"
+        needs_int = "!?[DjVX^]\d+"
         # R(x), +, - do not need to be followed by a integer w/ or w/o a ! 'R2'
-        optional_int = "!?[Rx+-]\d*"
+        optional_int = "!?[RHhrx+-]\d*"
         # chirality options, "@", "@@", "@int" w/ or w/o a ! in front
         chirality = "!?[@]\d+|!?[@]@?"
 
@@ -838,23 +838,19 @@ into ChemicalEnvironments." % smirks)
         a single Atom object fitting the description
         or None if no such atom exists
         """
-        if descriptor is None:
-            return random.choice(self._graph_nodes())
+        if descriptor is None or isinstance(descriptor,str):
+            atoms = self.getComponentList('atom', descriptor)
+            if len(atoms) == 0:
+                return None
+            return random.choice(atoms)
 
-        try: descriptor = int(descriptor)
-        except ValueError: pass
-
-        if isinstance(descriptor, int):
-            for atom in self.getAtoms():
-                if atom.index == descriptor:
-                    return atom
+        if not isinstance(descriptor, int):
             return None
 
-        atoms = self.getComponentList('atom',descriptor)
-        if len(atoms) == 0:
-            return None
-
-        return random.choice(atoms)
+        for atom in self.getAtoms():
+            if atom.index == descriptor:
+                return atom
+        return None
 
     def getComponentList(self, component_type, descriptor = None):
         """
@@ -869,8 +865,12 @@ into ChemicalEnvironments." % smirks)
         Returns
         -------
         """
+        des_list = ['indexed', 'unindexed', 'alpha', 'beta', 'all']
         if descriptor is not None:
             d = descriptor.lower()
+            if not d in des_list:
+                raise Exception("Error: descriptor must be in the list [%s]" %
+                                ', '.join(des_list))
         else:
             d = None
 
@@ -921,20 +921,19 @@ into ChemicalEnvironments." % smirks)
         a single Bond object fitting the description
         or None if no such atom exists
         """
-        try: descriptor = int(descriptor)
-        except ValueError: pass
+        if descriptor is None or isinstance(descriptor,str):
+            bonds = self.getComponentList('bond', descriptor)
+            if len(bonds) == 0:
+                return None
+            return random.choice(bonds)
 
-        if type(descriptor) is int:
-            for bond in self.getBonds():
-                if bond._bond_type == descriptor:
-                    return bond
+        if not isinstance(descriptor, int):
             return None
+        for bond in self.getBonds():
+            if bond._bond_type == descriptor:
+                return bond
 
-        bonds = self.getComponentList('bond', descriptor)
-        if len(bonds) == 0:
-            return None
-
-        return random.choice(bonds)
+        return None
 
     def addAtom(self, bondToAtom, bondORtypes = None, bondANDtypes = None,
             newORtypes = None, newANDtypes = None, newAtomIndex = None,
