@@ -1,8 +1,7 @@
 """
 This is a test for the molecule, atom, and bond objects.
-Currently chemper only downloads one version of these objects.
-This test runs for which ever mol_toolkit is available and will
-print which one it is using
+First, it checks which toolkits (OpenEye or RDKit) are available
+It will run tests for each object for all toolkits that are available.
 """
 
 from chemper.mol_toolkits import mol_toolkit
