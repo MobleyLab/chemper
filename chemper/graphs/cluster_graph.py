@@ -14,17 +14,20 @@ Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvi
 """
 
 import networkx as nx
+from functools import total_ordering
 from chemper.graphs.fragment_graph import ChemPerGraph
 from chemper.graphs.environment import ChemicalEnvironment as CE
 from chemper.mol_toolkits import mol_toolkit
 
 
+@total_ordering
 class ClusterGraph(ChemPerGraph):
     """
     ChemPerGraphs are a graph based class for storing atom and bond information.
     They use the chemper.mol_toolkits Atoms, Bonds, and Mols
     """
-    class AtomStorage(object):
+    @total_ordering
+    class AtomStorage:
         """
         AtomStorage tracks information about an atom
         """
@@ -49,8 +52,6 @@ class ClusterGraph(ChemPerGraph):
                 for atom in atoms:
                     self.decorators.add(self.make_atom_decorators(atom))
             self.label = label
-
-        def __str__(self): return self.as_smirks()
 
         def __lt__(self, other):
             """
@@ -88,6 +89,12 @@ class ClusterGraph(ChemPerGraph):
             # Both SMIRKS indices are not positive or None so compare the SMIRKS patterns instead
             return self.as_smirks() < other.as_smirks()
 
+        def __eq__(self, other): return self.as_smirks() == other.as_smirks() and self.label == other.label
+
+        def __hash__(self): return id(self)
+
+        def __str__(self): return self.as_smirks()
+
         def make_atom_decorators(self, atom):
             """
             extract information from a chemper atom that would be useful in a smirks
@@ -115,12 +122,12 @@ class ClusterGraph(ChemPerGraph):
 
             return (
                 '#%i' % atom.atomic_number(),
-                aromatic,
                 'H%i' % atom.hydrogen_count(),
                 'X%i' % atom.connectivity(),
                 'x%i' % atom.ring_connectivity(),
                 ring,
-                charge
+                charge,
+                aromatic,
                 )
 
         def as_smirks(self, compress=False):
@@ -157,17 +164,25 @@ class ClusterGraph(ChemPerGraph):
             ----------
             dec_set: list like
                 single set of atom decorators
+            wild: boolean
+                insert * for decorator lists with no #n decorator
 
             Returns
             -------
             sorted_dec_set: list
                 same set of decorators sorted with atomic number or * first
             """
-            atom_num = [i for i in dec_set if '#' in i]
+            temp_dec_set = list(dec_set)
+            atom_num = [i for i in temp_dec_set if '#' in i]
             if len(atom_num) == 0 and wild:
                 atom_num = ["*"]
 
-            return atom_num + sorted(list(set(dec_set) - set(atom_num)))
+            temp_dec_set = set(temp_dec_set) - set(atom_num)
+
+            aro = [i for i in temp_dec_set if 'a' in i.lower()]
+            temp_dec_set = set(temp_dec_set) - set(aro)
+
+            return atom_num + sorted(list(temp_dec_set)) + aro
 
         def _compress_smirks(self):
             """
@@ -243,7 +258,6 @@ class ClusterGraph(ChemPerGraph):
 
             for ref in self.decorators:
                 # get atomic number for this set of decorators
-                ref_atomic = int(ref[0][1:])
                 current = len(set(ref) & set(decs))
 
                 # if atomic numbers don't agree, get the number of common decorators / 10
@@ -257,7 +271,8 @@ class ClusterGraph(ChemPerGraph):
 
             return score
 
-    class BondStorage(object):
+    @total_ordering
+    class BondStorage:
         """
         BondStorage tracks information about a bond
         """
@@ -286,21 +301,15 @@ class ClusterGraph(ChemPerGraph):
         def __str__(self): return self.as_smirks()
 
         def __lt__(self, other):
-            """
-            Overrides the default implementation
-            Used for sorting, while I don't know why you would want to sort Bond Storage
-            it seemed like a good idea to add this one when I added the sorting for Atom Storage
-            Parameters
-            ----------
-            other: BondStorage object
-
-            Returns
-            -------
-            is_less_than: boolean
-                self is less than other
-            """
+            if self.as_smirks() == other.as_smirks():
+                return self.label < other.label
             return self.as_smirks() < other.as_smirks()
 
+        def __eq__(self, other):
+            return self.label == other.label and self.as_smirks() == other.as__smirks()
+
+        def __hash__(self): return id(self)
+        
         def as_smirks(self):
             """
             Returns
