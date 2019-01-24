@@ -11,7 +11,7 @@ branches:
     - master
 
 python: # what python are you supporting?
-  - 3.5
+  - 3.6
 
 env:
   matrix:
