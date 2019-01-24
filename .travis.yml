@@ -11,7 +11,7 @@ branches:
     - master
 
 python: # what python are you supporting?
-  - 3.6
+  - 3.5
 
 env:
   matrix:
@@ -45,7 +45,11 @@ install:
     # creates environment for the given python version
   - conda create -q -n test python=$TRAVIS_PYTHON_VERSION numpy pytest
   - source activate test
-  - conda install -c conda-forge codecov pytest-cov nbval
+
+    # install anything not in conda
+  - pip install codecov
+  - pip install pytest-cov
+  - pip install nbval
   - conda list
 
 before_script:
