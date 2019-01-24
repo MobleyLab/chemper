@@ -23,14 +23,14 @@ try:
     from openeye import oechem
     from chemper.mol_toolkits import cp_openeye
     HAS_OE = True
-except:
+except ImportError:
     HAS_OE = False
 
 try:
     from rdkit import Chem
     from chemper.mol_toolkits import cp_rdk
     HAS_RDK = True
-except:
+except ImportError:
     HAS_RDK = False
 
 if not HAS_OE and not HAS_RDK:
