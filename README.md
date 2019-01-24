@@ -4,7 +4,7 @@
 
 This repository contains a variety of tools that will be useful in automating the process
 of chemical perception for the new SMIRKS Native Open Force Field (SMIRNOFF) format
-as a part of the [Open Force Field Consortium](http://openforcefield.org) [1].
+as a part of the [Open Force Field Initiative](http://openforcefield.org) [1].
 
 This idea originated from the tools [SMARTY and SMIRKY](https://github.com/openforcefield/smarty) which
 were designed to use an automated monte carlo algorithm to sample the chemical perception used
