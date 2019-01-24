@@ -26,15 +26,18 @@ AUTHORS:
 Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
-from chemper.mol_toolkits import mol_toolkit
 import networkx as nx
+from functools import total_ordering
+from chemper.mol_toolkits import mol_toolkit
 
 
+@total_ordering
 class ChemPerGraph(object):
     """
     ChemPerGraphs are a graph based class for storing atom and bond information.
     They use the chemper.mol_toolkits Atoms, Bonds, and Mols
     """
+    @total_ordering
     class AtomStorage(object):
         """
         AtomStorage tracks information about an atom
@@ -110,6 +113,10 @@ class ChemPerGraph(object):
             # Both SMIRKS indices are not positive or None so compare the SMIRKS patterns instead
             return self.as_smirks() < other.as_smirks()
 
+        def __eq__(self, other): return self.as_smirks() == other.as_smirks() and self.label == other.label
+
+        def __hash__(self): return id(self)
+
         def __str__(self): return self.as_smirks()
 
         def as_smirks(self, compress=False):
@@ -150,6 +157,7 @@ class ChemPerGraph(object):
 
             return '[%s:%i]' % (base_smirks, self.label)
 
+    @total_ordering
     class BondStorage(object):
         """
         BondStorage tracks information about a bond
@@ -177,7 +185,15 @@ class ChemPerGraph(object):
 
         def __str__(self): return self.as_smirks()
 
-        def __lt__(self, other): return self.as_smirks() < other.as_smirks()
+        def __lt__(self, other):
+            if self.as_smirks() == other.as_smirks():
+                return self.label < other.label
+            return self.as_smirks() < other.as_smirks()
+
+        def __eq__(self, other):
+            return self.label == other.label and self.as_smirks() == other.as__smirks()
+
+        def __hash__(self): return id(self)
 
         def as_smirks(self):
             """
@@ -209,7 +225,9 @@ class ChemPerGraph(object):
 
     def __lt__(self, other): return self.as_smirks() < other.as_smirks()
 
-    def __hash__(self): hash(self.as_smirks()) # eq function uses hash function
+    def __eq__(self, other): return self.as_smirks() == self.as_smirks()
+
+    def __hash__(self): return id(self)
 
     def as_smirks(self, compress=False):
         """

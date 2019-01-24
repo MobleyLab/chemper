@@ -185,3 +185,23 @@ def test_wrong_smirks_error():
     from chemper.graphs.environment import SMIRKSParsingError
     with pytest.raises(SMIRKSParsingError):
         env = ChemicalEnvironment(smirks)
+
+
+decs = ['!a','!A','!D4','!H', '!h', '!x', '!r', '!V3',
+        '!X4', '!#7', '!+', '!-', '!^1', '!@', '!@@', '!@2']
+
+@pytest.mark.parametrize('decorator',decs)
+def test_ring_parsing(decorator):
+    """
+    Check not's in parsing or or and decoration
+    """
+    # make SMIRKS with decorator in both the OR and AND decorators
+    temp_smirks = "[#1%s;a;%s:1]" % (decorator, decorator)
+    env = ChemicalEnvironment(temp_smirks)
+    atom = env.getIndexedAtoms()[0]
+
+    # check decorator in OR type
+    assert decorator in atom.getORtypes()[0][1]
+
+    # check decorator in AND types
+    assert decorator in atom.getANDtypes()
