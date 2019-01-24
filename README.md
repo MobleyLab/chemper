@@ -28,6 +28,9 @@ For example, if you know you want to assign certain group of angles (sets of thr
 the same equilibrium bond angle and force constant,
 then chemper should generate SMIRKS patterns that maintain that clustering.
 
+**Warning**
+This repository is still under active development. While an initial [version](#versions) is available changes are still expected in the API and the underlying code.
+
 ## Prerequisites
 
 We currently test with Python 3.5, though we expect anything 3.5+ should work.
@@ -144,6 +147,13 @@ In this case the SMIRKS indexed atoms for propane (mol1) are one of the terminal
 In pentane (mol2) however atom1 can be a terminal or middle of the chain carbon atom. This changes the number of
 hydrogen atoms (`Hn` decorator) on the carbon, thus there are two possible SMIRKS patterns for atom `:1`
 `#6AH2X4x0r0+0` or (indicated by the "`,`") `#6AH3X4x0r0+0`. But, atom `:2` only has one possibility `#6AH2X4x0r0+0`.
+
+## Versions
+
+### 0.1.0 Alpha Release
+This is a first release of the Alpha testing version of `chemper`. As you can follow in the [issue tracker](https://github.com/MobleyLab/chemper/issues) there are still
+on going problems to resolve. This first release will allow for reference to the concepts and algorithms included here
+for automated chemical perception. However, the API is still in flux and nothing should be considered permanent at this time.
 
 ## Contributors
 
