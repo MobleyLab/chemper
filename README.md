@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/MobleyLab/chemper.svg?branch=master)](https://travis-ci.org/MobleyLab/chemper) [![codecov](https://codecov.io/gh/MobleyLab/chemper/branch/master/graph/badge.svg)](https://codecov.io/gh/MobleyLab/chemper) [![Documentation Status](https://readthedocs.org/projects/chemper/badge/?version=latest)](http://chemper.readthedocs.io/en/latest/?badge=latest)
+[![Build Status](https://travis-ci.org/MobleyLab/chemper.svg?branch=master)](https://travis-ci.org/MobleyLab/chemper) [![codecov](https://codecov.io/gh/MobleyLab/chemper/branch/master/graph/badge.svg)](https://codecov.io/gh/MobleyLab/chemper) [![Documentation Status](https://readthedocs.org/projects/chemper/badge/?version=latest)](http://chemper.readthedocs.io/en/latest/?badge=latest) [![Total alerts](https://img.shields.io/lgtm/alerts/g/MobleyLab/chemper.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/MobleyLab/chemper/alerts/)
 
 # chemper
 
@@ -79,7 +79,7 @@ This is `chempers` main function.
 It takes groups of molecular fragments which should be typed together and generates a heirarchical list
 of SMIRKS patterns which maintains this typing.
 `chemper`'s `SMIRKSifier` takes a list of molecules and groups of atoms based on index and generates
-a hierarchical list of SMIRKS in just a few lines of code. 
+a hierarchical list of SMIRKS in just a few lines of code.
 In the example, [general_smirks_for_clusters](https://chemper.readthedocs.io/en/latest/examples/general_smirks_for_clusters.html)
 we cluster bonds in a set of simple hydrocarbons based on order. Then `SMIRKSifer` turns these clusters into a list of SMIRKS patterns.
 The following functionalities are used to make the `SMIRKSifier` possible, but may be useful on their own.
