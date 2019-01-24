@@ -113,7 +113,7 @@ class ChemPerGraph(object):
             # Both SMIRKS indices are not positive or None so compare the SMIRKS patterns instead
             return self.as_smirks() < other.as_smirks()
 
-        def __eq__(self, other): return self.as_smirks() == other.as_smirks()
+        def __eq__(self, other): return self.as_smirks() == other.as_smirks() and self.label == other.label
 
         def __hash__(self): return id(self)
 
@@ -186,10 +186,12 @@ class ChemPerGraph(object):
         def __str__(self): return self.as_smirks()
 
         def __lt__(self, other):
-            return self.label < other.label
+            if self.as_smirks() == other.as_smirks():
+                return self.label < other.label
+            return self.as_smirks() < other.as_smirks()
 
         def __eq__(self, other):
-            return self.label == self.label
+            return self.label == other.label and self.as_smirks() == other.as__smirks()
 
         def __hash__(self): return id(self)
 
