@@ -14,6 +14,7 @@ Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvi
 
 from abc import ABC, abstractmethod
 
+
 # =======================================
 # Molecule Class
 # =======================================
@@ -31,7 +32,7 @@ class MolAdapter(ABC):
         """
         Sets the aromaticity flags in this molecule to use the MDL model
         """
-        return
+        pass
 
     @abstractmethod
     def get_atoms(self):
@@ -41,7 +42,7 @@ class MolAdapter(ABC):
         atom_list: list of chemper Atoms
             list of all atoms in the molecule
         """
-        return
+        pass
 
     @abstractmethod
     def get_atom_by_index(self, idx):
@@ -56,7 +57,7 @@ class MolAdapter(ABC):
         atom: chemper Atom object
             atom with index idx
         """
-        return
+        pass
 
     @abstractmethod
     def get_bonds(self):
@@ -66,7 +67,7 @@ class MolAdapter(ABC):
         bond_list: list of chemper Bonds
             list of all bonds in the molecule
         """
-        return
+        pass
 
     @abstractmethod
     def get_bond_by_index(self, idx):
@@ -81,7 +82,7 @@ class MolAdapter(ABC):
         bond: chemper Bond object
             bond with index idx
         """
-        return
+        pass
 
     @abstractmethod
     def get_bond_by_atoms(self, atom1, atom2):
@@ -97,7 +98,7 @@ class MolAdapter(ABC):
         bond: chemper Bond object or None
             if atoms are connected returns bond otherwise None
         """
-        return
+        pass
 
     @abstractmethod
     def smirks_search(self, smirks):
@@ -116,7 +117,7 @@ class MolAdapter(ABC):
         matches: list of dictionaries
             dictionary for each match with the form {smirks index: atom index}
         """
-        return
+        pass
 
     @abstractmethod
     def get_smiles(self):
@@ -126,7 +127,7 @@ class MolAdapter(ABC):
         smiles: str
             SMILES string for the molecule
         """
-        return
+        pass
 
 # =======================================
 # Atom Class
@@ -149,7 +150,7 @@ class AtomAdapter(ABC):
         atomic_number: int
             atomic number for the atom
         """
-        return
+        pass
 
     @abstractmethod
     def degree(self):
@@ -159,7 +160,7 @@ class AtomAdapter(ABC):
         degree: int
             degree or number of explicit bonds around the atom
         """
-        return
+        pass
 
     @abstractmethod
     def connectivity(self):
@@ -169,7 +170,7 @@ class AtomAdapter(ABC):
         connectivity: int
             connectivity or total number of bonds around the atom
         """
-        return
+        pass
 
     @abstractmethod
     def valence(self):
@@ -179,7 +180,7 @@ class AtomAdapter(ABC):
         valence: int
             the atoms valence
         """
-        return
+        pass
 
     @abstractmethod
     def formal_charge(self):
@@ -189,7 +190,7 @@ class AtomAdapter(ABC):
         formal_charge: int
             the atom's formal charge
         """
-        return
+        pass
 
     @abstractmethod
     def hydrogen_count(self):
@@ -199,7 +200,7 @@ class AtomAdapter(ABC):
         H_count: int
             total number of hydrogen atoms connected to this Atom
         """
-        return
+        pass
 
     @abstractmethod
     def min_ring_size(self):
@@ -209,7 +210,7 @@ class AtomAdapter(ABC):
         min_ring_size: int
             size of the smallest ring this atom is a part of
         """
-        return
+        pass
 
     @abstractmethod
     def ring_connectivity(self):
@@ -219,7 +220,7 @@ class AtomAdapter(ABC):
         ring_connectivity: int
             number of bonds on the atom that are a part of a ring
         """
-        return
+        pass
 
     @abstractmethod
     def is_aromatic(self):
@@ -229,7 +230,7 @@ class AtomAdapter(ABC):
         is_aromatic: boolean
             True if the atom is aromatic otherwise False
         """
-        return
+        pass
 
     @abstractmethod
     def get_index(self):
@@ -239,7 +240,7 @@ class AtomAdapter(ABC):
         index: int
             atom index in its molecule
         """
-        return
+        pass
 
     @abstractmethod
     def is_connected_to(self, atom2):
@@ -254,7 +255,7 @@ class AtomAdapter(ABC):
         connected: boolean
             True if atom2 is a direct neighbor or atom1
         """
-        return
+        pass
 
     @abstractmethod
     def get_neighbors(self):
@@ -264,7 +265,7 @@ class AtomAdapter(ABC):
         neighbors: list of chemper Atoms
             atoms that are one bond away from this atom
         """
-        return
+        pass
 
     @abstractmethod
     def get_bonds(self):
@@ -274,7 +275,7 @@ class AtomAdapter(ABC):
         bonds: list of chemper Bonds
             bonds connected to this atom
         """
-        return
+        pass
 
     @abstractmethod
     def get_molecule(self):
@@ -286,7 +287,7 @@ class AtomAdapter(ABC):
         mol: chemper Mol
             molecule this atom is stored in
         """
-        return
+        pass
 
 
 # =======================================
@@ -309,7 +310,7 @@ class BondAdapter(ABC):
         order: int or float
             This is the absolute order, returns 1.5 if bond is aromatic
         """
-        return
+        pass
 
     @abstractmethod
     def get_atoms(self):
@@ -319,7 +320,7 @@ class BondAdapter(ABC):
         atoms: list of chemper Atoms
             the two atoms connected by this bond
         """
-        return
+        pass
 
     @abstractmethod
     def is_ring(self):
@@ -329,7 +330,7 @@ class BondAdapter(ABC):
         is_ring: boolean
             True if bond is a part of a ring, otherwise False
         """
-        return
+        pass
 
     @abstractmethod
     def is_aromatic(self):
@@ -339,7 +340,7 @@ class BondAdapter(ABC):
         is_aromatic: boolean
             True if it is an aromatic bond
         """
-        return
+        pass
 
     @abstractmethod
     def is_single(self):
@@ -349,7 +350,7 @@ class BondAdapter(ABC):
         is_single: boolean
             True if it is a single bond
         """
-        return
+        pass
 
     @abstractmethod
     def is_double(self):
@@ -359,7 +360,7 @@ class BondAdapter(ABC):
         is_double: boolean
             True if it is a double bond
         """
-        return
+        pass
 
     @abstractmethod
     def is_triple(self):
@@ -369,7 +370,7 @@ class BondAdapter(ABC):
         is_triple: boolean
             True if it is a triple bond
         """
-        return
+        pass
 
     @abstractmethod
     def get_molecule(self):
@@ -381,7 +382,7 @@ class BondAdapter(ABC):
         mol: chemper Mol
             molecule this bond is stored in
         """
-        return
+        pass
 
     @abstractmethod
     def get_index(self):
@@ -391,4 +392,4 @@ class BondAdapter(ABC):
         index: int
             index of this bond in its parent molecule
         """
-        return
+        pass

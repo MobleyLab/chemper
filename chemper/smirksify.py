@@ -34,16 +34,13 @@ Caitlin Bannan <bannanc@uci.edu>, UC Irvine, Mobley Group
 
 import copy
 
-import networkx as nx
-import time
 from chemper.graphs.environment import ChemicalEnvironment as CE
 from chemper.mol_toolkits import mol_toolkit
 from chemper.chemper_utils import ImproperDict, ValenceDict, \
-    get_typed_molecules, is_valid_smirks, match_reference
+    get_typed_molecules, match_reference
 from chemper.graphs.cluster_graph import ClusterGraph
 
 import numpy as np
-from numpy import random
 
 
 # =============================================================================================
@@ -309,7 +306,7 @@ class Reducer():
         # remove one or decorator from a single type
         ref_or = ors[ref_idx]
         decs = ref_or[1]
-        decs.remove(random.choice(decs))
+        decs.remove(np.random.choice(decs))
         ors[ref_idx] = (ref_or[0], decs)
         return ors
 
@@ -349,7 +346,7 @@ class Reducer():
         i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#6, [+0]), (#7, []) ]
         """
         all_decs = set([d for b,decs in input_ors for d in decs])
-        remove_dec = random.choice(list(all_decs))
+        remove_dec = np.random.choice(list(all_decs))
 
         # we start by defining a criteria for when the decorator
         # should not be removed.
@@ -402,7 +399,7 @@ class Reducer():
                 # you can remove 1 type of decorator, i.e. all 'Xn' decorators
                 choices.append('all_one_dec')
 
-        change = random.choice(choices)
+        change = np.random.choice(choices)
 
         if change == 'all':
             # remove ALL OR decorators
@@ -441,7 +438,7 @@ class Reducer():
         # chose a set of or decorators to change
         # these come in the form [base, (decorators)]
         all_ors = copy.deepcopy(input_all_ors)
-        or_idx = random.randint(len(all_ors))
+        or_idx = np.random.randint(len(all_ors))
 
         # atoms have more ORdecorators and therefore more options for
         # how they can be removed
@@ -450,7 +447,7 @@ class Reducer():
 
         # For a bond, either one ORtype is removed
         # or they are all removed.
-        if random.rand() > 0.5:
+        if np.random.rand() > 0.5:
             # remove just one or type
             return self.remove_ref(all_ors, or_idx), True
         # remove all ors
@@ -464,10 +461,10 @@ class Reducer():
         if len(input_all_ands) == 0:
             return input_all_ands, False
 
-        if random.rand() > 0.5:
+        if np.random.rand() > 0.5:
             # otherwise randomly remove an AND decorator
             all_ands = copy.deepcopy(input_all_ands)
-            all_ands.remove(random.choice(all_ands))
+            all_ands.remove(np.random.choice(all_ands))
         else:
             all_ands = list()
         return all_ands, True
@@ -513,7 +510,7 @@ class Reducer():
         weights = odds / odds.sum()
 
         # choose an atom or bond with the probabilities:
-        item = random.choice(items, p=weights)
+        item = np.random.choice(items, p=weights)
         dec_opts = list()
         if len(item.getORtypes()) > 0:
             dec_opts.append('remove_ors')
@@ -538,7 +535,7 @@ class Reducer():
         if sub is None or len(dec_opts) == 0:
             return smirks, False
 
-        change = random.choice(dec_opts)
+        change = np.random.choice(dec_opts)
         if change == 'remove_ors':
             new_or_types, changed = self.remove_or(sub.getORtypes(), isinstance(sub, CE.Bond))
             if not changed:
@@ -583,7 +580,7 @@ class Reducer():
 
             proposed_smirks = copy.deepcopy(self.current_smirks)
             # chose a SMIRKS to change
-            change_idx = random.randint(len(proposed_smirks))
+            change_idx = np.random.randint(len(proposed_smirks))
             change_entry = proposed_smirks[change_idx]
 
             # generate new smirks

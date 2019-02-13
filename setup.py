@@ -33,7 +33,7 @@ def find_package_data(data_root, package_root):
 if __name__ == "__main__":
     setuptools.setup(
         name='chemper',        # Make sure to change to match your library name
-        version="0.0.0",    # you should keep track of versions
+        version="0.1.0",    # you should keep track of versions
         description='A python package for automatically sampling chemical perception',     # add a description
         long_description=read('README.md'),
         author='Caitlin C. Bannan',          # add your name to author category
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         ],
 
         classifiers=[
-            'Development Status :: 4 - Beta',
+            'Development Status :: 4 - Alpha',
             'Intended Audience :: Science/Research',
             'Programming Language :: Python :: 3',
         ],
