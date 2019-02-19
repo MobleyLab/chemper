@@ -1,5 +1,0 @@
-source oldff/leaprc.ff99SB
-divaline = sequence {NVAL CVAL}
-savepdb divaline divaline_linear.pdb
-protein = loadpdb divaline_linear.pdb
-saveamberparm protein protein.prmtop protein.inpcrd
