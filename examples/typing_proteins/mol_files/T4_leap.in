@@ -1,0 +1,3 @@
+source leaprc.protein.ff14SB
+protein = loadpdb T4protein.pdb
+saveamberparm protein T4protein.prmtop T4protein.inpcrd
