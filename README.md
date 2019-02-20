@@ -1,10 +1,10 @@
-[![Build Status](https://travis-ci.org/MobleyLab/chemper.svg?branch=master)](https://travis-ci.org/MobleyLab/chemper) [![codecov](https://codecov.io/gh/MobleyLab/chemper/branch/master/graph/badge.svg)](https://codecov.io/gh/MobleyLab/chemper) [![Documentation Status](https://readthedocs.org/projects/chemper/badge/?version=latest)](http://chemper.readthedocs.io/en/latest/?badge=latest)
+[![Build Status](https://travis-ci.org/MobleyLab/chemper.svg?branch=master)](https://travis-ci.org/MobleyLab/chemper) [![codecov](https://codecov.io/gh/MobleyLab/chemper/branch/master/graph/badge.svg)](https://codecov.io/gh/MobleyLab/chemper) [![Documentation Status](https://readthedocs.org/projects/chemper/badge/?version=latest)](http://chemper.readthedocs.io/en/latest/?badge=latest) [![Total alerts](https://img.shields.io/lgtm/alerts/g/MobleyLab/chemper.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/MobleyLab/chemper/alerts/)
 
 # chemper
 
 This repository contains a variety of tools that will be useful in automating the process
 of chemical perception for the new SMIRKS Native Open Force Field (SMIRNOFF) format
-as a part of the [Open Force Field Consortium](http://openforcefield.org) [1].
+as a part of the [Open Force Field Initiative](http://openforcefield.org) [1].
 
 This idea originated from the tools [SMARTY and SMIRKY](https://github.com/openforcefield/smarty) which
 were designed to use an automated monte carlo algorithm to sample the chemical perception used
@@ -27,6 +27,9 @@ matching clustering of molecular subgraphs.
 For example, if you know you want to assign certain group of angles (sets of three atoms)
 the same equilibrium bond angle and force constant,
 then chemper should generate SMIRKS patterns that maintain that clustering.
+
+**Warning**
+This repository is still under active development. While an initial [version](#versions) is available changes are still expected in the API and the underlying code.
 
 ## Prerequisites
 
@@ -73,7 +76,18 @@ pip install -e .
 Below are some details on the tools provided in `chemper` see
 [examples](https://github.com/MobleyLab/chemper/tree/master/examples) for more detailed usage examples
 
-### mol_toolkits
+### SMIRKSifier
+
+This is `chempers` main function.
+It takes groups of molecular fragments which should be typed together and generates a heirarchical list
+of SMIRKS patterns which maintains this typing.
+`chemper`'s `SMIRKSifier` takes a list of molecules and groups of atoms based on index and generates
+a hierarchical list of SMIRKS in just a few lines of code.
+In the example, [general_smirks_for_clusters](https://chemper.readthedocs.io/en/latest/examples/general_smirks_for_clusters.html)
+we cluster bonds in a set of simple hydrocarbons based on order. Then `SMIRKSifer` turns these clusters into a list of SMIRKS patterns.
+The following functionalities are used to make the `SMIRKSifier` possible, but may be useful on their own.
+
+### `mol_toolkits`
 
 As noted [above](#installation), we seek to keep `chemper` independent of the cheminformatics toolkit.
 `mol_toolkits` is created to keep all code dependent on the toolkit installed. It can create molecules from
@@ -134,26 +148,17 @@ In pentane (mol2) however atom1 can be a terminal or middle of the chain carbon 
 hydrogen atoms (`Hn` decorator) on the carbon, thus there are two possible SMIRKS patterns for atom `:1`
 `#6AH2X4x0r0+0` or (indicated by the "`,`") `#6AH3X4x0r0+0`. But, atom `:2` only has one possibility `#6AH2X4x0r0+0`.
 
+## Versions
 
-# What's coming next?
-
-The ClusterGraph code can accurately create a SMIRKS pattern for a group of clustered molecular subgraphes.
-However as you can see in the [SMIRKS_from_molecules](examples/using_cluster_graph/SMIRKS_from_molecules.ipynb)
-the SMIRKS created by `ClusterGraph` are highly specific.
-Our final goal here is to maintain a given set of clustering, but to generate relatively general SMIRKS patterns
-that can then be used to assign force field parameters. This use of relatively generic SMIRKS patterns is part of what
-we believe makes the SMIRNOFF force field format so powerful.
-
-One option here would be to go back to the MC sampling used in [SMARTY/SMIRKY](https://github.com/openforcefield/smarty).
-Where the information stored in `ClusterGraph` could be used to make more intelligent/efficient moves.
-However, we believe there is a yet more efficient option where the differences and similarities in `ClusterGraph` objects
-could be used to determine the correct SMIRKS patterns. Thus, the next step is to essentially find the similarities
-and differences in `ClusterGraph`s so that the most general SMIRKS can be used to maintain clustering as the user
-inputs, but not specify more information than necessary.
+### 0.1.0 Alpha Release
+This is a first release of the Alpha testing version of `chemper`. As you can follow in the [issue tracker](https://github.com/MobleyLab/chemper/issues) there are still
+on going problems to resolve. This first release will allow for reference to the concepts and algorithms included here
+for automated chemical perception. However, the API is still in flux and nothing should be considered permanent at this time.
 
 ## Contributors
 
-* [Caitlin Bannan (UCI)](https://github.com/bannanc)
+* [Caitlin C. Bannan (UCI)](https://github.com/bannanc)
+* [Jessica Maat (UCI)](https://github.com/jmaat)
 * [David L. Mobley (UCI)](https://github.com/davidlmobley)
 
 ## Acknowledgments

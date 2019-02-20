@@ -42,7 +42,8 @@ See :doc:`installation`.
 Contributors
 ------------
 
-* `Caitlin Bannan (UCI) <https://github.com/bannanc>`_
+* `Caitlin C. Bannan (UCI) <https://github.com/bannanc>`_
+* `Jessica Maat (UCI) <https://github.com/jmaat>`_
 * `David L. Mobley (UCI) <https://github.com/davidlmobley>`_
 
 Acknowledgments
