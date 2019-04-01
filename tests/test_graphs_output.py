@@ -98,28 +98,21 @@ graph_data = [
      '[#6H2,#6H3;!r;+0;X4;x0;A:1](-;!@[#1H0X1,#6H3X4;!r;+0;x0;A])(-;!@[#1H0X1x0!r+0A])' \
      '(-;!@[#1H0X1x0!r+0A])-;!@[#6H3X4x0!r+0A:2](-;!@[#1H0X1x0!r+0A])(-;!@[#1H0X1x0!r+0A])-;!@[#1H0X1x0!r+0A]'
      ),
-    # 9
-    (make_cluster_graph(['C1CCCC1', 'C1=CNC=C1', 'CO'], layers=2),
-     "[#6H1X3x2r5+0a,#6H2X4x2r5+0A,#8H1X2x0!r+0A:1](-;!@[#1H0X1x0!r+0A])-,:[#6H1X3x2r5+0a," \
-     "#6H2X4x2r5+0A,#6H3X4x0!r+0A:2](-,:[#1H0X1x0!r+0A,#6H2X4x2r5+0A,#7H1X3x2r5+0a])-;!@[#1H0X1x0!r+0A]",
-     "[#6H1X3r5x2a,#6H2X4r5x2A,#8!rH1X2x0A;+0:1](-;!@[#1H0X1x0!r+0A])-,:[#6!rH3X4x0A," \
-     "#6H1X3r5x2a,#6H2X4r5x2A;+0:2](-,:[#1!rH0X1x0A,#6H2X4r5x2A,#7H1X3r5x2a;+0])-;!@[#1H0X1x0!r+0A]"
-     ),
     # Make single molecule ChemPerGraphs
-    # 10
+    # 9
     (make_frag_graph('C', 0), '[#6AH4X4x0!r+0:1]-!@[#1AH0X1x0!r+0:2]', "[#6:1]-!@[#1:2]"), # no layers
-    # 11
+    # 10
     (make_frag_graph('C#C', 1), # one layer
      '[#6AH1X2x0!r+0:1](-!@[#1AH0X1x0!r+0])#!@[#6AH1X2x0!r+0:2]-!@[#1AH0X1x0!r+0]',
      "[#6:1](-!@[#1])#!@[#6:2]-!@[#1]"
      ),
-    # 12
+    # 11
     (make_frag_graph('C#CC', 3), # three layers
      '[#6AH1X2x0!r+0:1](-!@[#1AH0X1x0!r+0])#!@[#6AH0X2x0!r+0:2]-!@[#6AH3X4x0!r+0]' \
      "(-!@[#1AH0X1x0!r+0])(-!@[#1AH0X1x0!r+0])-!@[#1AH0X1x0!r+0]",
      "[#6:1](-!@[#1])#!@[#6:2]-!@[#6](-!@[#1])(-!@[#1])-!@[#1]"
      ),
-    # 13
+    # 12
     (make_frag_graph('CO', 'all'), # infinite layers
      '[#6AH3X4x0!r+0:1](-!@[#1AH0X1x0!r+0])(-!@[#1AH0X1x0!r+0])(-!@[#1AH0X1x0!r+0])' \
      '-!@[#8AH1X2x0!r+0:2]-!@[#1AH0X1x0!r+0]',
