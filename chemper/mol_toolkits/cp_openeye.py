@@ -130,6 +130,8 @@ class Mol(MolAdapter):
         if not ss.Init(smirks):
             raise ValueError("Error parsing SMIRKS %s" % smirks)
 
+        # set maximum matches in substructure search to infinite (0 in API)
+        ss.SetMaxMatches(0)
         for match in ss.Match(cmol, False):
             d = dict()
             for ma in match.GetAtoms():
