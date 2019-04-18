@@ -13,7 +13,6 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     MINICONDA=Miniconda3-latest-MacOSX-x86_64.sh
 else
     MINICONDA=Miniconda3-latest-Linux-x86_64.sh
-    export PYTHON_VER=$TRAVIS_PYTHON_VERSION
 fi
 MINICONDA_HOME=$HOME/miniconda
 MINICONDA_MD5=$(curl -s https://repo.continuum.io/miniconda/ | grep -A3 $MINICONDA | sed -n '4p' | sed -n 's/ *<td>\(.*\)<\/td> */\1/p')
@@ -33,6 +32,7 @@ source ~/.bashrc  # source file to get new commands
 #export PATH=$MINICONDA_HOME/bin:$PATH  # Old way, should not be needed anymore
     
 conda config --add channels conda-forge
+conda config --add channels openeye
     
 conda config --set always_yes yes
 conda install conda conda-build jinja2 anaconda-client
