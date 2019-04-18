@@ -1,0 +1,67 @@
+environment:
+
+  matrix:
+      # OpenEye python 3.6
+    - PYTHON: "C:\\Miniconda36-x64"
+      PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "64"
+      OE: true
+      RDK: false
+
+      # RDKit python 3.6
+    - PYTHON: "C:\\Miniconda37-x64"
+      PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "64"
+      OE: false
+      RDK: true
+
+      # RDKit python 3.7
+    - PYTHON: "C:\\Miniconda37-x64"
+      PYTHON_VERSION: "3.7"
+      PYTHON_ARCH: "64"
+      OE: false
+      RDK: true
+
+      # RDKit and OE python 3.6
+    - PYTHON: "C:\\Miniconda37-x64"
+      PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "64"
+      OE: true
+      RDK: true
+  
+
+install:
+    # Make sure pip is around
+  - python -m ensurepip
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  
+    # Add conda-forge channel
+  - conda config --add channels conda-forge
+  
+
+    # Always run commands without asking
+  - conda config --set always_yes yes
+
+    # Try to update conda first to avoid odd dependency clashes
+  - conda update --all
+
+    # Create test environment for package
+    # - if %OE% == true if %RDK% == false (python devtools\\scripts\\create_conda_env.py -n=test -p=%PYTHON_VERSION% devtools\\conda-envs\\test_env_oe.yaml)
+    # - if %OE% == false if %RDK% == true (python devtools\\scripts\\create_conda_env.py -n=test -p=%PYTHON_VERSION% devtools\\conda-envs\\test_env_rdk.yaml)
+    # - if %OE% == true if %RDK% == true (python devtools\\scripts\\create_conda_env.py -n=test -p=%PYTHON_VERSION% devtools\\conda-envs\\test_env_both.yaml)
+  - python devtools\\scripts\\create_conda_env.py -n=test -p=%PYTHON_VERSION% devtools\\conda-envs\\test_env_both.yaml
+
+    # Activate the test environment
+  - activate test
+
+    # Build and install package
+  - python setup.py develop --no-deps
+
+  
+build: false
+
+test_script:
+  - pytest -v --cov=chemper chemper\\tests
+
+on_success:
+  - codecov
