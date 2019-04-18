@@ -8,7 +8,7 @@ dependencies:
     # Base depends
   - python
   - pip
-  - openeye
+  - openeye-toolkits
   - rdkit
   - numpy
   - networkx

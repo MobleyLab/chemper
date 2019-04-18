@@ -7,20 +7,23 @@ branches:
   only:
     - master
 
-python: # what python are you supporting?
-  - 3.6
-
 matrix:
   include:
     # Test osx with RDK without OE
     - os: osx
       language: generic
+      python: 3.6
       env: PYTHON_VER=3.6 RDK=true OE=false
 
-    # test one python 3.7 (RDK not OE due to conda)
+    # test one python 3.7 per platform (RDK not OE due to conda)
     - os: osx
       language: generic
+      python: 3.7
       env: PYTHON_VER=3.7 RDK=true OE=false 
+    - os: linux
+      language: generic
+      python: 3.7
+      env: PYTHON_VER=3.7 RDK=true OE=false
 
     # Test linux with RDK without OE
     - os: linux
@@ -31,6 +34,7 @@ matrix:
     # Test osx with OE and without RDK
     - os: osx
       language: generic
+      python: 3.6
       env: PYTHON_VER=3.6 RDK=false OE=true
 
     # Test linux with OE and no RDK
