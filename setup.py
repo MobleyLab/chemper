@@ -61,7 +61,7 @@ if __name__ == "__main__":
         packages=['chemper', 'chemper.tests'],
         # look for other package data, not just the python modules
         # this should install all data in the chemper/data/ folders
-        package_data={'chemper': ["data/*"] }
+        package_data={'chemper': ["data/*"] },
         # This was previously
         # package_data={'chemper': find_package_data('chemper/data', 'chemper')}
         # TODO: permanently delete line above and relevant function if it works
