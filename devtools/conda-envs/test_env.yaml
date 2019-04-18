@@ -1,0 +1,15 @@
+name: chemper
+channels:
+  - conda-forge
+dependencies:
+    # Base depends
+  - python
+  - pip
+
+    # Testing
+  - pytest
+  - pytest-cov
+  - nbval
+  - codecov
+  - numpy
+  - networkx
