@@ -11,9 +11,9 @@ to more closely resemble the MolSSI cookiecutter format:
     https://github.com/MolSSI/cookiecutter-cms
 """
 
-import setuptools
 import os
 from os.path import relpath, join
+from setuptools import setup
 import versioneer
 
 def read(fname):
@@ -35,38 +35,23 @@ def find_package_data(data_root, package_root):
     return files
 
 
-if __name__ == "__main__":
-
-    short_description = __doc__.split("\n")
-    try:
-        with open("README.md", "r") as handle:
-            long_description = handle.read()
-    except:
-        long_description = "\n".join(short_description[2:])
-
-    setuptools.setup(
-        name='chemper',        # Make sure to change to match your library name
-        version="0.1.0",    # you should keep track of versions
-        description='A python package for automatically sampling chemical perception',     # add a description
-        long_description=read('README.md'),
-        author='Caitlin C. Bannan',          # add your name to author category
-        author_email='bannanc@uci.edu',    # add your e-mail
-        description=short_description[0],
-        long_description=long_description,
-        long_description_content_type="text/markdown",
-        version=versioneer.get_version(),
-        cmdclass=versioneer.get_cmdclass(),
-        license='MIT',      # should match license in your repo
-
-        packages=['chemper', 'chemper.tests'],
-        # look for other package data, not just the python modules
-        # this should install all data in the chemper/data/ folders
-        package_data={'chemper': ["data/*"] },
-        # This was previously
-        # package_data={'chemper': find_package_data('chemper/data', 'chemper')}
-        # TODO: permanently delete line above and relevant function if it works
-        # these were optional in cookiecutter, I added for completeness
-        url="https://github.com/MobleyLab/chemper",             # add github URL
-        python_requires=">=3.5",
-        zip_safe=True,
-    )
+setup(
+    name = 'chemper',        # Make sure to change to match your library name
+    author = 'Caitlin C. Bannan',          # add your name to author category
+    author_email = 'bannanc@uci.edu',    # add your e-mail
+    description = ("ChemPer"),
+    license = 'MIT',      # should match license in your repo
+    keywords = "chemical perception, SMARTS, SMIRKS, SMIRNOFF, Open Force Field, forcefield",
+    url = "http://github.com/mobleylab/chemper",
+    packages = [
+        'chemper',
+        'chemper/data',
+        'chemper/graphs',
+        'chemper/mol_toolkits',
+        'chemper/tests',
+        ],
+    long_description = read('README.md'),
+    package_data = {'chemper': find_package_data('chemper/data', 'chemper')},
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass()
+)
