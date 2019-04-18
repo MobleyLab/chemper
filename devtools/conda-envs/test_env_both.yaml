@@ -1,9 +1,17 @@
 name: test
+
 channels:
+  - openeye
+  - rdkit
+
 dependencies:
     # Base depends
   - python
   - pip
+  - openeye
+  - rdkit
+  - numpy
+  - networkx
 
     # Testing
   - pytest
