@@ -1,0 +1,29 @@
+package:
+  name: chemper
+  version: 0.0.0
+
+source:
+  path: ../..
+
+build:
+  number: 0
+
+requirements:
+  host:
+    - python
+    - setuptools
+
+  run:
+    - python
+    - numpy
+    - networkx
+
+test:
+  requires:
+    - pytest
+  imports:
+    - chemper
+
+about:
+  home: https://github.com/MobleyLab/chemper
+  license: MIT License

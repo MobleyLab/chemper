@@ -3,6 +3,7 @@
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/MobleyLab/chemper.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/MobleyLab/chemper/context:python)
 [![codecov](https://codecov.io/gh/MobleyLab/chemper/branch/master/graph/badge.svg)](https://codecov.io/gh/MobleyLab/chemper)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![DOI](https://zenodo.org/badge/120546688.svg)](https://zenodo.org/badge/latestdoi/120546688)
 
 # ChemPer
 

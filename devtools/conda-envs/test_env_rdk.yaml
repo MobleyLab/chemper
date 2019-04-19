@@ -1,0 +1,21 @@
+name: test
+
+channels:
+  - rdkit
+
+dependencies:
+    # Base depends
+  - python
+  - pip
+
+  - rdkit
+  - numpy
+
+    # Testing
+  - pytest
+  - pytest-cov
+
+    # Pip-only installs
+  - pip:
+    - codecov
+    - nbval

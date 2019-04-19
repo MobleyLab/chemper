@@ -1,0 +1,46 @@
+environment:
+
+  matrix:
+      # just try to make something work
+    - PYTHON: "C:\\Miniconda36-x64"
+      PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "64"
+
+install:
+    # Make sure pip is around
+  - python -m ensurepip
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  
+    # Add conda-forge channel
+  - conda config --add channels conda-forge
+  
+
+    # Always run commands without asking
+  - conda config --set always_yes yes
+
+    # Try to update conda first to avoid odd dependency clashes
+  - conda update --all
+  - conda install conda-build
+  
+    # Create test environment for package
+    # - if %OE% == true if %RDK% == false (python devtools\\scripts\\create_conda_env.py -n=test -p=%PYTHON_VERSION% devtools\\conda-envs\\test_env_oe.yaml)
+    # - python devtools\\scripts\\create_conda_env.py -n=test -p=%PYTHON_VERSION% devtools\\conda-envs\\test_env_both.yaml
+  - conda create -n test python=%PYTHON_VERSION% pip pytest pytest-cov
+  
+    # Activate the test environment
+  - activate test
+  - pip install codecov
+  - conda install -c rdkit rdkit
+
+    # Build and install package
+  - conda build -- quiet python=%PYTHON_VERSION% devtools\\conda-recipe
+  - conda install --use-local chemper
+
+  
+build: false
+
+test_script:
+  - pytest -v --cov=chemper chemper\\tests
+
+on_success:
+  - codecov

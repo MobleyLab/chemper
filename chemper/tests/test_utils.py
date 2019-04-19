@@ -1,6 +1,7 @@
 """
 This script provides tests for all functions in chemper_utils
 """
+import os
 from chemper import chemper_utils
 from chemper.mol_toolkits import mol_toolkit
 import pytest
@@ -26,12 +27,12 @@ def test_smirks_validity(smirks, is_valid):
 # -------------------------------
 
 chemper_data = [
-    'molecules/MiniDrugBank_tripos.mol2',
-    'smarts_files/angle_smirks.smarts',
-    'smarts_files/bond_smirks.smarts',
-    'smarts_files/improper_torsion_smirks.smarts',
-    'smarts_files/proper_torsion_smirks.smarts',
-    'smarts_files/nonbond_smirks.smarts'
+    os.path.join('molecules', 'MiniDrugBank_tripos.mol2'),
+    os.path.join('smarts_files', 'angle_smirks.smarts'),
+    os.path.join('smarts_files', 'bond_smirks.smarts'),
+    os.path.join('smarts_files', 'improper_torsion_smirks.smarts'),
+    os.path.join('smarts_files', 'proper_torsion_smirks.smarts'),
+    os.path.join('smarts_files', 'nonbond_smirks.smarts')
 ]
 @pytest.mark.parametrize('fn', chemper_data)
 def test_valid_files(fn):
@@ -83,7 +84,7 @@ smirks_match_sets = [(smirks1, smirks2, True),
 
 @pytest.mark.parametrize('smirks1,smirks2,checks',smirks_match_sets)
 def test_matching_smirks(smirks1, smirks2, checks):
-    path = chemper_utils.get_data_path('molecules/MiniDrugBank_tripos.mol2')
+    path = chemper_utils.get_data_path(os.path.join('molecules','MiniDrugBank_tripos.mol2'))
     mols = mol_toolkit.mols_from_mol2(path)
     did_it_work = chemper_utils.check_smirks_agree(smirks1, smirks2, mols)
     assert did_it_work == checks

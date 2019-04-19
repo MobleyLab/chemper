@@ -1,0 +1,21 @@
+name: test
+
+channels:
+  - openeye
+
+dependencies:
+    # Base depends
+  - python
+  - pip
+  - openeye-toolkits
+  - numpy
+  - networkx
+
+    # Testing
+  - pytest
+  - pytest-cov
+
+    # Pip-only installs
+  - pip:
+    - codecov
+    - nbval
