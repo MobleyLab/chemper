@@ -104,5 +104,3 @@ ENV/
 .pytest_cache/
 .idea/
 
-# custom
-/examples/typing_proteins/mol_files
