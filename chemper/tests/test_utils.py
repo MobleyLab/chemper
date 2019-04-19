@@ -84,7 +84,7 @@ smirks_match_sets = [(smirks1, smirks2, True),
 
 @pytest.mark.parametrize('smirks1,smirks2,checks',smirks_match_sets)
 def test_matching_smirks(smirks1, smirks2, checks):
-    path = chemper_utils.get_data_path(os.path.join('molecules','MiniDrugBank_tripos.mol2')
+    path = chemper_utils.get_data_path(os.path.join('molecules','MiniDrugBank_tripos.mol2'))
     mols = mol_toolkit.mols_from_mol2(path)
     did_it_work = chemper_utils.check_smirks_agree(smirks1, smirks2, mols)
     assert did_it_work == checks
