@@ -15,14 +15,15 @@ from itertools import product
 from chemper.smirksify import SMIRKSifier
 from chemper.chemper_utils import get_full_path, create_tuples_for_clusters, get_typed_molecules
 from chemper.mol_toolkits.mol_toolkit import mols_from_mol2
+from chemper.chemper_utils import 
 
 
-def parse_smarts_file(file_path):
+def parse_smarts_file(smarts_file_name):
     """
     Parameters
     ----------
-    file_path: str
-        relative path in chemper/data or absolute path
+    smarts_file_name: str
+        smarts file located in chemper/data/smarts_files/
 
     Returns
     -------
@@ -31,6 +32,8 @@ def parse_smarts_file(file_path):
         if a label is provided in the file then it is assigned, otherwise
         the indices from the file is used
     """
+    import os
+    smarts_folder = get_data_path(os.path.join('smarts_files', smarts_file_name))
     fn = get_full_path(file_path)
     f = open(fn)
     lines = f.readlines()
@@ -56,7 +59,7 @@ def test_complex_clusters(mol_file, frag):
         m.set_aromaticity_mdl()
 
     # load smirks list
-    smirks_list = parse_smarts_file("smarts_files/%s_smirks.smarts" % frag)
+    smirks_list = parse_smarts_file("%s_smirks.smarts" % frag)
 
     # type molecules with these smirks
     clusters = create_tuples_for_clusters(smirks_list, mols_list)
