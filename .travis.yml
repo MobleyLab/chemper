@@ -9,6 +9,12 @@ branches:
 
 matrix:
   include:
+    # Try one windows installation
+    - os: windows
+      language: generic
+      python: 3.6
+      env: PYTHON_VER=3.6 RDK=true OE=true
+
     # Test osx with RDK without OE
     - os: osx
       language: generic
