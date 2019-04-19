@@ -29,6 +29,7 @@ install:
   
     # Activate the test environment
   - activate test
+  - pip install codecov
   - conda install -c rdkit rdkit
 
     # Build and install package
