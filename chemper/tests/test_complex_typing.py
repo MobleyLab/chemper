@@ -9,6 +9,7 @@ Then the clusters based on those SMIRKS are used to generate a
 hierarchical list of SMIRKS patterns using the SMIRKSifier.
 """
 
+import os
 from copy import deepcopy
 import pytest
 from itertools import product
@@ -32,9 +33,8 @@ def parse_smarts_file(smarts_file_name):
         if a label is provided in the file then it is assigned, otherwise
         the indices from the file is used
     """
-    import os
-    smarts_folder = get_data_path(os.path.join('smarts_files', smarts_file_name))
-    fn = get_full_path(file_path)
+    smarts_folder = os.path.join('smarts_files', smarts_file_name)
+    fn = get_full_path(smarts_folder)
     f = open(fn)
     lines = f.readlines()
     f.close()
