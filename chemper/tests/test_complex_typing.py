@@ -15,7 +15,7 @@ from itertools import product
 from chemper.smirksify import SMIRKSifier
 from chemper.chemper_utils import get_full_path, create_tuples_for_clusters, get_typed_molecules
 from chemper.mol_toolkits.mol_toolkit import mols_from_mol2
-from chemper.chemper_utils import 
+from chemper.chemper_utils import get_data_path
 
 
 def parse_smarts_file(smarts_file_name):
