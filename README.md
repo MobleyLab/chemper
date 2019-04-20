@@ -1,4 +1,4 @@
-[![Travis build](https://img.shields.io/travis/MobleyLab/chemper/master.svg?logo=linux&logoColor=white)](https://travis-ci.org/MobleyLab/chemper)
+[![Travis build](https://img.shields.io/travis/MobleyLab/chemper/master.svg?logo=linux&logoColor=white?logo=osx&logoColor=white)](https://travis-ci.org/MobleyLab/chemper)
 [![Documentation Status](https://readthedocs.org/projects/chemper/badge/?version=latest)](http://chemper.readthedocs.io/en/latest/?badge=latest)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/MobleyLab/chemper.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/MobleyLab/chemper/context:python)
 [![codecov](https://codecov.io/gh/MobleyLab/chemper/branch/master/graph/badge.svg)](https://codecov.io/gh/MobleyLab/chemper)
