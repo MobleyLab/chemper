@@ -22,7 +22,6 @@ from chemper.mol_toolkits.adapters import MolAdapter, BondAdapter, AtomAdapter
 try:
     from openeye.oechem import OEChemIsLicensed
     if not OEChemIsLicensed():
-        print("No OE_LICENSE file found")
         HAS_OE = False
     else:
         from chemper.mol_toolkits import cp_openeye
