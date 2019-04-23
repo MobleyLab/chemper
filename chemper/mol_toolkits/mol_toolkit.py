@@ -20,9 +20,13 @@ from chemper.chemper_utils import get_data_path
 from chemper.mol_toolkits.adapters import MolAdapter, BondAdapter, AtomAdapter
 # define default_toolkit:
 try:
-    from openeye import oechem
-    from chemper.mol_toolkits import cp_openeye
-    HAS_OE = True
+    from openeye.oechem import OEChemIsLicensed
+    if not OEChemIsLicensed():
+        print("No OE_LICENSE file found")
+        HAS_OE = False
+    else:
+        from chemper.mol_toolkits import cp_openeye
+        HAS_OE = True
 except ImportError:
     HAS_OE = False
 
@@ -36,6 +40,7 @@ except ImportError:
 if not HAS_OE and not HAS_RDK:
     raise ImportWarning("No Cheminformatics toolkit was found."\
                         " currently chemper supports OpenEye and RDKit")
+
 
 def Mol(mol):
     """

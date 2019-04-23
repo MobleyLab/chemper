@@ -1,11 +1,15 @@
-[![Build Status](https://travis-ci.org/MobleyLab/chemper.svg?branch=master)](https://travis-ci.org/MobleyLab/chemper)
+# <img src="https://github.com/mobleylab/chemper/blob/master/chemper_logo.svg" height=150>
+
+[![Travis build](https://img.shields.io/travis/MobleyLab/chemper/master.svg?logo=linux&logoColor=white)](https://travis-ci.org/MobleyLab/chemper)
+[![Travis build](https://img.shields.io/travis/MobleyLab/chemper/master.svg?logo=apple&logoColor=white)](https://travis-ci.org/MobleyLab/chemper)
+[![AppVeyor build](https://img.shields.io/travis/MobleyLab/chemper/master.svg?logo=windows&logoColor=white)](https://ci.appveyor.com/project/bannanc/chemper)
+
 [![Documentation Status](https://readthedocs.org/projects/chemper/badge/?version=latest)](http://chemper.readthedocs.io/en/latest/?badge=latest)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/MobleyLab/chemper.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/MobleyLab/chemper/context:python)
 [![codecov](https://codecov.io/gh/MobleyLab/chemper/branch/master/graph/badge.svg)](https://codecov.io/gh/MobleyLab/chemper)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![DOI](https://zenodo.org/badge/120546688.svg)](https://zenodo.org/badge/latestdoi/120546688)
 
-# ChemPer
+[![DOI](https://zenodo.org/badge/120546688.svg)](https://zenodo.org/badge/latestdoi/120546688)
 
 This repository contains a variety of tools that will be useful in automating the process
 of chemical perception for the new SMIRKS Native Open Force Field (SMIRNOFF) format
