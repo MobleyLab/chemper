@@ -189,8 +189,9 @@ class Atom(AtomAdapter):
         if not isinstance(atom, Chem.rdchem.Atom):
             raise TypeError("Expecting a rdchem.Atom instead of %s" % type(atom))
         self.atom = atom
+        self._idx = self.atom.GetIdx()
 
-    def __str__(self): return '%i%s' % (self.get_index(), self.atom.GetSymbol())
+    def __str__(self): return '%i%s' % (self._idx, self.atom.GetSymbol())
 
     def atomic_number(self):
         """
@@ -286,7 +287,7 @@ class Atom(AtomAdapter):
         index: int
             atom index in its molecule
         """
-        return self.atom.GetIdx()
+        return self._idx
 
     def is_connected_to(self, atom2):
         """
@@ -487,7 +488,7 @@ def mols_from_mol2(mol2_file):
         mol_path = get_data_path(os.path.join('molecules', mol2_file))
 
         if not os.path.exists(mol_path):
-            raise IOError("File '%s' not found locally or in chemper/data/molecules." % mol_file)
+            raise IOError("File '%s' not found locally or in chemper/data/molecules." % mol2_file)
         else:
             mol2_file = mol_path
 
@@ -502,7 +503,7 @@ def mols_from_mol2(mol2_file):
     molecules = list()
     mol2_block = list()
 
-    file_open = open(mol2_file, 'r')
+    file_open = open(mol2_file)
 
     for line in file_open:
         if line.startswith(delimiter) and mol2_block:

@@ -190,9 +190,9 @@ class Atom(AtomAdapter):
         if not isinstance(atom, oechem.OEAtomBase):
             raise TypeError("Expecting an OEAtomBase object instead of %s" % type(atom))
         self.atom = atom
-        self._index = self.atom.GetIdx()
+        self._idx = self.atom.GetIdx()
 
-    def __str__(self): return "%i%s" % (self.get_index(),
+    def __str__(self): return "%i%s" % (self._idx,
                                         oechem.OEGetAtomicSymbol(self.atomic_number()))
 
     def atomic_number(self):
@@ -283,7 +283,7 @@ class Atom(AtomAdapter):
         index: int
             atom index in its molecule
         """
-        return self._index
+        return self._idx
 
     def is_connected_to(self, atom2):
         """
