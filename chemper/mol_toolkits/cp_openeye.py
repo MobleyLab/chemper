@@ -31,7 +31,7 @@ class Mol(MolAdapter):
             openeye molecule to convert to chemper Mol object
         """
         if not isinstance(mol, oechem.OEMolBase):
-            raise Exception("Expecting an OEMol object instead of %s" % type(mol))
+            raise TypeError("Expecting an OEMol object instead of %s" % type(mol))
         self.mol = mol
 
     def __str__(self): return self.get_smiles()
@@ -188,9 +188,12 @@ class Atom(AtomAdapter):
             Atom object from an OpenEye molecule
         """
         if not isinstance(atom, oechem.OEAtomBase):
-            raise Exception("Expecting an OEAtomBase object instead of %s" % type(atom))
+            raise TypeError("Expecting an OEAtomBase object instead of %s" % type(atom))
         self.atom = atom
         self._index = self.atom.GetIdx()
+
+    def __str__(self): return "%i%s" % (self.get_index(),
+                                        oechem.OEGetAtomicSymbol(self.atomic_number()))
 
     def atomic_number(self):
         """
@@ -294,6 +297,8 @@ class Atom(AtomAdapter):
         connected: boolean
             True if atom2 is a direct neighbor or atom1
         """
+        if not isinstance(atom2, oechem.OEAtomBase):
+            return False
         return self.atom.IsConnected(atom2.atom)
 
     def get_neighbors(self):
@@ -344,13 +349,27 @@ class Bond(BondAdapter):
             Bond object from an OpenEye molecule
         """
         if not isinstance(bond, oechem.OEBondBase):
-            raise Exception("Expecting an OEBondBase object instead of %s" % type(bond))
+            raise TypeError("Expecting an OEBondBase object instead of %s" % type(bond))
         self.bond = bond
+
+        # save index
+        self._idx = self.bond.GetIdx()
+
+        # store order information
         self._order = self.bond.GetOrder()
         if self.is_aromatic():
             self._order = 1.5
 
-        self._idx = self.bond.GetIdx()
+        orders = {1:'-', 2:'=', 3:'#', 1.5:':'}
+        self._order_symbol = orders.get(self._order, '~')
+
+        # save atoms in bond
+        self.beginning = Atom(self.bond.GetBgn())
+        self.end = Atom(self.bond.GetEnd())
+
+    def __str__(self):
+        return "%i %s%s%s" % (self.get_index(), self.beginning,
+                              self._order_symbol, self.end)
 
     def get_order(self):
         """
@@ -368,9 +387,7 @@ class Bond(BondAdapter):
         atoms: list of chemper Atoms
             the two atoms connected by this bond
         """
-        beginning = Atom(self.bond.GetBgn())
-        end = Atom(self.bond.GetEnd())
-        return [beginning, end]
+        return [self.beginning, self.end]
 
     def is_ring(self):
         """

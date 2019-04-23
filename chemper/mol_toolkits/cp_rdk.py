@@ -30,8 +30,8 @@ class Mol(MolAdapter):
         mol: openeye RDKMol object
             openeye molecule to convert to chemper Mol object
         """
-        if type(mol) != Chem.rdchem.Mol:
-            raise Exception("Expecting an rdchem.Mol instead of %s" % type(mol))
+        if not isinstance(mol, Chem.rdchem.Mol):
+            raise TypeError("Expecting an rdchem.Mol instead of %s" % type(mol))
         self.mol = mol
 
     def __str__(self): return self.get_smiles()
@@ -186,9 +186,11 @@ class Atom(AtomAdapter):
         atom: RDKAtom
             Atom object from an RDK molecule
         """
-        if type(atom) != Chem.rdchem.Atom:
-            raise Exception("Expecting an rdchem.Atom instead of %s" % type(atom))
+        if not isinstance(atom, Chem.rdchem.Atom):
+            raise TypeError("Expecting a rdchem.Atom instead of %s" % type(atom))
         self.atom = atom
+
+    def __str__(self): return '%i%s' % (self.get_index(), self.atom.GetSymbol())
 
     def atomic_number(self):
         """
@@ -298,8 +300,7 @@ class Atom(AtomAdapter):
         connected: boolean
             True if atom2 is a direct neighbor or atom1
         """
-        if not type(atom2.atom) is Chem.rdchem.Atom:
-            # TODO: raise exception/return something else?
+        if not isinstance(atom2.atom, Chem.rdchem.Atom):
             return False
         neighbors = [a.GetIdx() for a in self.atom.GetNeighbors()]
         return atom2.get_index() in neighbors
@@ -350,12 +351,25 @@ class Bond(BondAdapter):
         bond: RDKBond
             Bond object from an RDK molecule
         """
-        if type(bond) != Chem.rdchem.Bond:
-            raise Exception("Expecting an rdchem.Bond instead of %s" % type(bond))
+        if not isinstance(bond, Chem.rdchem.Bond):
+            raise TypeError("Expecting an rdchem.Bond instead of %s" % type(bond))
         self.bond = bond
-        self.order = self.bond.GetBondTypeAsDouble()
+
+        # save index
+        self._idx = self.bond.GetIdx()
+
+        # save order information
+        self._order = self.bond.GetBondTypeAsDouble()
+        orders = {1:'-', 2:'=', 3:'#', 1.5:':'}
+        self._order_symbol = orders.get(self._order, '~')
+
+        # save atoms in bond
         self.beginning = Atom(self.bond.GetBeginAtom())
         self.end = Atom(self.bond.GetEndAtom())
+
+    def __str__(self):
+        return "%i %s%s%s" % (self.get_index(), self.beginning,
+                              self._order_symbol, self.end)
 
     def get_order(self):
         """
@@ -364,7 +378,7 @@ class Bond(BondAdapter):
         order: int or float
             This is the absolute order, returns 1.5 if bond is aromatic
         """
-        return self.order
+        return self._order
 
     def get_atoms(self):
         """
@@ -400,7 +414,7 @@ class Bond(BondAdapter):
         is_single: boolean
             True if it is a single bond
         """
-        return self.order == 1
+        return self._order == 1
 
     def is_double(self):
         """
@@ -409,7 +423,7 @@ class Bond(BondAdapter):
         is_double: boolean
             True if it is a double bond
         """
-        return self.order == 2
+        return self._order == 2
 
     def is_triple(self):
         """
@@ -418,7 +432,7 @@ class Bond(BondAdapter):
         is_triple: boolean
             True if it is a triple bond
         """
-        return self.order == 3
+        return self._order == 3
 
     def get_molecule(self):
         """
@@ -439,7 +453,11 @@ class Bond(BondAdapter):
         index: int
             index of this bond in its parent molecule
         """
-        return self.bond.GetIdx()
+        return self._idx
+
+# =====================================================================
+# functions for importing molecules from files
+# =====================================================================
 
 def mols_from_mol2(mol2_file):
     """
