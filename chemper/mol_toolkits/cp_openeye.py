@@ -297,7 +297,7 @@ class Atom(AtomAdapter):
         connected: boolean
             True if atom2 is a direct neighbor or atom1
         """
-        if not isinstance(atom2, oechem.OEAtomBase):
+        if not isinstance(atom2.atom, oechem.OEAtomBase):
             return False
         return self.atom.IsConnected(atom2.atom)
 
@@ -329,7 +329,7 @@ class Atom(AtomAdapter):
             molecule this atom is stored in
         """
         mol = oechem.OEMol(self.atom.GetParent())
-        self.atom = mol.GetAtom(oechem.OEHasAtomIdx(self._index))
+        self.atom = mol.GetAtom(oechem.OEHasAtomIdx(self._idx))
         return Mol(mol)
 
 # =======================================

@@ -689,7 +689,6 @@ class ClusterGraph(ChemPerGraph):
                 # sum up score for every entry in the atom and storage set
                 score = 0
                 for sa, a in zip(storage_set, atom_set):
-                    print(a)
                     if isinstance(sa, self.BondStorage):
                         score += sa.compare_bond(a)
                     else:
