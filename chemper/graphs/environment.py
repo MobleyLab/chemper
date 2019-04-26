@@ -8,15 +8,13 @@
 environment.py
 this is adapted from the openforcefield ChemicalEnvironments class.
 
-When the openforcefield package fully supports RDKit and OpenEye I will think about
-switching to that as a dependency, although it would mean we're locked into RDKit
-or OpenEye and not other toolkits
-This script includes the base ChemicalEnvironment class with isValid adapted
-to use chemper's is_smirks_valid.
+There have been some on going debates over where chemper should live,
+here or in the base openforcefield toolkit. Due to the want to update
+this module for use in chemper amidst the openforcefield 0.2.0 overall,
+environment.py has been updated independently in this repository.
 
-If we decide we really need our own version of this code I will do a full update here.
-If, as I suspect will happen, we make openforcefield a dependency
-I will put in a PR to that repo with this code updated to be match pep8.
+The only function of real use in openforcefield.py is the `get_type` function,
+which has also been updated here.
 
 AUTHORS
 
