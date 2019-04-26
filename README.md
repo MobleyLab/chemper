@@ -42,14 +42,14 @@ This repository is still under active development. While an initial [version](#v
 
 ## Prerequisites
 
-We currently test with Python 3.5, though we expect anything 3.5+ should work.
+We test with Python 3.6 and 3.7 and expect any verion above 3.5 to behave well.
 
 This is a python tool kit with a few dependencies. We recommend installing
 [miniconda](http://conda.pydata.org/miniconda.html). Then you can create an
 environment with the following commands:
 
 ```bash
-conda create -n [my env name] python=3.5 numpy networkx pytest
+conda create -n [my env name] python=3.6 numpy networkx pytest
 source activate [my env name]
 ```
 
@@ -83,7 +83,9 @@ pip install -e .
 # Documentation
 
 Below are some details on the tools provided in `chemper` see
-[examples](https://github.com/MobleyLab/chemper/tree/master/examples) for more detailed usage examples
+[examples](https://github.com/MobleyLab/chemper/tree/master/examples) 
+and [documentation](https://chemper.readthedocs.io/en/latest/)
+for more detailed usage examples
 
 ### SMIRKSifier
 
@@ -95,37 +97,6 @@ a hierarchical list of SMIRKS in just a few lines of code.
 In the example, [general_smirks_for_clusters](https://chemper.readthedocs.io/en/latest/examples/general_smirks_for_clusters.html)
 we cluster bonds in a set of simple hydrocarbons based on order. Then `SMIRKSifer` turns these clusters into a list of SMIRKS patterns.
 The following functionalities are used to make the `SMIRKSifier` possible, but may be useful on their own.
-
-### `mol_toolkits`
-
-As noted [above](#installation), we seek to keep `chemper` independent of the cheminformatics toolkit.
-`mol_toolkits` is created to keep all code dependent on the toolkit installed. It can create molecules from
-an RDK or OE molecule object or from a SMILES string. It includes a variety of functions for extracting information
-about atoms, bonds, and molecules. Also included here are SMIRKS pattern searches.
-
-### ChemPerGraph
-
-The goal of this tool was to create an example of how you could create a SMIRKS pattern from a
-molecule and set of atom indices.
-While this isn't ultimately useful in sampling chemical perception as they
-only work for a single molecule, however it is a tool that did not exist to the best of the authors knowledge before.
-For a detailed example see the [single_mol_smirks](examples/using_fragment_graph/single_mol_smirks.ipynb)
-jupyter notebook.
-
-Here is a brief usage example for creating the SMIRKS pattern for the bond between the two carbon
-atoms in ethene including atoms one bond away from the indexed atoms. The indexed atoms are the two carbon
-atoms at indices 0 and 1 in the molecule are assigned to SMIRKS indices `:1` and `:2` respectively
-
-```python
-from chemper.mol_toolkits import mol_toolkit
-from chemper.graphs.fragment_graph import  ChemPerGraphFromMol
-
-mol = mol_toolkit.MolFromSmiles('C=C') # note this adds explicit hydrogens to your molecule
-smirks_dict = {1:0, 2: 1}
-graph = ChemPerGraphFromMol(mol, smirks_dict, layers=1)
-print(graph.as_smirks)
-# [#6AH2X3x0r0+0:1](-!@[#1AH0X1x0r0+0])(-!@[#1AH0X1x0r0+0])=!@[#6AH2X3x0r0+0:2](-!@[#1AH0X1x0r0+0])-!@[#1AH0X1x0r0+0]
-```
 
 ### ClusterGraph
 
@@ -145,8 +116,8 @@ from chemper.graphs.cluster_graph import ClusterGraph
 
 mol1 = mol_toolkit.MolFromSmiles('CCC')
 mol2 = mol_toolkit.MolFromSmiles('CCCCC')
-smirks_dicts = [[{1:0, 2:1}], [{1:0,2:1}, {1:1, 2:2}]]
-graph = ClusterGraph([mol1, mol2], smirks_dicts)
+smirks_atom_lists = [[(0,1)], [(0,1), (1,2)]]
+graph = ClusterGraph([mol1, mol2], smirks_atom_lists)
 print(graph.as_smirks())
 # '[#6AH2X4x0r0+0,#6AH3X4x0r0+0:1]-;!@[#6AH2X4x0r0+0:2]'
 ```
@@ -156,6 +127,37 @@ In this case the SMIRKS indexed atoms for propane (mol1) are one of the terminal
 In pentane (mol2) however atom1 can be a terminal or middle of the chain carbon atom. This changes the number of
 hydrogen atoms (`Hn` decorator) on the carbon, thus there are two possible SMIRKS patterns for atom `:1`
 `#6AH2X4x0r0+0` or (indicated by the "`,`") `#6AH3X4x0r0+0`. But, atom `:2` only has one possibility `#6AH2X4x0r0+0`.
+
+### ChemPerGraph
+
+The goal of this tool was to create an example of how you could create a SMIRKS pattern from a
+molecule and set of atom indices.
+While this isn't ultimately useful in sampling chemical perception as they
+only work for a single molecule, however it is a tool that did not exist to the best of the authors knowledge before.
+For a detailed example see the [single_mol_smirks](examples/using_fragment_graph/single_mol_smirks.ipynb)
+jupyter notebook.
+
+Here is a brief usage example for creating the SMIRKS pattern for the bond between the two carbon
+atoms in ethene including atoms one bond away from the indexed atoms. The indexed atoms are the two carbon
+atoms at indices 0 and 1 in the molecule are assigned to SMIRKS indices `:1` and `:2` respectively
+
+```python
+from chemper.mol_toolkits import mol_toolkit
+from chemper.graphs.fragment_graph import  ChemPerGraphFromMol
+
+mol = mol_toolkit.MolFromSmiles('C=C') # note this adds explicit hydrogens to your molecule
+smirks_atoms = (0,1)
+graph = ChemPerGraphFromMol(mol, smirks_atoms, layers=1)
+print(graph.as_smirks())
+# [#6AH2X3x0r0+0:1](-!@[#1AH0X1x0r0+0])(-!@[#1AH0X1x0r0+0])=!@[#6AH2X3x0r0+0:2](-!@[#1AH0X1x0r0+0])-!@[#1AH0X1x0r0+0]
+```
+
+### mol\_toolkits
+
+As noted [above](#installation), we seek to keep `chemper` independent of the underlying cheminformatics toolkits.
+`mol_toolkits` was created to keep all code dependent on the toolkit isolated. It can create molecules from
+an RDK or OE molecule object or from a SMILES string. It includes a variety of functions for extracting information
+about atoms, bonds, and molecules. Also included here are subsearchs using indexed SMARTS (or SMIRKS) patterns.
 
 ## Versions
 
@@ -176,5 +178,5 @@ CCB is funded by a fellowship from [The Molecular Sciences Software Institute](h
 
 ## References
 
-1. D. Mobley et al. bioRxiv 2018, 286542. [doi.org/10.1101/286542](http://doi.org/10.1101/286542)
-2. C. Zanette and C.C. Bannan et al. chemRxiv 2018, [doi.org/10.26434/chemrxiv.6230627.v1](https://doi.org/10.26434/chemrxiv.6230627.v1)
+1. D. Mobley et al. _JCTC,_ **2018**, _14_(11), pp 6076-6092. ([JCTC](http://doi.org/10.1021/acs.jctc.8b00640) or [bioRxiv](http://doi.org/10.1101/286542))
+2. C. Zanette and C.C. Bannan et al. _JCTC_ **2019** _15_(1), pp 402-423. ([JCTC](https://doi.org/10.1021/acs.jctc.8b00821) or [ChemRxiv](https://doi.org/10.26434/chemrxiv.6230627.v1))
