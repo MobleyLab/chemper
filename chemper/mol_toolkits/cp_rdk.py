@@ -20,15 +20,14 @@ from rdkit import Chem
 # =======================================
 
 class Mol(MolAdapter):
-    """
-    Wrapper for RDKMol to create a chemper Mol
-    """
     def __init__(self, mol):
         """
+        Create a ChemPer Mol from an RDMol
+
         Parameters
         ----------
-        mol: openeye RDKMol object
-            openeye molecule to convert to chemper Mol object
+        mol : openeye RDKMol object
+              openeye molecule to convert to ChemPer Mol object
         """
         if not isinstance(mol, Chem.rdchem.Mol):
             raise TypeError("Expecting an rdchem.Mol instead of %s" % type(mol))
@@ -36,92 +35,35 @@ class Mol(MolAdapter):
 
     def __str__(self): return self.get_smiles()
 
+    @classmethod
+    def from_smiles(cls, smiles):
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            raise ValueError('Could not parse SMILES %s' % smiles)
+        cls(Chem.AddHs(mol))
+
     def set_aromaticity_mdl(self):
-        """
-        Sets the aromaticity flags in this molecule to use the MDL model
-        """
         Chem.SanitizeMol(self.mol, Chem.SANITIZE_ALL^Chem.SANITIZE_SETAROMATICITY)
         Chem.SetAromaticity(self.mol, Chem.AromaticityModel.AROMATICITY_MDL)
 
     def get_atoms(self):
-        """
-        Returns
-        -------
-        atom_list: list of chemper Atoms
-            list of all atoms in the molecule
-        """
         return [Atom(a) for a in self.mol.GetAtoms()]
 
     def get_atom_by_index(self, idx):
-        """
-        Parameters
-        ----------
-        idx: int
-            atom index
-
-        Returns
-        -------
-        atom: chemper Atom object
-            atom with index idx
-        """
         return Atom(self.mol.GetAtomWithIdx(idx))
 
     def get_bonds(self):
-        """
-        Returns
-        -------
-        bond_list: list of chemper Bonds
-            list of all bonds in the molecule
-        """
         return [Bond(b) for b in self.mol.GetBonds()]
 
     def get_bond_by_index(self, idx):
-        """
-        Parameters
-        ----------
-        idx: ing
-            bond index
-
-        Returns
-        -------
-        bond: chemper Bond object
-            bond with index idx
-        """
         return Bond(self.mol.GetBondWithIdx(idx))
 
     def get_bond_by_atoms(self, atom1, atom2):
-        """
-        Finds a bond between two atoms
-        Parameters
-        ----------
-        atom1: chemper Atom object
-        atom2: chemper Atom object
-
-        Returns
-        -------
-        bond: chemper Bond object or None
-            if atoms are connected returns bond otherwise None
-        """
         if not atom1.is_connected_to(atom2):
             return None
         return Bond(self.mol.GetBondBetweenAtoms(atom1.get_index(), atom2.get_index()))
 
     def smirks_search(self, smirks):
-        """
-        Performs a substructure search on the molecule with the provided
-        SMIRKS pattern. Note - this function expects SMIRKS patterns with indexed atoms
-        that is with :n for at least some atoms.
-
-        Parameters
-        ----------
-        smirks: str
-            SMIRKS pattern with indexed atoms (:n)
-
-        Returns
-        -------
-        matches: list of dictionaries
-            dictionary for each match with the form {smirks index: atom index}
-        """
         cmol = Chem.Mol(self.mol)
 
         matches = list()
@@ -144,31 +86,9 @@ class Mol(MolAdapter):
         return matches
 
     def get_smiles(self):
-        """
-        Returns
-        -------
-        smiles: str
-            SMILES string for the molecule
-        """
         smiles = Chem.MolToSmiles(Chem.RemoveHs(self.mol))
         return smiles
 
-class MolFromSmiles(Mol):
-    """
-    Creates a chemper Mol from a smiles string
-    It automatically adds explicit hydrogens.
-    """
-    def __init__(self, smiles):
-        """
-        Parameters
-        ----------
-        smiles: str
-            SMILES string for a molecule
-        """
-        mol = Chem.MolFromSmiles(smiles)
-        if mol is None:
-            raise ValueError('Could not parse SMILES %s' % smiles)
-        Mol.__init__(self, Chem.AddHs(mol))
 
 # =======================================
 # Atom Class
@@ -176,15 +96,14 @@ class MolFromSmiles(Mol):
 
 
 class Atom(AtomAdapter):
-    """
-    Wrapper for RDKAtom to create a chemper Atom
-    """
     def __init__(self, atom):
         """
+        Create a ChemPer Atom from an RDAtom
+
         Parameters
         ----------
-        atom: RDKAtom
-            Atom object from an RDK molecule
+        atom : RDKit Atom
+               Atom object from an RDK molecule
         """
         if not isinstance(atom, Chem.rdchem.Atom):
             raise TypeError("Expecting a rdchem.Atom instead of %s" % type(atom))
@@ -193,76 +112,23 @@ class Atom(AtomAdapter):
 
     def __str__(self): return '%i%s' % (self._idx, self.atom.GetSymbol())
 
-    def atomic_number(self):
-        """
-        Returns
-        -------
-        atomic_number: int
-            atomic number for the atom
-        """
-        return self.atom.GetAtomicNum()
+    def atomic_number(self): return self.atom.GetAtomicNum()
 
-    def degree(self):
-        """
-        Returns
-        -------
-        degree: int
-            degree or number of explicit bonds around the atom
-        """
-        return self.atom.GetDegree()
+    def degree(self): return self.atom.GetDegree()
 
-    def connectivity(self):
-        """
-        Returns
-        -------
-        connectivity: int
-            connectivity or total number of bonds around the atom
-        """
-        return self.atom.GetTotalDegree()
+    def connectivity(self): return self.atom.GetTotalDegree()
 
-    def valence(self):
-        """
-        Returns
-        -------
-        valence: int
-            the atoms valence
-        """
-        return self.atom.GetTotalValence()
+    def valence(self): return self.atom.GetTotalValence()
 
-    def formal_charge(self):
-        """
-        Returns
-        -------
-        formal_charge: int
-            the atom's formal charge
-        """
-        return self.atom.GetFormalCharge()
+    def formal_charge(self): return self.atom.GetFormalCharge()
 
     def hydrogen_count(self):
-        """
-        Returns
-        -------
-        H_count: int
-            total number of hydrogen atoms connected to this Atom
-        """
         return self.atom.GetTotalNumHs(includeNeighbors=True)
 
     def ring_connectivity(self):
-        """
-        Returns
-        -------
-        ring_connectivity: int
-            number of bonds on the atom that are a part of a ring
-        """
         return len([b for b in self.atom.GetBonds() if b.IsInRing()])
 
     def min_ring_size(self):
-        """
-        Returns
-        -------
-        min_ring_size: int
-            size of the smallest ring this atom is a part of
-        """
         if not self.atom.IsInRing():
             return 0
         for i in range(10000):
@@ -271,68 +137,23 @@ class Atom(AtomAdapter):
         # TODO: raise exception instead?
         return 10000
 
-    def is_aromatic(self):
-        """
-        Returns
-        -------
-        is_aromatic: boolean
-            True if the atom is aromatic otherwise False
-        """
-        return self.atom.GetIsAromatic()
+    def is_aromatic(self): return self.atom.GetIsAromatic()
 
-    def get_index(self):
-        """
-        Returns
-        -------
-        index: int
-            atom index in its molecule
-        """
-        return self._idx
+    def get_index(self): return self._idx
 
     def is_connected_to(self, atom2):
-        """
-        Parameters
-        ----------
-        atom2: chemper Atom object
-            atom to check if it is connected to this atom
-
-        Returns
-        -------
-        connected: boolean
-            True if atom2 is a direct neighbor or atom1
-        """
         if not isinstance(atom2.atom, Chem.rdchem.Atom):
             return False
         neighbors = [a.GetIdx() for a in self.atom.GetNeighbors()]
         return atom2.get_index() in neighbors
 
     def get_neighbors(self):
-        """
-        Returns
-        -------
-        neighbors: list of chemper Atoms
-            atoms that are one bond away from this atom
-        """
         return [Atom(a) for a in self.atom.GetNeighbors()]
 
     def get_bonds(self):
-        """
-        Returns
-        -------
-        bonds: list of chemper Bonds
-            bonds connected to this atom
-        """
         return [Bond(b) for b in self.atom.GetBonds()]
 
     def get_molecule(self):
-        """
-        Extracts the parent molecule this atom is in
-
-        Returns
-        -------
-        mol: chemper Mol
-            molecule this atom is stored in
-        """
         mol = Chem.Mol(self.atom.GetOwningMol())
         return Mol(mol)
 
@@ -342,15 +163,14 @@ class Atom(AtomAdapter):
 
 
 class Bond(BondAdapter):
-    """
-    Wrapper for RDKBond to create a chemper Bond
-    """
     def __init__(self, bond):
         """
+        Creates a ChemPer Bond from an RDK Bond
+
         Parameters
         ----------
-        bond: RDKBond
-            Bond object from an RDK molecule
+        bond : RDK Bond
+               Bond object from an RDK molecule
         """
         if not isinstance(bond, Chem.rdchem.Bond):
             raise TypeError("Expecting an rdchem.Bond instead of %s" % type(bond))
@@ -365,96 +185,32 @@ class Bond(BondAdapter):
         self._order_symbol = orders.get(self._order, '~')
 
         # save atoms in bond
-        self.beginning = Atom(self.bond.GetBeginAtom())
-        self.end = Atom(self.bond.GetEndAtom())
+        self._beginning = Atom(self.bond.GetBeginAtom())
+        self._end = Atom(self.bond.GetEndAtom())
 
     def __str__(self):
-        return "%i %s%s%s" % (self.get_index(), self.beginning,
-                              self._order_symbol, self.end)
+        return "%i %s%s%s" % (self.get_index(), self._beginning,
+                              self._order_symbol, self._end)
 
-    def get_order(self):
-        """
-        Returns
-        -------
-        order: int or float
-            This is the absolute order, returns 1.5 if bond is aromatic
-        """
-        return self._order
+    def get_order(self): return self._order
 
-    def get_atoms(self):
-        """
-        Returns
-        -------
-        atoms: list of chemper Atoms
-            the two atoms connected by this bond
-        """
-        return [self.beginning, self.end]
+    def get_atoms(self): return [self._beginning, self._end]
 
-    def is_ring(self):
-        """
-        Returns
-        -------
-        is_ring: boolean
-            True if bond is a part of a ring, otherwise False
-        """
-        return self.bond.IsInRing()
+    def is_ring(self): return self.bond.IsInRing()
 
-    def is_aromatic(self):
-        """
-        Returns
-        -------
-        is_aromatic: boolean
-            True if it is an aromatic bond
-        """
-        return self.bond.GetIsAromatic()
+    def is_aromatic(self): return self.bond.GetIsAromatic()
 
-    def is_single(self):
-        """
-        Returns
-        -------
-        is_single: boolean
-            True if it is a single bond
-        """
-        return self._order == 1
+    def is_single(self): return self._order == 1
 
-    def is_double(self):
-        """
-        Returns
-        -------
-        is_double: boolean
-            True if it is a double bond
-        """
-        return self._order == 2
+    def is_double(self): return self._order == 2
 
-    def is_triple(self):
-        """
-        Returns
-        -------
-        is_triple: boolean
-            True if it is a triple bond
-        """
-        return self._order == 3
+    def is_triple(self): return self._order == 3
 
     def get_molecule(self):
-        """
-        Extracts the parent molecule this bond is in
-
-        Returns
-        -------
-        mol: chemper Mol
-            molecule this bond is stored in
-        """
         mol = Chem.Mol(self.bond.GetOwningMol())
         return Mol(mol)
 
-    def get_index(self):
-        """
-        Returns
-        -------
-        index: int
-            index of this bond in its parent molecule
-        """
-        return self._idx
+    def get_index(self): return self._idx
 
 # =====================================================================
 # functions for importing molecules from files
@@ -462,7 +218,7 @@ class Bond(BondAdapter):
 
 def mols_from_mol2(mol2_file):
     """
-    Parses a mol2 file into chemper molecules using RDKit
+    Parses a mol2 file into ChemPer molecules using RDKit
 
     This is a hack for separating mol2 files taken from a Source Forge discussion here:
     https://www.mail-archive.com/rdkit-discuss@lists.sourceforge.net/msg01510.html
@@ -470,14 +226,14 @@ def mols_from_mol2(mol2_file):
 
     Parameters
     ----------
-    mol2_file: str
-               relative or absolute path to a mol2 file you want to parse
-               accessible form the current directory
+    mol2_file : str
+                relative or absolute path to a mol2 file you want to parse
+                accessible form the current directory
 
     Returns
     -------
-    mols: list of chemper Mols
-          list of molecules in the mol2 file as chemper molecules
+    mols : list[ChemPer Mol]
+           list of molecules in the mol2 file as ChemPer molecules
     """
     # TODO: check that this works with mol2 files with a single molecule
     # TODO: figure out if @<TRIPOS>MOLECULE is the only delimiter acceptable in this file type

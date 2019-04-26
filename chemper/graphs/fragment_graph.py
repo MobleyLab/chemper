@@ -409,6 +409,10 @@ class ChemPerGraph(object):
         return new_atom_storage
 
 
+# ==============================================================================
+# TODO: Isn't this the same thing as starting with a ChemPerGraph with mols=None
+# and smirks_atoms=None as the default?
+# ==============================================================================
 class ChemPerGraphFromMol(ChemPerGraph):
     """
     Creates a ChemPerGraph from a chemper Mol object

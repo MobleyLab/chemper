@@ -26,7 +26,7 @@ def test_molecule(toolkit):
     """
     Test MolOE functions
     """
-    mol = toolkit.MolFromSmiles('C')
+    mol = toolkit.Mol.from_smiles('C')
 
     atoms = 0
     for a in mol.get_atoms():
@@ -50,7 +50,7 @@ def test_smirks_search(toolkit):
     """
     test SMIRKS searching
     """
-    mol = toolkit.MolFromSmiles('C')
+    mol = toolkit.Mol.from_smiles('C')
 
     # smirks for C-H bond
     smirks = "[#6:1]-[#1:2]"
@@ -68,7 +68,7 @@ def test_bad_smirks(toolkit):
     """
     Check a ValueError is raised with improper SMIRKS
     """
-    mol = toolkit.MolFromSmiles('C')
+    mol = toolkit.Mol.from_smiles('C')
 
     with pytest.raises(ValueError):
         mol.smirks_search(']X[')
@@ -79,11 +79,11 @@ def test_bad_smiles(toolkit):
     Check a ValueError is raised with a bad SMILES
     """
     with pytest.raises(ValueError):
-        mol = toolkit.MolFromSmiles('ZZZ')
+        mol = toolkit.Mol.from_smiles('ZZZ')
 
 @pytest.mark.parametrize('toolkit', mts)
 def test_bond(toolkit):
-    mol = toolkit.MolFromSmiles('C')
+    mol = toolkit.Mol.from_smiles('C')
     print('made molecule')
     bond = mol.get_bond_by_index(0)
 
@@ -113,7 +113,7 @@ def test_bond(toolkit):
 
 @pytest.mark.parametrize('toolkit', mts)
 def test_atom(toolkit):
-    mol = toolkit.MolFromSmiles('C')
+    mol = toolkit.Mol.from_smiles('C')
     atom = mol.get_atom_by_index(0)
 
     assert atom.atomic_number() == 6

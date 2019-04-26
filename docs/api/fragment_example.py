@@ -1,7 +1,7 @@
 from chemper.mol_toolkits import mol_toolkit
 from chemper.graphs.fragment_graph import  ChemPerGraphFromMol
 
-mol = mol_toolkit.MolFromSmiles('C=C') # note this adds explicit hydrogens to your molecule
+mol = mol_toolkit.mol_from_smiles('C=C') # note this adds explicit hydrogens to your molecule
 atoms = (0, 1)
 graph = ChemPerGraphFromMol(mol, atoms, layers=1)
 print(graph.as_smirks)

@@ -1,8 +1,8 @@
 from chemper.mol_toolkits import mol_toolkit
 from chemper.graphs.cluster_graph import ClusterGraph
 
-mol1 = mol_toolkit.MolFromSmiles('CCC')
-mol2 = mol_toolkit.MolFromSmiles('CCCCC')
+mol1 = mol_toolkit.mol_from_smiles('CCC')
+mol2 = mol_toolkit.mol_from_smiles('CCCCC')
 atoms1 = [(0,1)]
 atoms2 = [(0,1), (1,2)]
 graph = ClusterGraph([mol1, mol2], [atoms1, atoms2])

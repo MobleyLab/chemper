@@ -38,7 +38,7 @@ except ImportError:
 
 if not HAS_OE and not HAS_RDK:
     raise ImportWarning("No Cheminformatics toolkit was found."\
-                        " currently chemper supports OpenEye and RDKit")
+                        " currently ChemPer supports OpenEye and RDKit")
 
 
 def Mol(mol):
@@ -46,11 +46,12 @@ def Mol(mol):
 
     Parameters
     ----------
-    mol - a molecule object from any supported toolkit
+    mol : Mol
+          Molecule from any supported toolkit (ChemPer, OpenEye, RDKit)
 
     Returns
     -------
-    mol - a chemper Mol
+    mol : ChemPer Mol
 
     """
     # if it is already a chemper molecule return as is
@@ -67,7 +68,7 @@ def Mol(mol):
 
     err_msg = """
     Your molecule has the type %s.
-    Currently chemper only supports OpenEye and RDKit.
+    Currently ChemPer only supports OpenEye and RDKit.
     To add support to a new toolkit submit an issue on GitHub at
     github.com/MobleyLab/chemper
     """
@@ -79,11 +80,12 @@ def Atom(atom):
 
     Parameters
     ----------
-    atom - Atom object from any supported toolkit
+    atom : Atom
+           Atom from any supported toolkit (ChemPer, OpenEye, RDKit)
 
     Returns
     -------
-    atom - a chemper Atom object
+    atom : ChemPer Atom
 
     """
     if isinstance(atom, AtomAdapter):
@@ -97,7 +99,7 @@ def Atom(atom):
 
     err_msg = """
     Your atom has the type %s.
-    Currently chemper only supports OpenEye and RDKit.
+    Currently ChemPer only supports OpenEye and RDKit.
     To add support to a new toolkit submit an issue on GitHub at
     github.com/MobleyLab/chemper
     """
@@ -109,11 +111,12 @@ def Bond(bond):
 
     Parameters
     ----------
-    bond - Bond object from any supported toolkit
+    bond : Bond
+           Bond from any supported toolkit (ChemPer, OpenEye, RDKit)
 
     Returns
     -------
-    bond - a chemper Bond object
+    bond : ChemPer Bond
 
     """
     if isinstance(bond, BondAdapter):
@@ -127,7 +130,7 @@ def Bond(bond):
 
     err_msg = """
     Your bond has the type %s.
-    Currently chemper only supports OpenEye and RDKit.
+    Currently ChemPer only supports OpenEye and RDKit.
     To add support to a new toolkit submit an issue on GitHub at
     github.com/MobleyLab/chemper
     """
@@ -142,16 +145,16 @@ def check_toolkit(toolkit=None):
 
     Parameters
     ----------
-    toolkit - str
-        'openeye', 'rdkit', or None
-        if None then the toolkit will be picked automatically
+    toolkit : str
+              'openeye', 'rdkit', or None
+              if None then the toolkit will be picked automatically
 
     Returns
     -------
-    toolkit - str
-    returns the name of the toolkit to be used.
-    If the package isn't available for the specified toolkit
-    then an error is raised instead
+    toolkit : str
+              returns the name of the toolkit to be used.
+              If the package isn't available for the specified toolkit
+              then an error is raised instead
     """
     # check for a stable
     if toolkit is None:
@@ -179,14 +182,14 @@ def check_mol_file(file_name):
 
     Parameters
     ----------
-    file_name - str
-        path to a molecule file
+    file_name : str
+                path to a molecule file
 
     Returns
     -------
-    path - str
-        absolute path to a molecule file
-        raises error if file isn't available
+    path : str
+           absolute path to a molecule file
+           raises error if file isn't available
     """
     # is it a local file?
     if os.path.exists(file_name):
@@ -204,25 +207,26 @@ def check_mol_file(file_name):
 # get molecule from SMILES
 # ================================================================
 
-def MolFromSmiles(smiles, toolkit=None):
+def mol_from_smiles(smiles, toolkit=None):
     """
 
     Parameters
     ----------
-    smiles - str
-        SMILES string
-    toolkit - str or None
-        'openeye' or 'rdkit' or None to let chemper pick
+    smiles : str
+             SMILES string
+    toolkit : str or None
+              'openeye' or 'rdkit'
+              if None ChemPer will use whichever is available
 
     Returns
     -------
-    mol - ChemPer Mol
+    mol : ChemPer Mol
     """
     toolkit = check_toolkit(toolkit)
     if toolkit.lower() == 'openeye':
-        return cp_openeye.MolFromSmiles(smiles)
+        return cp_openeye.Mol.from_smiles(smiles)
 
-    return cp_rdk.MolFromSmiles(smiles)
+    return cp_rdk.Mol.from_smiles(smiles)
 
 # =======================================
 # get molecules from files
@@ -230,23 +234,23 @@ def MolFromSmiles(smiles, toolkit=None):
 
 def mols_from_mol2(mol2_file, toolkit=None):
     """
-    Creates a list of chemper Mols from the provided mol2 file
+    Creates a list of ChemPer Mols from the provided mol2 file
     using a specified or default toolkit
 
     Parameters
     ----------
-    mol2_file: str
-               path to mol2 file, this can be a relative or absolute path locally
-               or the path to a molecules file stored in chemper at chemper/data/molecules/
-    toolkit: None or str
-             'openeye' or 'rdkit' are the two supported toolkits
-             if None then the first package available (in the order listed here)
-             will be used
+    mol2_file : str
+                path to mol2 file, this can be a relative or absolute path locally
+                or the path to a molecules file stored in ChemPer at chemper/data/molecules/
+    toolkit : None or str
+              'openeye' or 'rdkit' are the two supported toolkits
+              if None then the first package available (in the order listed here)
+              will be used
 
     Returns
     -------
-    mol2s: list of chemper Mol
-           list of molecules in the provided mol2 file
+    mol2s : list[ChemPer Mol]
+            List of molecules in the provided mol2 file
     """
     toolkit = check_toolkit(toolkit)
     mol2_path = check_mol_file(mol2_file)

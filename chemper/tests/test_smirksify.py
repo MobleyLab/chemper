@@ -14,7 +14,7 @@ def test_max_reduction(smiles):
     starting from a single atom with no layers,
     you should get [*:1] in a minimum of 7 steps
     """
-    mol = mol_toolkit.MolFromSmiles(smiles)
+    mol = mol_toolkit.mol_from_smiles(smiles)
     cluster_lists = [('1', [[(0,)]])]
     # create reducer
     red = SMIRKSifier([mol], cluster_lists, max_layers=0)
@@ -27,7 +27,7 @@ def test_more_complex_reducer():
     Check that all SMIRKSifier class functions at least work
     """
     smiles = ['CC', 'C=C', 'C#C']
-    mols = [mol_toolkit.MolFromSmiles(s) for s in smiles]
+    mols = [mol_toolkit.mol_from_smiles(s) for s in smiles]
     c1 = [[(0, 1)]]*len(smiles)
     c2 = [[(0, 2)]]*len(smiles)
     cluster_lists = [('1', c1), ('2', c2)]
@@ -44,7 +44,7 @@ def test_reducer_methods():
     explicitly check each method
     """
     # practice reducer
-    mol = mol_toolkit.MolFromSmiles('C')
+    mol = mol_toolkit.mol_from_smiles('C')
     red = Reducer([('a','[*:1]~[*:2]')], [mol])
 
     # check generic SMIRKS output
@@ -91,7 +91,7 @@ expected_change = ["[#6:1]~[*:2]",
 @pytest.mark.parametrize('in_smirks', expected_change)
 def test_expected_removal(in_smirks):
     # create reducer
-    mol = mol_toolkit.MolFromSmiles('C')
+    mol = mol_toolkit.mol_from_smiles('C')
     smirks_list = [('a', '[#6AH4X4x0!r+0:1]-;!@[#1AH0X1x0!r+0:2]')]
     red = Reducer(smirks_list, [mol])
 
@@ -102,8 +102,8 @@ def test_expected_removal(in_smirks):
     assert red_smirks == "[*:1]~[*:2]"
 
 def test_failed_layers():
-    mol1 = mol_toolkit.MolFromSmiles('CCC')
-    mol2 = mol_toolkit.MolFromSmiles('CCCC')
+    mol1 = mol_toolkit.mol_from_smiles('CCC')
+    mol2 = mol_toolkit.mol_from_smiles('CCCC')
     # cluster 1 has bond 0-1 in mol1
     # cluster 2 has bond 0-1 and 2-3 in mol2
     # the only way to distinguish these is
@@ -117,8 +117,8 @@ def test_failed_layers():
 
 @pytest.mark.parametrize('layers',[1,2,3,5,10,100])
 def test_layer_choice(layers):
-    mol1 = mol_toolkit.MolFromSmiles('CCC')
-    mol2 = mol_toolkit.MolFromSmiles('CCCC')
+    mol1 = mol_toolkit.mol_from_smiles('CCC')
+    mol2 = mol_toolkit.mol_from_smiles('CCCC')
     # cluster 1 has bond 0-1 in mol1
     # cluster 2 has bond 0-1 and 2-3 in mol2
     # this should always need 1 layer to work

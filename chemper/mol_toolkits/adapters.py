@@ -1,8 +1,8 @@
 """
 adapters.py
 
-This script contains adapters or the structure for atoms, molecules and
-substructure searches.
+This script contains adapters or the structure for
+molecules, atoms, and bonds.
 Our chemical perception code is designed to be independent of the users
 cheminformatics packages. For each cheminformatics package we support we
 will provide classes following the structure in these adapters.
@@ -12,7 +12,7 @@ AUTHORS:
 Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractclassmethod
 
 
 # =======================================
@@ -21,12 +21,30 @@ from abc import ABC, abstractmethod
 
 class MolAdapter(ABC):
     """
-    Template class for wrapping a molecule object
-    from a given cheminformatics package into a chemper Mol.
-    chemper `Mol` are initiated from the reference package molecule object.
-    The class MolFromSmiles initiates a chemper Mol from a SMILES string.
-    Currently we support OpenEye toolkits and RDKit
+    This is a ChemPer wrapper for a molecule from
+    one of the cheminformatics toolkits.
+    ChemPer molecules are initiated from the reference package molecule object.
+    Currently we support OpenEye and RDKit toolkits.
+
+    Attributes
+    ----------
+    mol : toolkit Mol
+          Mol object from the reference cheminformatics toolkit
     """
+    @abstractclassmethod
+    def from_smiles(cls, smiles):
+        """
+        Creates a ChemPer Mol form a SMILES string
+
+        Parameters
+        ----------
+        smiles : str
+                 SMILES used to create molecule with wrapped toolkit
+
+        Returns
+        -------
+        Mol : ChemPer Mol
+        """
     @abstractmethod
     def set_aromaticity_mdl(self):
         """
@@ -39,7 +57,7 @@ class MolAdapter(ABC):
         """
         Returns
         -------
-        atom_list: list of chemper Atoms
+        atom_list : list[ChemPer Atoms]
             list of all atoms in the molecule
         """
         pass
@@ -49,12 +67,12 @@ class MolAdapter(ABC):
         """
         Parameters
         ----------
-        idx: int
+        idx : int
             atom index
 
         Returns
         -------
-        atom: chemper Atom object
+        atom : ChemPer Atom
             atom with index idx
         """
         pass
@@ -64,7 +82,7 @@ class MolAdapter(ABC):
         """
         Returns
         -------
-        bond_list: list of chemper Bonds
+        bond_list : list[ChemPer Bonds]
             list of all bonds in the molecule
         """
         pass
@@ -74,12 +92,12 @@ class MolAdapter(ABC):
         """
         Parameters
         ----------
-        idx: ing
+        idx: int
             bond index
 
         Returns
         -------
-        bond: chemper Bond object
+        bond: ChemPer Bond
             bond with index idx
         """
         pass
@@ -88,15 +106,16 @@ class MolAdapter(ABC):
     def get_bond_by_atoms(self, atom1, atom2):
         """
         Finds a bond between two atoms
+
         Parameters
         ----------
-        atom1: chemper Atom object
-        atom2: chemper Atom object
+        atom1 : ChemPer Atom
+        atom2 : ChemPer Atom
 
         Returns
         -------
-        bond: chemper Bond object or None
-            if atoms are connected returns bond otherwise None
+        bond : ChemPer Bond or None
+            If atoms are connected returns bond otherwise None
         """
         pass
 
@@ -109,13 +128,13 @@ class MolAdapter(ABC):
 
         Parameters
         ----------
-        smirks: str
+        smirks : str
             SMIRKS pattern with indexed atoms (:n)
 
         Returns
         -------
-        matches: list of dictionaries
-            dictionary for each match with the form {smirks index: atom index}
+        matches : list[match dictionary]
+            match dictionaries have the form {smirks index: atom index}
         """
         pass
 
@@ -136,18 +155,21 @@ class MolAdapter(ABC):
 
 class AtomAdapter(ABC):
     """
-    Template class for wrapping an atom object
-    from a given cheminformatics package into a chemper Atom.
-    These are always initiated from a reference package Atom object.
-    Currently we support OpenEye toolkits and RDKit
-    """
+    This is a ChemPer wrapper for an atom from
+    one of the cheminformatics toolkits.
+    ChemPer Atoms are initiated from the reference package object.
+    Currently we support OpenEye and RDKit toolkits.
 
+    Attributes
+    ----------
+    atom : Atom from reference toolkit
+    """
     @abstractmethod
     def atomic_number(self):
         """
         Returns
         -------
-        atomic_number: int
+        atomic_number : int
             atomic number for the atom
         """
         pass
@@ -157,8 +179,8 @@ class AtomAdapter(ABC):
         """
         Returns
         -------
-        degree: int
-            degree or number of explicit bonds around the atom
+        degree : int
+            degree or number of explicit bond orders around the atom
         """
         pass
 
@@ -167,8 +189,8 @@ class AtomAdapter(ABC):
         """
         Returns
         -------
-        connectivity: int
-            connectivity or total number of bonds around the atom
+        connectivity : int
+            connectivity or total number of bonds (regardless of order) around the atom
         """
         pass
 
@@ -177,8 +199,8 @@ class AtomAdapter(ABC):
         """
         Returns
         -------
-        valence: int
-            the atoms valence
+        valence : int
+            the atoms valence (equivalent to degree when all bonds are explicit)
         """
         pass
 
@@ -187,7 +209,7 @@ class AtomAdapter(ABC):
         """
         Returns
         -------
-        formal_charge: int
+        formal_charge : int
             the atom's formal charge
         """
         pass
@@ -197,7 +219,7 @@ class AtomAdapter(ABC):
         """
         Returns
         -------
-        H_count: int
+        H_count : int
             total number of hydrogen atoms connected to this Atom
         """
         pass
@@ -207,7 +229,7 @@ class AtomAdapter(ABC):
         """
         Returns
         -------
-        min_ring_size: int
+        min_ring_size : int
             size of the smallest ring this atom is a part of
         """
         pass
@@ -217,7 +239,7 @@ class AtomAdapter(ABC):
         """
         Returns
         -------
-        ring_connectivity: int
+        ring_connectivity : int
             number of bonds on the atom that are a part of a ring
         """
         pass
@@ -227,7 +249,7 @@ class AtomAdapter(ABC):
         """
         Returns
         -------
-        is_aromatic: boolean
+        is_aromatic : boolean
             True if the atom is aromatic otherwise False
         """
         pass
@@ -237,7 +259,7 @@ class AtomAdapter(ABC):
         """
         Returns
         -------
-        index: int
+        index : int
             atom index in its molecule
         """
         pass
@@ -247,13 +269,13 @@ class AtomAdapter(ABC):
         """
         Parameters
         ----------
-        atom2: chemper Atom object
-            atom to check if it is connected to this atom
+        atom2 : ChemPer Atom
+            Atom to check if it is bonded to this atom
 
         Returns
         -------
-        connected: boolean
-            True if atom2 is a direct neighbor or atom1
+        connected : boolean
+            True if atom2 is a bonded to atom1
         """
         pass
 
@@ -262,8 +284,8 @@ class AtomAdapter(ABC):
         """
         Returns
         -------
-        neighbors: list of chemper Atoms
-            atoms that are one bond away from this atom
+        neighbors : list[ChemPer Atoms]
+            Atoms that are one bond away from this atom
         """
         pass
 
@@ -272,20 +294,20 @@ class AtomAdapter(ABC):
         """
         Returns
         -------
-        bonds: list of chemper Bonds
-            bonds connected to this atom
+        bonds : list[ChemPer Bonds]
+            Bonds connected to this atom
         """
         pass
 
     @abstractmethod
     def get_molecule(self):
         """
-        Extracts the parent molecule this atom is in
+        Extracts the parent molecule this atom is from.
 
         Returns
         -------
-        mol: chemper Mol
-            molecule this atom is stored in
+        mol : ChemPer Mol
+            Molecule this atom is stored in
         """
         pass
 
@@ -296,18 +318,21 @@ class AtomAdapter(ABC):
 
 class BondAdapter(ABC):
     """
-    Template class for wrapping a bond object
-    from a given cheminformatics package into a chemper Bond.
-    These are always initiated from a reference package Bond object.
-    Currently we support OpenEye toolkits and RDKit
-    """
+    This is a ChemPer wrapper for a bond from
+    one of the cheminformatics toolkits.
+    ChemPer Bonds are initiated from the reference package object.
+    Currently we support OpenEye and RDKit toolkits.
 
+    Attributes
+    ----------
+    bond : Bond from reference class
+    """
     @abstractmethod
     def get_order(self):
         """
         Returns
         -------
-        order: int or float
+        order : int or float
             This is the absolute order, returns 1.5 if bond is aromatic
         """
         pass
@@ -317,8 +342,8 @@ class BondAdapter(ABC):
         """
         Returns
         -------
-        atoms: list of chemper Atoms
-            the two atoms connected by this bond
+        atoms : list[ChemPer Atoms]
+            The two atoms connected by this bond
         """
         pass
 
@@ -327,7 +352,7 @@ class BondAdapter(ABC):
         """
         Returns
         -------
-        is_ring: boolean
+        is_ring : boolean
             True if bond is a part of a ring, otherwise False
         """
         pass
@@ -337,7 +362,7 @@ class BondAdapter(ABC):
         """
         Returns
         -------
-        is_aromatic: boolean
+        is_aromatic : boolean
             True if it is an aromatic bond
         """
         pass
@@ -347,7 +372,7 @@ class BondAdapter(ABC):
         """
         Returns
         -------
-        is_single: boolean
+        is_single : boolean
             True if it is a single bond
         """
         pass
@@ -357,7 +382,7 @@ class BondAdapter(ABC):
         """
         Returns
         -------
-        is_double: boolean
+        is_double : boolean
             True if it is a double bond
         """
         pass
@@ -367,7 +392,7 @@ class BondAdapter(ABC):
         """
         Returns
         -------
-        is_triple: boolean
+        is_triple : boolean
             True if it is a triple bond
         """
         pass
@@ -375,12 +400,12 @@ class BondAdapter(ABC):
     @abstractmethod
     def get_molecule(self):
         """
-        Extracts the parent molecule this bond is in
+        Extracts the parent molecule this bond is from
 
         Returns
         -------
-        mol: chemper Mol
-            molecule this bond is stored in
+        mol : ChemPer Mol
+            Molecule this bond is stored in
         """
         pass
 
@@ -389,7 +414,7 @@ class BondAdapter(ABC):
         """
         Returns
         -------
-        index: int
+        index : int
             index of this bond in its parent molecule
         """
         pass
