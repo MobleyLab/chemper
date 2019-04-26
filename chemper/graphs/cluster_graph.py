@@ -478,7 +478,7 @@ class ClusterGraph(ChemPerGraph):
 
         if len(self.mols) == 0:
             self._add_first_smirks_atoms(mol, smirks_atoms_list[0])
-            self._symmetry_funct = self.get_symmetry_funct(CE(self.as_smirks()).getType())
+            self._symmetry_funct = self.get_symmetry_funct(CE(self.as_smirks()).get_type())
             self._add_mol(mol, smirks_atoms_list[1:])
         else:
             self._add_mol(mol, smirks_atoms_list)

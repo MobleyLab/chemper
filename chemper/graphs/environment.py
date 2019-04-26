@@ -73,7 +73,7 @@ def _find_embedded_brackets(string, in_char, out_char):
     out_idx = out_list[list_idx]
     return string[in_idx:out_idx+1], in_idx, out_idx
 
-def _convert_embedded_SMIRKS(smirks):
+def _convert_embedded_smirks(smirks):
     """
     Converts a SMIRKS string with the $(...) in an atom to the
     form expected by the environment parser
@@ -81,7 +81,7 @@ def _convert_embedded_SMIRKS(smirks):
     smirks = any smirks string, if no $(...) then the original smirks is returned
 
     initial_smirks = "[#1$(*~[#6]):1]"
-    new_smirks = _convert_embedded_SMIRKS(initial_smirks)
+    new_smirks = _convert_embedded_smirks(initial_smirks)
     # new_smirks = [#1:1]~[#6]
     """
     a_out = 0
@@ -114,7 +114,7 @@ def _convert_embedded_SMIRKS(smirks):
         # in the latter case the first atom refers the current atom
         if embedded[1] == '[':
             first, f_in, f_out = _find_embedded_brackets(embedded, r'\[',r'\]')
-            first = _convert_embedded_SMIRKS(first)
+            first = _convert_embedded_smirks(first)
             new_atom = atom[:d]+first[1:-1]+atom[p_out+1:]
             embedded = embedded[f_out+1:]
             # if embedded is empty between brackets, remove it
@@ -136,7 +136,7 @@ def _convert_embedded_SMIRKS(smirks):
             else:
                 new_atom = atom[:d]+atom[p_out+1]
 
-        # Look for ring insided embedded SMIRKS "[#6$(*1CCC1)]"
+        # Look for ring inside embedded SMIRKS "[#6$(*1CCC1)]"
         match = re.match(r'(\d+)', embedded)
         if match is not None: # embedded starts with an int
             ring_in = re.findall(r'(\d+)', embedded)[0]
@@ -181,59 +181,61 @@ class ChemicalEnvironment(object):
     """Chemical environment abstract base class that matches an atom, bond, angle, etc.
     """
     class Atom(object):
-        """Atom representation, which may have some ORtypes and ANDtypes properties.
+        """Atom representation, which may have some or_types and ANDtypes properties.
 
         Attributes
         ----------
-        ORtypes : list of tuples in the form (base, [list of decorators])
+        or_types : list of tuples in the form (base, [list of decorators])
             where bases and decorators are both strings
             The descriptor types that will be combined with logical OR
-        ANDtypes : list of string
+        and_types : list of string
             The descriptor types  that will be combined with logical AND
         """
-        def __init__(self, ORtypes = None, ANDtypes = None, index = None, ring = None):
+        def __init__(self, or_types = None, and_types = None, index = 0, ring = None):
             """Initialize an Atom object with optional descriptors.
 
             Parameters
             -----------
-            ORtypes: list of tuples for ORbases and ORdecorators,
+            or_types: list of tuples for ORbases and ORdecorators,
                 in the form (base, [list of decorators])
                 optional, default = []
-            ANDtypes: list of str,
+            and_types: list of str
                 strings that will be AND'd together in a SMARTS
                 optional, default = None
-            index : int, optional, default=None
-                If not None, the specified index will be attached as a SMIRKS index (e.g. '[#6:1]')
+            index : int
+                If greater than zero,
+                the specified index will be attached as a SMIRKS index (e.g. '[#6:1]')
+                otherwise, it is only used for accessing atom information
             ring : int, optional, default = None
                 If not None, the specified ring index will be attached at the end of the atom i.e. '[#6:1]1'
             """
             # List of 2 tuples in the form [ (ORbase, ORdecorator), ...]
-            if ORtypes is not None:
-                self.ORtypes = copy.deepcopy(ORtypes)
+            if or_types is not None:
+                self._or_types = copy.deepcopy(or_types)
             else:
-                self.ORtypes = list()
+                self._or_types = list()
 
             # Set of strings that will be AND'd to the the end
-            if ANDtypes is not None:
-                self.ANDtypes = list(copy.deepcopy(ANDtypes))
+            if and_types is not None:
+                self._and_types = list(copy.deepcopy(and_types))
             else:
-                self.ANDtypes = list()
+                self._and_types = list()
 
             self.index = index
             self.ring = ring
-            self._atom = True
+            self.is_atom = True
 
         def is_generic(self):
             """
             returns True if there are no decorators on this atom
             (IMPORTANT: this is newly added and in chemper only as of 8/9/18)
             """
-            if not self.ORtypes:
-                if not self.ANDtypes:
+            if not self._or_types:
+                if not self._and_types:
                     return True
             return False
 
-        def asSMARTS(self):
+        def as_smarts(self):
             """Return the atom representation as SMARTS.
 
             Returns
@@ -245,31 +247,31 @@ class ChemicalEnvironment(object):
             smarts = '['
 
             # Add the OR'd features
-            if self.ORtypes:
-                ORList = list()
-                for (base, ORdecorators) in self.ORtypes:
+            if self._or_types:
+                or_list = list()
+                for (base, or_decorators) in self._or_types:
                     if len(base) > 0 and base[0] == '$':
                         # after a $base an explicit '&' is necessary
-                        if ORdecorators:
-                            OR = base+'&'+''.join(ORdecorators)
+                        if or_decorators:
+                            or_bit = base + '&' + ''.join(or_decorators)
                         else:
-                            OR = base
+                            or_bit = base
                     else: # base doesn't start with $
-                        OR = base+''.join(ORdecorators)
-                    ORList.append(OR)
-                smarts += ','.join(ORList)
+                        or_bit = base + ''.join(or_decorators)
+                    or_list.append(or_bit)
+                smarts += ','.join(or_list)
             else:
                 smarts += '*'
 
-            if len(self.ANDtypes) > 0:
-                smarts += ';' + ';'.join(self.ANDtypes)
+            if len(self._and_types) > 0:
+                smarts += ';' + ';'.join(self._and_types)
 
             if self.ring is not None:
                 return smarts + ']' + str(self.ring)
             else:
                 return smarts + ']'
 
-        def asSMIRKS(self):
+        def as_smirks(self):
             """Return the atom representation as SMIRKS.
 
             Returns
@@ -277,117 +279,116 @@ class ChemicalEnvironment(object):
             smirks : str
             The SMIRKS string for this atom
             """
-            smirks = self.asSMARTS()
+            smirks = self.as_smarts()
 
             # No index specified so SMIRKS = SMARTS
-            if self.index is None:
+            if self.index <= 0:
                 return smirks
 
             # Add label to the end of SMARTS
-            else:
-                sub_string, start, end = _find_embedded_brackets(smirks, r'\[',r'\]')
-                if self.ring is not None:
-                    return sub_string[:-1] + ':' + str(self.index) + ']'+str(self.ring)
-                else:
-                    return sub_string[:-1] + ':' + str(self.index) + ']'
+            sub_string, start, end = _find_embedded_brackets(smirks, r'\[', r'\]')
+            end_string = smirks[end:]
+            return sub_string[:-1] + ':' + str(self.index) + end_string
 
-        def addORtype(self, ORbase, ORdecorators):
+        def add_or_type(self, or_base, or_decorators):
             """
             Adds ORtype to the set for this atom.
 
             Parameters
             --------
-            ORbase: string, such as '#6'
-            ORdecorators: list of strings, such as ['X4','+0']
+            or_base: string, such as '#6'
+            or_decorators: list of strings, such as ['X4','+0']
             """
-            ORdecorators = _remove_blanks_repeats(ORdecorators, ['',ORbase])
-            self.ORtypes.append((ORbase, ORdecorators))
+            or_decorators = _remove_blanks_repeats(or_decorators, ['', or_base])
+            self._or_types.append((or_base, or_decorators))
 
-        def addANDtype(self, ANDtype):
+        def add_and_type(self, and_type):
             """
             Adds ANDtype to the set for this atom.
 
             Parameters
             --------
-            ANDtype: string
-                added to the list of ANDtypes for this atom
+            and_type: string
+                added to the list of and_types for this atom
             """
-            self.ANDtypes.append(ANDtype)
-            self.ANDtypes = _remove_blanks_repeats(self.ANDtypes)
+            self._and_types.append(and_type)
+            self._and_types = _remove_blanks_repeats(self._and_types)
 
-        def getORtypes(self):
-            """
-            returns a copy of the dictionary of ORtypes for this atom
-            """
-            return copy.deepcopy(self.ORtypes)
+        @property
+        def or_types(self):
+            """Provides the or_types in this atom"""
+            return self._or_types
 
-        def setORtypes(self, newORtypes):
+        @or_types.setter
+        def or_types(self, new_or_types):
             """
-            sets new ORtypes for this atom
+            sets new or_types for this atom
 
             Parameters
             ----------
-            newORtypes: list of tuples in the form (base, [ORdecorators])
+            new_or_types: list of tuples in the form (base, [ORdecorators])
                 for example: ('#6', ['X4','H0','+0']) --> '#6X4H0+0'
             """
-            self.ORtypes = list()
-            if newORtypes is not None:
-                for (base, decs) in newORtypes:
+            self._or_types = list()
+            if new_or_types is not None:
+                for (base, decs) in new_or_types:
                     adjusted_decs = _remove_blanks_repeats(decs, ['', base])
-                    self.ORtypes.append( (base, adjusted_decs) )
+                    self._or_types.append((base, adjusted_decs))
 
-        def getANDtypes(self):
+        @property
+        def and_types(self):
             """
-            returns a copy of the list of ANDtypes for this atom
+            returns a copy of the list of and_types for this atom
             """
-            return list(copy.deepcopy(self.ANDtypes))
+            return list(copy.deepcopy(self._and_types))
 
-        def setANDtypes(self, newANDtypes):
+        @and_types.setter
+        def and_types(self, new_and_types):
             """
-            sets new ANDtypes for this atom
+            sets new and_types for this atom
 
             Parameters
             ----------
-            newANDtypes: list of strings
+            new_and_types: list of strings
                 strings that will be AND'd together in a SMARTS
             """
-            if newANDtypes is None:
-                self.ANDtypes = list()
+            if new_and_types is None:
+                self._and_types = list()
             else:
-                self.ANDtypes = _remove_blanks_repeats(newANDtypes)
+                self._and_types = _remove_blanks_repeats(new_and_types)
 
     class Bond(Atom):
         """Bond representation, which may have ORtype and ANDtype descriptors.
 
         Attributes
         ----------
-        ORtypes : list of tuples of ORbases and ORdecorators
+        or_types : list of tuples of ORbases and ORdecorators
             in form (base: [list of decorators])
             The ORtype types that will be combined with logical OR
-        ANDtypes : list of string
-            The ANDtypes that will be combined with logical AND
+        and_types : list of string
+            The and_types that will be combined with logical AND
 
         """
         # Implementation identical to atoms apart from what is put in the asSMARTS/asSMIRKS strings
 
-        def __init__(self, ORtypes = None, ANDtypes = None):
+        def __init__(self, or_types = None, and_types = None, index = 0):
             """
             Parameters
             -----------
-            ORtypes: list of tuples, optional, default = None
+            or_types: list of tuples, optional, default = None
                 tuples have form (base, [ORdecorators])
                 bond descriptors that will be OR'd together in a SMARTS
-            ANDtypes: list of str, optional, default = None
+            and_types: list of str, optional, default = None
                 strings that will be AND'd together in a SMARTS
-            index: integer, default = None
+            index: integer, default = 0
                 This is for book keeping inside environments and will not be shown in SMARTS or SMIRKS
                 example: bond1 in a Bond is the bond between atom1 and atom2
             """
-            super(ChemicalEnvironment.Bond,self).__init__(ORtypes, ANDtypes, None, None)
-            self._atom = False
+            super(ChemicalEnvironment.Bond,self).__init__(or_types, and_types, index)
+            self.is_atom = False
             return
 
-        def asSMARTS(self):
+        def as_smarts(self):
             """Return the atom representation as SMARTS.
 
             Returns
@@ -395,20 +396,20 @@ class ChemicalEnvironment(object):
             smarts : str
                 The SMARTS string for just this atom
             """
-            if self.ORtypes:
-                ORcombos = list()
-                for (ORbase, ORdecorators) in self.ORtypes:
-                    ORcombos.append(ORbase+''.join(ORdecorators))
-                smarts = ','.join(ORcombos)
+            if self._or_types:
+                or_combos = list()
+                for (ORbase, ORdecorators) in self._or_types:
+                    or_combos.append(ORbase + ''.join(ORdecorators))
+                smarts = ','.join(or_combos)
             else:
                 smarts = '~'
 
-            if len(self.ANDtypes) > 0:
-                smarts += ';' + ';'.join(self.ANDtypes)
+            if len(self._and_types) > 0:
+                smarts += ';' + ';'.join(self._and_types)
 
             return smarts
 
-        def asSMIRKS(self):
+        def as_smirks(self):
             """
             Returns
             --------
@@ -418,23 +419,23 @@ class ChemicalEnvironment(object):
             #the same as asSMARTS()
             #    for consistency asSMARTS() or asSMIRKS() can be called
             #    for all environment objects
-            return self.asSMARTS()
+            return self.as_smarts()
 
-        def getOrder(self):
+        def get_order(self):
             """
             Returns a float for the order of this bond
-            for multiple ORtypes or ~ it returns the minimum possible order
+            for multiple or_types or ~ it returns the minimum possible order
             the intended application is for checking valence around a given atom
             """
-            # Minimum order for empty ORtypes is 1:
-            if not self.ORtypes:
+            # Minimum order for empty or_types is 1:
+            if not self._or_types:
                 return 1
 
-            orderDict = {'~':1.,
+            order_dict = {'~':1.,
                     '-':1., ':': 1.5, '=':2., '#':3.,
                     '!-':1.5, '!:':1., '!=':1., '!#':1.}
-            orderList = [orderDict[base] for (base, decor) in self.ORtypes]
-            return min(orderList)
+            order_list = [order_dict.get(base,1) for (base, decor) in self._or_types]
+            return min(order_list)
 
     def __init__(self, smirks = None, label = None, replacements = None):
         """Initialize a chemical environment abstract base class.
@@ -489,7 +490,7 @@ class ChemicalEnvironment(object):
 
         if smirks is not None:
             # Check that it is a valid SMIRKS
-            if not self.isValid(smirks):
+            if not self.is_valid(smirks):
                 raise SMIRKSParsingError("Error Provided SMIRKS ('%s') was \
 not parseable with current toolkit" % smirks)
 
@@ -511,9 +512,9 @@ into ChemicalEnvironments." % smirks)
                         into a ChemicalEnvironment" % smirks)
 
         # Check that the created Environment is valid
-        if not self.isValid():
+        if not self.is_valid():
             raise SMIRKSParsingError("Input SMIRKS (%s), converted to %s \
-                    is now invalid" % (smirks, self.asSMIRKS()))
+                    is now invalid" % (smirks, self.as_smirks()))
 
         return
 
@@ -554,13 +555,13 @@ into ChemicalEnvironments." % smirks)
         """
         return self._graph.get_edge_data(node1, node2)
 
-    def isValid(self, smirks = None):
+    def is_valid(self, smirks = None):
         """
         Returns if the environment is valid, that is if it
         creates a parseable SMIRKS string.
         """
         if smirks is None:
-            smirks = self._asSMIRKS()
+            smirks = self._as_smirks()
         from chemper.chemper_utils import is_valid_smirks
         return is_valid_smirks(smirks)
 
@@ -568,11 +569,11 @@ into ChemicalEnvironments." % smirks)
         """
         This function converts a smirks string to a Chemical Environment
         """
-        smirks = _convert_embedded_SMIRKS(input_smirks)
+        smirks = _convert_embedded_smirks(input_smirks)
         atoms = dict() # store created atom
         idx = 1 # current atom being created
         store = list() # to store indices while branching
-        bondingTo = idx # which atom are we going to bond to
+        bonding_to = idx # which atom are we going to bond to
 
         atom_string, start, end = _find_embedded_brackets(smirks, r'\[', r'\]')
 
@@ -599,29 +600,28 @@ into ChemicalEnvironments." % smirks)
 
         # Check for ring index, i.e. the 1s in "[#6:1]1-CCCCC1"
         match = re.match(r'(\d+)',leftover)
-        if match is not None: # leftover starts with int
+        if match is not None:  # leftover starts with int
             ring = re.findall(r'(\d+)',leftover)[0]
             leftover = leftover[match.end():]
         else:
             ring = None
 
         # Get atom information and create first atom
-        OR, AND, index = self._getAtomInfo(atom_string)
-        new_atom = self.addAtom(None, newORtypes = OR, newANDtypes = AND,
-                newAtomIndex = index, newAtomRing = ring, beyondBeta = True)
+        ors, ands, index = self._get_atom_info(atom_string)
+        new_atom = self.add_atom(None, new_or_types= ors, new_and_types= ands,
+                                 new_atom_index= index, new_atom_ring= ring, beyond_beta= True)
         atoms[idx] = new_atom
 
         while len(leftover) > 0:
             idx += 1
-
             # Check for branching
             if leftover[0] == ')':
-                bondingTo = store.pop()
+                bonding_to = store.pop()
                 leftover = leftover[1:]
                 continue
 
             if leftover[0] == '(':
-                store.append(bondingTo)
+                store.append(bonding_to)
                 leftover = leftover[1:]
                 continue
 
@@ -650,8 +650,8 @@ into ChemicalEnvironments." % smirks)
                 leftover = leftover[end+1:]
 
             # Get bond and atom info
-            bOR, bAND = self._getBondInfo(bond_string)
-            aOR, aAND, index = self._getAtomInfo(atom_string[1:-1])
+            b_or, b_and = self._get_bond_info(bond_string)
+            a_or, a_and, index = self._get_atom_info(atom_string[1:-1])
 
             # Check for ring index, i.e. the 1s in "[#6:1]1-CCCCC1"
             match = re.match(r'(\d+)',leftover)
@@ -662,18 +662,18 @@ into ChemicalEnvironments." % smirks)
                 ring = None
 
             # create new atom
-            new_atom = self.addAtom(atoms[bondingTo], bondORtypes=bOR,
-                    bondANDtypes=bAND, newORtypes=aOR, newANDtypes=aAND,
-                    newAtomIndex=index, newAtomRing=ring, beyondBeta=True)
+            new_atom = self.add_atom(atoms[bonding_to], bond_or_types=b_or,
+                                     bond_and_types=b_and, new_or_types=a_or, new_and_types=a_and,
+                                     new_atom_index=index, new_atom_ring=ring, beyond_beta=True)
 
             # update state
             atoms[idx] = new_atom
-            bondingTo = idx
+            bonding_to = idx
         return
 
-    def _getAtomInfo(self, atom):
+    def _get_atom_info(self, atom):
         """
-        given atom string, returns ORtypes, ANDtypes, and index
+        given atom string, returns or_types, and_types, and index
         """
         # Find atom index
         colon = atom.find(':')
@@ -685,37 +685,37 @@ into ChemicalEnvironments." % smirks)
 
         split = atom.split(';')
 
-        # Get ANDtypes (and split them if they don't use ;)
-        ANDtypes = list()
+        # Get and_types (and split them if they don't use ;)
+        and_types = list()
         for a in split[1:]:
-            ANDtypes += re.findall(self.atom_reg, a)
+            and_types += re.findall(self.atom_reg, a)
 
-        # Get ORtypes
-        ORList = split[0].split(',')
-        ORtypes = list()
-        # Separate ORtypes into bases and decorators
-        for OR in ORList:
-            ORbase, ORdecors = self._separateORtypes(OR)
-            if ORbase is not None:
-                ORtypes.append( (ORbase, ORdecors) )
+        # Get or_types
+        or_list = split[0].split(',')
+        or_types = list()
+        # Separate or_types into bases and decorators
+        for OR in or_list:
+            or_base, or_decors = self._separate_or_types(OR)
+            if or_base is not None:
+                or_types.append((or_base, or_decors))
 
-        return ORtypes, ANDtypes, index
+        return or_types, and_types, index
 
-    def _separateORtypes(self, ORtype):
+    def _separate_or_types(self, or_type):
         """
         Separates ORtype (i.e. "#6X4R+0") into
         a base and decorators (i.e. '#6', ['X4','R','+0'] )
         """
         # special case 1: wild card
-        if ORtype == '*':
+        if or_type == '*':
             return None, []
 
         # if ORbase is a wildcard
-        if ORtype[0] == '*':
-            return '*', re.findall(self.atom_reg, ORtype[1:])
+        if or_type[0] == '*':
+            return '*', re.findall(self.atom_reg, or_type[1:])
 
         # Split up decorators by RegEx strings for atoms
-        split = re.findall(self.atom_reg, ORtype)
+        split = re.findall(self.atom_reg, or_type)
         if len(split) == 0:
             return None, []
 
@@ -723,36 +723,36 @@ into ChemicalEnvironments." % smirks)
         decs = _remove_blanks_repeats(split[1:], ['',base])
         return base, decs
 
-    def _getBondInfo(self, bond):
+    def _get_bond_info(self, bond):
         """
-        given bond strings returns ORtypes and ANDtypes
+        given bond strings returns or_types and and_types
         """
         # blank bond string is single or aromatic
-        # empty ORtypes in Chemical Environments are treated as ~ bonds
+        # empty or_types in Chemical Environments are treated as ~ bonds
         if bond == "":
-            ANDtypes = list()
-            ORtypes = [ ('-', []), (':', []) ]
-            return ORtypes, ANDtypes
+            and_types = list()
+            or_types = [('-', []), (':', [])]
+            return or_types, and_types
 
         # AND types indicated by ; at the end
         split = bond.split(';')
-        ANDtypes = list()
+        and_types = list()
         for a in split[1:]:
-            ANDtypes += re.findall(self.bond_regs, a)
+            and_types += re.findall(self.bond_regs, a)
 
-        # ORtypes are divided by ,
-        ORList = split[0].split(',')
-        ORtypes = list()
-        for OR in ORList:
+        # or_types are divided by ,
+        or_list = split[0].split(',')
+        or_types = list()
+        for OR in or_list:
             if OR == '~':
                 continue
             or_divide = re.findall(self.bond_regs, OR)
             if len(or_divide) > 0:
-                ORtypes.append( (or_divide[0], or_divide[1:]))
+                or_types.append((or_divide[0], or_divide[1:]))
 
-        return ORtypes, ANDtypes
+        return or_types, and_types
 
-    def asSMIRKS(self, smarts = False):
+    def as_smirks(self, smarts = False):
         """
         Returns a SMIRKS representation of the chemical environment
 
@@ -761,10 +761,10 @@ into ChemicalEnvironments." % smirks)
         smarts: optional, boolean
             if True, returns a SMARTS instead of SMIRKS without index labels
         """
-        init_atom = self.selectAtom(1)
-        return self._asSMIRKS(init_atom, None, smarts)
+        init_atom = self.select_atom(1)
+        return self._as_smirks(init_atom, None, smarts)
 
-    def _asSMIRKS(self, initialAtom = None, neighbors = None, smarts = False):
+    def _as_smirks(self, initial_atom = None, neighbors = None, smarts = False):
         """Return a SMIRKS representation of the chemical environment.
 
         Parameters
@@ -782,46 +782,46 @@ into ChemicalEnvironments." % smirks)
         if len(self._graph_nodes()) == 0:
             return ""
 
-        if initialAtom is None:
-            initialAtom = self.getAtoms()[0]
+        if initial_atom is None:
+            initial_atom = self.get_atoms()[0]
 
         if neighbors is None:
-            neighbors = self._graph_neighbors(initialAtom)
+            neighbors = self._graph_neighbors(initial_atom)
 
         # sort neighbors to guarantee order is constant
-        neighbors = sorted(neighbors, key=lambda atom: atom.asSMIRKS())
+        neighbors = sorted(neighbors, key=lambda atom: atom.as_smirks())
 
         # initialize smirks for starting atom
         if smarts:
-            smirks = initialAtom.asSMARTS()
+            smirks = initial_atom.as_smarts()
         else:
-            smirks = initialAtom.asSMIRKS()
+            smirks = initial_atom.as_smirks()
 
         # loop through neighbors
         for idx, neighbor in enumerate(neighbors):
             # get the SMIRKS for the bond between these atoms
             # bonds are the same if smarts or smirks
-            bond_edge = self._graph_get_edge_data(initialAtom, neighbor)
-            bondSMIRKS = bond_edge['bond'].asSMIRKS()
+            bond_edge = self._graph_get_edge_data(initial_atom, neighbor)
+            bond_smirks = bond_edge['bond'].as_smirks()
 
             # Get the neighbors for this neighbor
             new_neighbors = self._graph_neighbors(neighbor)
             # Remove initialAtom so it doesn't get reprinted
-            new_neighbors.remove(initialAtom)
+            new_neighbors.remove(initial_atom)
 
             # Call asSMIRKS again to get the details for that atom
-            atomSMIRKS = self._asSMIRKS(neighbor, new_neighbors, smarts)
+            atom_smirks = self._as_smirks(neighbor, new_neighbors, smarts)
 
             # Use ( ) for branch atoms (all but last)
             if idx < len(neighbors) - 1:
-                smirks += '(' + bondSMIRKS + atomSMIRKS + ')'
+                smirks += '(' + bond_smirks + atom_smirks + ')'
             # This is for the atoms that are a part of the main chain
             else:
-                smirks += bondSMIRKS + atomSMIRKS
+                smirks += bond_smirks + atom_smirks
 
         return smirks
 
-    def selectAtom(self, descriptor = None):
+    def select_atom(self, descriptor = None):
         """Select a random atom fitting the descriptor.
 
         Parameters
@@ -840,7 +840,7 @@ into ChemicalEnvironments." % smirks)
         or None if no such atom exists
         """
         if descriptor is None or isinstance(descriptor,str):
-            atoms = self.getComponentList('atom', descriptor)
+            atoms = self.get_component_list('atom', descriptor)
             if len(atoms) == 0:
                 return None
             return random.choice(atoms)
@@ -848,12 +848,12 @@ into ChemicalEnvironments." % smirks)
         if not isinstance(descriptor, int):
             return None
 
-        for atom in self.getAtoms():
+        for atom in self.get_atoms():
             if atom.index == descriptor:
                 return atom
         return None
 
-    def getComponentList(self, component_type, descriptor = None):
+    def get_component_list(self, component_type, descriptor = None):
         """
         Returns a list of atoms or bonds matching the descriptor
 
@@ -869,42 +869,42 @@ into ChemicalEnvironments." % smirks)
         des_list = ['indexed', 'unindexed', 'alpha', 'beta', 'all']
         if descriptor is not None:
             d = descriptor.lower()
-            if not d in des_list:
-                raise Exception("Error: descriptor must be in the list [%s]" %
+            if d not in des_list:
+                raise LookupError("Error: descriptor must be in the list [%s]" %
                                 ', '.join(des_list))
         else:
             d = None
 
         if not component_type.lower() in ['atom', 'bond']:
-            raise Exception("Error: 'getComponentList()' component_type must be 'atom' or 'bond'")
+            raise LookupError("Error: component_type must be 'atom' or 'bond'")
 
         if component_type.lower() == 'atom':
             if d == 'indexed':
-                return self.getIndexedAtoms()
+                return self.get_indexed_atoms()
             elif d == 'unindexed':
-                return self.getUnindexedAtoms()
+                return self.get_unindexed_atoms()
             elif d == 'alpha':
-                return self.getAlphaAtoms()
+                return self.get_alpha_atoms()
             elif d == 'beta':
-                return self.getBetaAtoms()
+                return self.get_beta_atoms()
             else:
-                return self.getAtoms()
+                return self.get_atoms()
 
         elif component_type.lower() == 'bond':
             if d == 'indexed':
-                return self.getIndexedBonds()
+                return self.get_indexed_bonds()
             elif d == 'unindexed':
-                return self.getUnindexedBonds()
+                return self.get_unindexed_bonds()
             elif d == 'alpha':
-                return self.getAlphaBonds()
+                return self.get_alpha_bonds()
             elif d == 'beta':
-                return self.getBetaBonds()
+                return self.get_beta_bonds()
 
-            return self.getBonds()
+            return self.get_bonds()
 
         return None
 
-    def selectBond(self, descriptor = None):
+    def select_bond(self, descriptor = None):
         """Select a random bond fitting the descriptor.
 
         Parameters
@@ -923,88 +923,90 @@ into ChemicalEnvironments." % smirks)
         or None if no such atom exists
         """
         if descriptor is None or isinstance(descriptor,str):
-            bonds = self.getComponentList('bond', descriptor)
+            bonds = self.get_component_list('bond', descriptor)
             if len(bonds) == 0:
                 return None
             return random.choice(bonds)
 
         if not isinstance(descriptor, int):
             return None
-        for bond in self.getBonds():
-            if bond._bond_type == descriptor:
+        for bond in self.get_bonds():
+            if bond.index == descriptor:
                 return bond
 
         return None
 
-    def addAtom(self, bondToAtom, bondORtypes = None, bondANDtypes = None,
-            newORtypes = None, newANDtypes = None, newAtomIndex = None,
-            newAtomRing = None, beyondBeta = False):
+    def add_atom(self, bond_to_atom, bond_or_types = None, bond_and_types = None,
+                 new_or_types = None, new_and_types = None, new_atom_index = None,
+                 new_atom_ring = None, beyond_beta = False):
         """Add an atom to the specified target atom.
 
         Parameters
         -----------
-        bondToAtom: atom object, required
+        bond_to_atom: atom object, required
             atom the new atom will be bound to
-        bondORtypes: list of tuples, optional
-            strings that will be used for the ORtypes for the new bond
-        bondANDtypes: list of strings, optional
-            strings that will be used for the ANDtypes for the new bond
-        newORtypes: list of strings, optional
-            strings that will be used for the ORtypes for the new atom
-        newANDtypes: list of strings, optional
-            strings that will be used for the ANDtypes for the new atom
-        newAtomIndex: int, optional
+        bond_or_types: list of tuples, optional
+            strings that will be used for the or_types for the new bond
+        bond_and_types: list of strings, optional
+            strings that will be used for the and_types for the new bond
+        new_or_types: list of strings, optional
+            strings that will be used for the or_types for the new atom
+        new_and_types: list of strings, optional
+            strings that will be used for the and_types for the new atom
+        new_atom_index: int, optional
             integer label that could be used to index the atom in a SMIRKS string
-        beyondBeta: boolean, optional
+        new_atom_ring: int, optional
+            integer used to track the openning and closing of rings in SMARTS/SMIRKS patterns
+        beyond_beta: boolean, optional
             if True, allows bonding beyond beta position
 
         Returns
         --------
-        newAtom: atom object for the newly created atom
+        new_atom: atom object for the newly created atom
         """
-        if bondToAtom is None:
+        if bond_to_atom is None:
             if len(self._graph_nodes()) > 0:
                 return None
-            newType = newAtomIndex
-            if newType is None:
-                newType = 0
 
-            newAtom = self.Atom(newORtypes, newANDtypes, newAtomIndex, newAtomRing)
-            self._graph.add_node(newAtom, atom_type = newType)
-            return newAtom
+            if new_atom_index is None:
+                new_atom_index = 0
+
+            new_atom = self.Atom(new_or_types, new_and_types, new_atom_index, new_atom_ring)
+            self._graph.add_node(new_atom)
+            return new_atom
 
         # Check if we can get past beta position
-        bondToType = self._graph_nodes(data=True)[bondToAtom]['atom_type']
-        if bondToType < 0 and not beyondBeta:
+        bond_to_index = bond_to_atom.index
+        if bond_to_index < 0 and not beyond_beta:
             return None
 
         # determine the type integer for the new atom and bond
-        if newAtomIndex is not None:
-            newType = newAtomIndex
-            bondType = max(newType, bondToType) - 1
-        else:
-            if bondToType > 0:
-                newType = 0
+        if new_atom_index is None:
+            if bond_to_index > 0:
+                new_atom_index = 0
             else:
-                newType = bondToType - 1
-            bondType = newType
+                new_atom_index = bond_to_index - 1
+
+        if new_atom_index > 0 and bond_to_index > 0:
+            bond_index = max(new_atom_index, bond_to_index) - 1
+        else:
+            bond_index = new_atom_index
 
         # create new bond
-        newBond = self.Bond(bondORtypes, bondANDtypes)
+        new_bond = self.Bond(bond_or_types, bond_and_types, bond_index)
 
         # create new atom
-        newAtom = self.Atom(newORtypes, newANDtypes, newAtomIndex, newAtomRing)
+        new_atom = self.Atom(new_or_types, new_and_types, new_atom_index, new_atom_ring)
 
-        # Add node for newAtom
-        self._graph.add_node(newAtom, atom_type = newType)
+        # Add node for new_atom
+        self._graph.add_node(new_atom)
 
         # Connect original atom and new atom
-        self._graph.add_edge(bondToAtom, newAtom, bond = newBond, bond_type = bondType)
-        newBond._bond_type = bondType
+        self._graph.add_edge(bond_to_atom, new_atom, bond = new_bond)
 
-        return newAtom
+        return new_atom
 
-    def removeAtom(self, atom, onlyEmpty=False):
+    def remove_atom(self, atom, only_empty=False):
         """Remove the specified atom from the chemical environment.
         if the atom is not indexed for the SMIRKS string or
         used to connect two other atoms.
@@ -1013,15 +1015,15 @@ into ChemicalEnvironments." % smirks)
         ----------
         atom: atom object, required
             atom to be removed if it meets the conditions.
-        onlyEmpty: boolean, optional
-            True only an atom with no ANDtypes and 1 ORtype can be removed
+        only_empty: boolean, optional
+            True only an atom with no and_types and 1 ORtype can be removed
 
         Returns
         --------
         Boolean True: atom was removed, False: atom was not removed
         """
         # labeled atoms can't be removed
-        if atom.index is not None:
+        if atom.index > 0:
             return False
 
         # Atom connected to more than one other atom cannot be removed
@@ -1029,7 +1031,7 @@ into ChemicalEnvironments." % smirks)
             return False
 
         # if you can remove "decorated atoms" remove it
-        if not onlyEmpty:
+        if not only_empty:
             self._graph_remove_node(atom)
             return True
 
@@ -1041,7 +1043,7 @@ into ChemicalEnvironments." % smirks)
         self._graph_remove_node(atom)
         return True
 
-    def getAtoms(self):
+    def get_atoms(self):
         """
         Returns
         -------
@@ -1049,7 +1051,7 @@ into ChemicalEnvironments." % smirks)
         """
         return self._graph_nodes()
 
-    def getBonds(self, atom=None):
+    def get_bonds(self, atom=None):
         """
         Parameters
         ----------
@@ -1070,7 +1072,7 @@ into ChemicalEnvironments." % smirks)
 
         return bonds
 
-    def getBond(self, atom1, atom2):
+    def get_bond(self, atom1, atom2):
         """
         Get bond betwen two atoms
 
@@ -1087,132 +1089,118 @@ into ChemicalEnvironments." % smirks)
         else:
             return None
 
-    def getIndexedAtoms(self):
+    def get_indexed_atoms(self):
         """
         returns the list of Atom objects with an index
         """
         index_atoms = []
-        for atom, info in self._graph_nodes(data=True).items():
-            if info['atom_type'] > 0:
+        for atom in self.get_atoms():
+            if atom.index > 0:
                 index_atoms.append(atom)
         return index_atoms
 
-    def getUnindexedAtoms(self):
+    def get_unindexed_atoms(self):
         """
         returns a list of Atom objects that are not indexed
         """
         unindexed_atoms = []
-        for atom, info in self._graph_nodes(data=True).items():
-            if info['atom_type'] < 1:
+        for atom in self.get_atoms():
+            if atom.index < 1:
                 unindexed_atoms.append(atom)
         return unindexed_atoms
 
-    def getAlphaAtoms(self):
+    def get_alpha_atoms(self):
         """
         Returns a list of atoms alpha to any indexed atom
             that are not also indexed
         """
         alpha_atoms = []
-        for atom, info in self._graph_nodes(data=True).items():
-            if info['atom_type'] == 0:
+        for atom in self.get_atoms():
+            if atom.index == 0:
                 alpha_atoms.append(atom)
 
         return alpha_atoms
 
-    def getBetaAtoms(self):
+    def get_beta_atoms(self):
         """
         Returns a list of atoms beta to any indexed atom
             that are not alpha or indexed atoms
         """
         beta_atoms = []
-        for atom, info in self._graph_nodes(data=True).items():
-            if info['atom_type'] == -1:
+        for atom in self.get_atoms():
+            if atom.index == -1:
                 beta_atoms.append(atom)
         return beta_atoms
 
-    def getIndexedBonds(self):
+    def get_indexed_bonds(self):
         """
         Returns a list of Bond objects that connect two indexed atoms
         """
-        indexedBonds = []
-        for bond in self.getBonds():
-            if bond._bond_type > 0:
-                indexedBonds.append(bond)
-        return indexedBonds
+        indexed_bonds = []
+        for bond in self.get_bonds():
+            if bond.index > 0:
+                indexed_bonds.append(bond)
+        return indexed_bonds
 
-    def getUnindexedBonds(self):
+    def get_unindexed_bonds(self):
         """
         Returns a list of Bond objects that connect
             an indexed atom to an unindexed atom
             two unindexed atoms
         """
-        unindexedBonds = []
-        for bond in self.getBonds():
-            if bond._bond_type < 1:
-                unindexedBonds.append(bond)
-        return unindexedBonds
+        unindexed_bonds = []
+        for bond in self.get_bonds():
+            if bond.index < 1:
+                unindexed_bonds.append(bond)
+        return unindexed_bonds
 
-    def getAlphaBonds(self):
+    def get_alpha_bonds(self):
         """
         Returns a list of Bond objects that connect
             an indexed atom to alpha atoms
         """
-        alphaBonds = []
-        for bond in self.getBonds():
-            if bond._bond_type == 0:
-                alphaBonds.append(bond)
-        return alphaBonds
+        alpha_bonds = []
+        for bond in self.get_bonds():
+            if bond.index == 0:
+                alpha_bonds.append(bond)
+        return alpha_bonds
 
-    def getBetaBonds(self):
+    def get_beta_bonds(self):
         """
         Returns a list of Bond objects that connect
             alpha atoms to beta atoms
         """
         betaBonds = []
-        for bond in self.getBonds():
-            if bond._bond_type == -1:
+        for bond in self.get_bonds():
+            if bond.index == -1:
                 betaBonds.append(bond)
         return betaBonds
 
-    def isAlpha(self, component):
+    def is_alpha(self, component):
         """
         Takes an atom or bond are returns True if it is alpha to an indexed atom
         """
-        if component._atom:
-            return self._graph_nodes(data=True)[component]['atom_type'] == 0
-        else:
-            return component._bond_type == 0
+        return component.index == 0
 
-    def isUnindexed(self, component):
+    def is_unindexed(self, component):
         """
         returns True if the atom or bond is not indexed
         """
-        if component._atom:
-            return component.index is None
-        else:
-            return component._bond_type < 1
+        return component.index < 1
 
-    def isIndexed(self, component):
+    def is_indexed(self, component):
         """
         returns True if the atom or bond is indexed
         """
-        if component._atom:
-            return component.index is not None
-        else:
-            return component._bond_type > 0
+        return component.index > 0
 
-    def isBeta(self, component):
+    def is_beta(self, component):
         """
         Takes an atom or bond are returns True if it is beta to an indexed atom
         """
-        if component._atom:
-            return self._graph_nodes(data=True)[component]['atom_type'] == -1
-        else:
-            return component._bond_type == -1
+        return component.index == -1
 
-    # TODO: We may want to overhaul ChemicalEnvironment.getType() to return one of ['atom', 'bond', 'angle', 'proper', 'improper']
-    # and check to make sure the expected connectivity is represented in the SMIRKS expression.
-    def getType(self):
+    def get_type(self):
         """
         Uses number of indexed atoms and bond connectivity
         to determine the type of chemical environment
@@ -1223,40 +1211,56 @@ into ChemicalEnvironments." % smirks)
             'Atom', 'Bond', 'Angle', 'ProperTorsion', 'ImproperTorsion'
             None if number of indexed atoms is 0 or > 4
         """
-        index_atoms = self.getIndexedAtoms()
+        index_atoms = self.get_indexed_atoms()
         natoms = len(index_atoms)
 
-        if natoms == 1:
-            return "Atom"
-        if natoms == 2:
-            return "Bond"
-        if natoms == 3:
-            return "Angle"
-        if natoms == 4:
-            atom2 = self.selectAtom(2)
-            atom4 = self.selectAtom(4)
-            bond24 = self.getBond(atom2, atom4)
-            if bond24 is not None:
-                return "ImproperTorsion"
-            return "ProperTorsion"
-        else:
+        if natoms == 0 or natoms > 4:
             return None
 
-    def getNeighbors(self, atom):
+        # one indexed atom can only be atom
+        if natoms == 1:
+            return "Atom"
+
+        # if 2 indexed atoms check they are connected
+        bond12 = self.get_bond(self.select_atom(1), self.select_atom(2))
+        if bond12 is None:
+            return None
+        if natoms == 2:
+            return "Bond"
+
+        # if 3 indexed atoms check connected in an angle
+        bond23 = self.get_bond(self.select_atom(2), self.select_atom(3))
+        if bond23 is None:
+            return None
+        if natoms == 3:
+            return "Angle"
+
+        # if 4 indexed atoms check for proper or improper torsion connections
+        bond34 = self.get_bond(self.select_atom(3), self.select_atom(4))
+        bond24 = self.get_bond(self.select_atom(2), self.select_atom(4))
+        if bond24 is not None:
+            return "ImproperTorsion"
+        if bond34 is not None:
+            return "ProperTorsion"
+
+        # must have 4 indexed atoms with incorrect connectivity
+        return None
+
+    def get_neighbors(self, atom):
         """
         Returns atoms that are bound to the given atom
         in the form of a list of Atom objects
         """
         return self._graph_neighbors(atom)
 
-    def getValence(self, atom):
+    def get_valence(self, atom):
         """
         Returns the valence (number of neighboring atoms)
         around the given atom
         """
         return len(self._graph_neighbors(atom))
 
-    def getBondOrder(self, atom):
+    def get_bond_order(self, atom):
         """
         Returns minimum bond order around a given atom
         0 if atom has no neighbors
@@ -1265,6 +1269,6 @@ into ChemicalEnvironments." % smirks)
         """
         order = 0.
         for a1, a2, info in self._graph_edges(data=True, node=atom):
-            order += info['bond'].getOrder()
+            order += info['bond'].get_order()
         return order
 

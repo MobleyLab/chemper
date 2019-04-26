@@ -43,14 +43,14 @@ def test_create_environments(smirks, frag_type):
     Each will be tetrahedral carbons connected by ring single bonds
     """
     env = ChemicalEnvironment(smirks)
-    output_type = env.getType()
+    output_type = env.get_type()
     assert output_type == frag_type
 
 def test_complicated_torsion():
     """
     Test ChemicalEnvironment objects with complicated torsion
     test methods that add atoms, remove atoms
-    add ORtypes and ANDtypes to existing atoms
+    add or_types and and_types to existing atoms
 
     This is the SMIRK for the final torsion
     "[*:1] - [#6:2](=[#8,#7;H0]) - [#6:3](-[#7X3,#8X2;+0]-[#1])(-[#1]) - [*:4]"
@@ -58,44 +58,44 @@ def test_complicated_torsion():
     torsion_smirks = "[*:1]-[#6:2]-[#6:3]-[*:4]"
     torsion = ChemicalEnvironment(torsion_smirks)
     # save atoms (use selectAtom)
-    atom1 = torsion.selectAtom(1)
-    atom2 = torsion.selectAtom(2)
-    atom3 = torsion.selectAtom(3)
+    atom1 = torsion.select_atom(1)
+    atom2 = torsion.select_atom(2)
+    atom3 = torsion.select_atom(3)
 
     # Add atoms with names so I can try to remove them
-    atom2alpha = torsion.addAtom(atom2, [('=',[])], None, [('#8',[]),('#7',[])], ['H0'])
-    atom3alpha1 = torsion.addAtom(atom3)
-    atom3beta1 = torsion.addAtom(atom3alpha1, [('-',[])], None, [('#1',[])])
-    atom3alpha2 = torsion.addAtom(atom3, [('-',[])], None, [('#1',[])])
+    atom2alpha = torsion.add_atom(atom2, [('=', [])], None, [('#8', []), ('#7', [])], ['H0'])
+    atom3alpha1 = torsion.add_atom(atom3)
+    atom3beta1 = torsion.add_atom(atom3alpha1, [('-', [])], None, [('#1', [])])
+    atom3alpha2 = torsion.add_atom(atom3, [('-', [])], None, [('#1', [])])
 
     # Get bond for atom3 and alpha and add ANDtype
-    bond = torsion.getBond(atom3, atom3alpha1)
+    bond = torsion.get_bond(atom3, atom3alpha1)
     assert bond is not None
-    bond.addORtype('-', [])
+    bond.add_or_type('-', [])
 
-    # Add ORtypes and ANDtypes to atom3 alpha atom
-    atom3alpha1.addORtype('#7', ['X3'])
-    atom3alpha1.addORtype('#8', ['X2'])
-    atom3alpha1.addANDtype('+0')
+    # Add or_types and and_types to atom3 alpha atom
+    atom3alpha1.add_or_type('#7', ['X3'])
+    atom3alpha1.add_or_type('#8', ['X2'])
+    atom3alpha1.add_and_type('+0')
 
-    # Call getAtoms and getBonds just to make sure they work
-    torsion.getAtoms()
-    torsion.getBonds()
+    # Call get_atoms and get_bonds just to make sure they work
+    torsion.get_atoms()
+    torsion.get_bonds()
 
     # get smarts and smirks for the large torsion
-    smarts = torsion.asSMIRKS(smarts=True)
+    smarts = torsion.as_smirks(smarts=True)
     assert is_valid_smirks(smarts)
-    smirks = torsion.asSMIRKS()
+    smirks = torsion.as_smirks()
     assert is_valid_smirks(smirks)
 
 
     # Try removing atoms
     # if it was labeled:
-    removed = torsion.removeAtom(atom1)
+    removed = torsion.remove_atom(atom1)
     assert not removed
-    removed = torsion.removeAtom(atom3alpha1)
+    removed = torsion.remove_atom(atom3alpha1)
     assert not removed
-    removed = torsion.removeAtom(atom3beta1)
+    removed = torsion.remove_atom(atom3beta1)
     assert removed
 
 
@@ -108,8 +108,8 @@ def test_selection_by_descriptor(descriptor, is_none):
     """
     angle_smirks = "[#6X3;R1:1]=,:;@[#6X3;R1;a:2](-,:;@[#7])-;!@[#8X2H1;!R:3]"
     angle = ChemicalEnvironment(angle_smirks)
-    atom = angle.selectAtom(descriptor)
-    bond = angle.selectBond(descriptor)
+    atom = angle.select_atom(descriptor)
+    bond = angle.select_bond(descriptor)
 
     assert (atom is None) == is_none
     assert (bond is None) == is_none
@@ -125,7 +125,7 @@ def test_get_component_list(comp, option, expected_len):
     """
     angle_smirks = "[#6X3;R1:1]=,:;@[#6X3;R1;a:2](-,:;@[#7])-;!@[#8X2H1;!R:3]"
     angle = ChemicalEnvironment(angle_smirks)
-    components = angle.getComponentList(comp, option)
+    components = angle.get_component_list(comp, option)
     assert len(components) == expected_len
 
 def test_other_env_methods():
@@ -135,21 +135,21 @@ def test_other_env_methods():
     angle_smirks = "[#6X3;R1:1]=,:;@[#6X3;R1;a:2](-,:;@[#7])-;!@[#8X2H1;!R:3]"
     angle = ChemicalEnvironment(angle_smirks)
     # Check is__ descriptors
-    atom2 = angle.selectAtom(2)
-    bond1 = angle.selectBond(1)
-    alpha_atom = angle.selectAtom('Alpha')
-    beta_atom = angle.addAtom(alpha_atom)
-    alpha_bond = angle.getBond(atom2, alpha_atom)
-    beta_bond = angle.getBond(alpha_atom, beta_atom)
+    atom2 = angle.select_atom(2)
+    bond1 = angle.select_bond(1)
+    alpha_atom = angle.select_atom('Alpha')
+    beta_atom = angle.add_atom(alpha_atom)
+    alpha_bond = angle.get_bond(atom2, alpha_atom)
+    beta_bond = angle.get_bond(alpha_atom, beta_atom)
 
     # list of lists:
     # [ [[components], [(method, expected)]], [...]]
     check_is_methods = [
-            [[atom2,bond1], [(angle.isAlpha, False), (angle.isBeta, False),
-                (angle.isIndexed, True), (angle.isUnindexed, False)]],
-            [[alpha_atom, alpha_bond], [(angle.isAlpha, True), (angle.isIndexed, False),
-                (angle.isUnindexed, True)]],
-            [[beta_atom, beta_bond], [(angle.isBeta, True)]]]
+            [[atom2,bond1], [(angle.is_alpha, False), (angle.is_beta, False),
+                             (angle.is_indexed, True), (angle.is_unindexed, False)]],
+            [[alpha_atom, alpha_bond], [(angle.is_alpha, True), (angle.is_indexed, False),
+                                        (angle.is_unindexed, True)]],
+            [[beta_atom, beta_bond], [(angle.is_beta, True)]]]
 
     for compSet, methodList in check_is_methods:
         for comp in compSet:
@@ -158,22 +158,22 @@ def test_other_env_methods():
                 classify = method(comp)
                 assert classify == expected
 
-    # Check getBond when atoms aren't bonded
-    atom1 = angle.selectAtom(1)
-    beta_to_atom1 = angle.getBond(beta_atom, atom1)
+    # Check get_bond when atoms aren't bonded
+    atom1 = angle.select_atom(1)
+    beta_to_atom1 = angle.get_bond(beta_atom, atom1)
     assert beta_to_atom1 is None
 
     # Check valence: should be 3 for atom2
-    val = angle.getValence(atom2)
+    val = angle.get_valence(atom2)
     assert val == 3
 
     # Check bond order
     # For bond1 =,:;@ it should be 1.5 because order returns lowest possible
-    order = bond1.getOrder()
+    order = bond1.get_order()
     assert order == 1.5
 
     # For atom
-    order = angle.getBondOrder(atom2)
+    order = angle.get_bond_order(atom2)
     assert order == 3.5
 
 def test_wrong_smirks_error():
@@ -198,10 +198,10 @@ def test_ring_parsing(decorator):
     # make SMIRKS with decorator in both the OR and AND decorators
     temp_smirks = "[#1%s;a;%s:1]" % (decorator, decorator)
     env = ChemicalEnvironment(temp_smirks)
-    atom = env.getIndexedAtoms()[0]
+    atom = env.get_indexed_atoms()[0]
 
     # check decorator in OR type
-    assert decorator in atom.getORtypes()[0][1]
+    assert decorator in atom.or_types[0][1]
 
     # check decorator in AND types
-    assert decorator in atom.getANDtypes()
+    assert decorator in atom.and_types

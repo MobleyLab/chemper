@@ -256,7 +256,7 @@ def get_smirks_matches(mol, smirks):
     from chemper.graphs.environment import ChemicalEnvironment
 
     env = ChemicalEnvironment(smirks)
-    if env.getType().lower() == 'impropertorsion':
+    if env.get_type().lower() == 'impropertorsion':
         matches = ImproperDict()
     else:
         matches = ValenceDict()

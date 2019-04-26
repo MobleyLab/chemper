@@ -126,10 +126,10 @@ class SMIRKSifier(object):
         graph = ClusterGraph(self.molecules, cluster_list[0][1], 0)
         test_smirks = graph.as_smirks(compress=True)
         env = CE(test_smirks)
-        if env.getType() is None:
+        if env.get_type() is None:
             # corresponds to an unknown chemical pattern
             self.dict_type = dict
-        elif env.getType().lower() == 'impropertorsion':
+        elif env.get_type().lower() == 'impropertorsion':
             self.dict_type = ImproperDict
         else:
             self.dict_type = ValenceDict
@@ -278,7 +278,19 @@ class SMIRKSifier(object):
 
 class Reducer():
     """
-    # TODO: add a description
+    Reducer starts with any list of SMIRKS and removes unnecessary decorators
+    while maintaining typing on input molecules.
+
+    Attributes
+    ----------
+    current_smirks: list of tuples
+                    current SMIRKS patterns in the form (label, smirks)
+    mols: list of chemper molecules
+          molecules being used to reduce the input SMIRKS
+    cluster_dict: dictionary
+                  Dictionary specifying typing using current SMIRKS in the form:
+                  {mol_idx:
+                        { (tuple of atom indices): label } }
     """
     def __init__(self, smirks_list, mols, verbose=False):
         """
@@ -287,7 +299,7 @@ class Reducer():
         smirks_list: list of tuples
             set of SMIRKS patterns in the form (label, smirks)
         mols: list of molecules
-            Any chemper compatible molecules accepted
+            Any chemper compatible molecules accepted (ChemPer, OpenEye, or RDKit)
         """
         self.verbose = verbose
         self.current_smirks = copy.deepcopy(smirks_list)
@@ -485,16 +497,16 @@ class Reducer():
         """
         items = list()
         odds = list()
-        for a_b in env.getAtoms() + env.getBonds():
-            count = len(a_b.getANDtypes())
-            for o in a_b.getORtypes():
+        for a_b in env.get_atoms() + env.get_bonds():
+            count = len(a_b.and_types)
+            for o in a_b.or_types:
                 if o[0] != '*':
                     count += 1
                 count += len(o[1])
 
             # a wild card, atom with no index should be considered ([*])
             # should also be on this list so it can be removed
-            if isinstance(a_b, CE.Atom) and not isinstance(a_b, CE.Bond) and env.isUnindexed(a_b):
+            if isinstance(a_b, CE.Atom) and not isinstance(a_b, CE.Bond) and env.is_unindexed(a_b):
                 count += 1
 
             items.append(a_b)
@@ -512,13 +524,13 @@ class Reducer():
         # choose an atom or bond with the probabilities:
         item = np.random.choice(items, p=weights)
         dec_opts = list()
-        if len(item.getORtypes()) > 0:
+        if len(item.or_types) > 0:
             dec_opts.append('remove_ors')
-        if len(item.getANDtypes()) > 0:
+        if len(item.and_types) > 0:
             dec_opts.append('remove_ands')
 
         if not isinstance(item, CE.Bond): # then it is an atom
-            if env.getValence(item) == 1 and env.isUnindexed(item):
+            if env.get_valence(item) == 1 and env.is_unindexed(item):
                 dec_opts.append('remove_atom')
 
         return item, dec_opts
@@ -537,21 +549,21 @@ class Reducer():
 
         change = np.random.choice(dec_opts)
         if change == 'remove_ors':
-            new_or_types, changed = self.remove_or(sub.getORtypes(), isinstance(sub, CE.Bond))
+            new_or_types, changed = self.remove_or(sub.or_types, isinstance(sub, CE.Bond))
             if not changed:
                 return smirks, False
-            sub.setORtypes(new_or_types)
+            sub.or_types = new_or_types
         elif change == 'remove_ands':
-            new_and_types, changed = self.remove_and(sub.getANDtypes())
+            new_and_types, changed = self.remove_and(sub.and_types)
             if not changed:
                 return smirks, False
-            sub.setANDtypes(new_and_types)
+            sub.and_types = new_and_types
         else: # change == 'remove_atom'
-            remove = env.removeAtom(sub)
+            remove = env.remove_atom(sub)
             if not remove:
                 return smirks, False
 
-        return env.asSMIRKS(), True
+        return env.as_smirks(), True
 
     def run(self, max_its=1000, verbose=None):
         """
