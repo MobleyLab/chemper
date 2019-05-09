@@ -22,7 +22,7 @@ def make_frag_graph(smiles, layers):
     and if layers is 1 then atoms 1 bond away from the indexed atoms are included, and so forth.
     Layers can also be "all" which will lead to all atoms in the molecule being added to the graph.
     """
-    mol = mol_toolkit.mol_from_smiles(smiles)
+    mol = mol_toolkit.Mol.from_smiles(smiles)
     smirks_atoms = (0,1)
     return ChemPerGraphFromMol(mol, smirks_atoms, layers)
 
@@ -38,7 +38,7 @@ def make_cluster_graph(smiles_list, layers=0):
     Layers can also be "all" which will lead to all atoms in the molecule being added to the graph.
     """
     smirks_atom_lists = [ [(0,1)] ] * len(smiles_list)
-    mols_list = [mol_toolkit.mol_from_smiles(smiles) for smiles in smiles_list]
+    mols_list = [mol_toolkit.Mol.from_smiles(smiles) for smiles in smiles_list]
     return ClusterGraph(mols_list, smirks_atom_lists, layers=layers)
 
 

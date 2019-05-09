@@ -81,8 +81,8 @@ def is_valid_smirks(smirks):
     -------
     is_valid : boolean
     """
-    from chemper.mol_toolkits.mol_toolkit import mol_from_smiles
-    mol = mol_from_smiles('C')
+    from chemper.mol_toolkits.mol_toolkit import Mol
+    mol = Mol.from_smiles('C')
     try:
         mol.smirks_search(smirks)
         return True

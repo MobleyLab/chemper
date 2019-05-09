@@ -283,11 +283,11 @@ class Reducer():
 
     Attributes
     ----------
-    current_smirks: list of tuples
+    current_smirks : list of tuples
                     current SMIRKS patterns in the form (label, smirks)
-    mols: list of chemper molecules
+    mols : list of chemper molecules
           molecules being used to reduce the input SMIRKS
-    cluster_dict: dictionary
+    cluster_dict : dictionary
                   Dictionary specifying typing using current SMIRKS in the form:
                   {mol_idx:
                         { (tuple of atom indices): label } }

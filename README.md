@@ -114,8 +114,8 @@ Below is a brief example showing the SMIRKS for the bond between two carbon atom
 from chemper.mol_toolkits import mol_toolkit
 from chemper.graphs.cluster_graph import ClusterGraph
 
-mol1 = mol_toolkit.MolFromSmiles('CCC')
-mol2 = mol_toolkit.MolFromSmiles('CCCCC')
+mol1 = mol_toolkit.Mol.from_smiles('CCC')
+mol2 = mol_toolkit.Mol.from_smiles('CCCCC')
 smirks_atom_lists = [[(0,1)], [(0,1), (1,2)]]
 graph = ClusterGraph([mol1, mol2], smirks_atom_lists)
 print(graph.as_smirks())
@@ -145,7 +145,7 @@ atoms at indices 0 and 1 in the molecule are assigned to SMIRKS indices `:1` and
 from chemper.mol_toolkits import mol_toolkit
 from chemper.graphs.fragment_graph import  ChemPerGraphFromMol
 
-mol = mol_toolkit.MolFromSmiles('C=C') # note this adds explicit hydrogens to your molecule
+mol = mol_toolkit.Mol.from_smiles('C=C') # note this adds explicit hydrogens to your molecule
 smirks_atoms = (0,1)
 graph = ChemPerGraphFromMol(mol, smirks_atoms, layers=1)
 print(graph.as_smirks())

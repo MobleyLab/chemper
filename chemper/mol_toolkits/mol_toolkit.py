@@ -18,12 +18,13 @@ mol = mol_toolkit.Mol(user_mol, toolkit='openeye')
 import os
 from chemper.chemper_utils import get_data_path
 from chemper.mol_toolkits.adapters import MolAdapter, BondAdapter, AtomAdapter
-# define default_toolkit:
+
+# identify which toolkits are available
+HAS_OE = False
+HAS_RDK = False
 try:
-    from openeye.oechem import OEChemIsLicensed
-    if not OEChemIsLicensed():
-        HAS_OE = False
-    else:
+    from openeye import oechem
+    if oechem.OEChemIsLicensed():
         from chemper.mol_toolkits import cp_openeye
         HAS_OE = True
 except ImportError:
@@ -36,105 +37,95 @@ try:
 except ImportError:
     HAS_RDK = False
 
+
+# ======================================================================
+# Find super Mol/Atom/Bond classes
+# ======================================================================
+
 if not HAS_OE and not HAS_RDK:
-    raise ImportWarning("No Cheminformatics toolkit was found."\
+    raise ImportWarning("No Cheminformatics toolkit was found." \
                         " currently ChemPer supports OpenEye and RDKit")
 
 
-def Mol(mol):
-    """
+class Mol:
+    def __init__(self, mol):
+        # if it is already a chemper molecule return as is
+        if isinstance(mol, MolAdapter):
+            self.mol = mol.mol
+            self.__class__ = mol.__class__
 
-    Parameters
-    ----------
-    mol : Mol
-          Molecule from any supported toolkit (ChemPer, OpenEye, RDKit)
+        # check if this is an Openeye molecule
+        elif HAS_OE and isinstance(mol, oechem.OEMolBase):
+            self.__class__ = cp_openeye.Mol
+            self.__class__.__init__(self,mol)
 
-    Returns
-    -------
-    mol : ChemPer Mol
+        # check if it is an RDK molecule
+        elif HAS_RDK and isinstance(mol, Chem.rdchem.Mol):
+            self.__class__ = cp_rdk.Mol
+            self.__class__.__init__(self, mol)
 
-    """
-    # if it is already a chemper molecule return as is
-    if isinstance(mol, MolAdapter):
-        return mol
+        else:
+            err_msg = """
+            Your molecule has the type %s.
+            Currently ChemPer only supports OpenEye and RDKit.
+            To add support to a new toolkit submit an issue on GitHub at
+            github.com/MobleyLab/chemper
+            """
+            raise TypeError(err_msg % type(mol))
 
-    # check if this is an Openeye molecule
-    if HAS_OE and isinstance(mol, oechem.OEMolBase):
-        return cp_openeye.Mol(mol)
+    @staticmethod
+    def from_smiles(smiles):
+        if HAS_OE:
+            return cp_openeye.Mol.from_smiles(smiles)
+        return cp_rdk.Mol.from_smiles(smiles)
 
-    # check if it is an RDK molecule
-    if HAS_RDK and isinstance(mol, Chem.rdchem.Mol):
-        return cp_rdk.Mol(mol)
+class Atom:
+    def __init__(self, atom):
 
-    err_msg = """
-    Your molecule has the type %s.
-    Currently ChemPer only supports OpenEye and RDKit.
-    To add support to a new toolkit submit an issue on GitHub at
-    github.com/MobleyLab/chemper
-    """
-    raise TypeError(err_msg % type(mol))
+        if isinstance(atom, AtomAdapter):
+            self.atom = atom.atom
+            self.__class__ = atom.__class__
 
+        elif HAS_OE and isinstance(atom, oechem.OEAtomBase):
+            self.__class__ = cp_openeye.Atom
+            self.__class__.__init__(self, atom)
 
-def Atom(atom):
-    """
+        elif HAS_RDK and isinstance(atom, Chem.rdchem.Atom):
+            self.__class__ = cp_rdk.Atom
+            self.__class__.__init__(self, atom)
 
-    Parameters
-    ----------
-    atom : Atom
-           Atom from any supported toolkit (ChemPer, OpenEye, RDKit)
-
-    Returns
-    -------
-    atom : ChemPer Atom
-
-    """
-    if isinstance(atom, AtomAdapter):
-        return atom
-
-    if HAS_OE and isinstance(atom, oechem.OEAtomBase):
-        return cp_openeye.Atom(atom)
-
-    if HAS_RDK and isinstance(atom, Chem.rdchem.Atom):
-        return cp_rdk.Atom(atom)
-
-    err_msg = """
-    Your atom has the type %s.
-    Currently ChemPer only supports OpenEye and RDKit.
-    To add support to a new toolkit submit an issue on GitHub at
-    github.com/MobleyLab/chemper
-    """
-    raise TypeError(err_msg % type(atom))
+        else:
+            err_msg = """
+            Your atom has the type %s.
+            Currently ChemPer only supports OpenEye and RDKit.
+            To add support to a new toolkit submit an issue on GitHub at
+            github.com/MobleyLab/chemper
+            """
+            raise TypeError(err_msg % type(atom))
 
 
-def Bond(bond):
-    """
+class Bond:
+    def __init__(self, bond):
+        if isinstance(bond, BondAdapter):
+            self.bond = bond.bond
+            self.__class__ = bond.__class__
 
-    Parameters
-    ----------
-    bond : Bond
-           Bond from any supported toolkit (ChemPer, OpenEye, RDKit)
+        elif HAS_OE and isinstance(bond, oechem.OEBondBase):
+            self.__class__ = cp_openeye.Bond
+            self.__class__.__init__(self,bond)
 
-    Returns
-    -------
-    bond : ChemPer Bond
+        elif HAS_RDK and isinstance(bond, Chem.rdchem.Bond):
+            self.__class__ = cp_rdk.Bond
+            self.__class__.__init__(self,bond)
 
-    """
-    if isinstance(bond, BondAdapter):
-        return bond
-
-    if HAS_OE and isinstance(bond, oechem.OEBondBase):
-        return cp_openeye.Bond(bond)
-
-    if HAS_RDK and isinstance(bond, Chem.rdchem.Bond):
-        return cp_rdk.Bond(bond)
-
-    err_msg = """
-    Your bond has the type %s.
-    Currently ChemPer only supports OpenEye and RDKit.
-    To add support to a new toolkit submit an issue on GitHub at
-    github.com/MobleyLab/chemper
-    """
-    raise TypeError(err_msg % type(bond))
+        else:
+            err_msg = """
+            Your bond has the type %s.
+            Currently ChemPer only supports OpenEye and RDKit.
+            To add support to a new toolkit submit an issue on GitHub at
+            github.com/MobleyLab/chemper
+            """
+            raise TypeError(err_msg % type(bond))
 
 # =======================================
 # check user specifications
@@ -201,32 +192,6 @@ def check_mol_file(file_name):
         raise IOError("Molecule file (%s) was not found locally or in chemper/data/molecules" % file_name)
 
     return path
-
-
-# ================================================================
-# get molecule from SMILES
-# ================================================================
-
-def mol_from_smiles(smiles, toolkit=None):
-    """
-
-    Parameters
-    ----------
-    smiles : str
-             SMILES string
-    toolkit : str or None
-              'openeye' or 'rdkit'
-              if None ChemPer will use whichever is available
-
-    Returns
-    -------
-    mol : ChemPer Mol
-    """
-    toolkit = check_toolkit(toolkit)
-    if toolkit.lower() == 'openeye':
-        return cp_openeye.Mol.from_smiles(smiles)
-
-    return cp_rdk.Mol.from_smiles(smiles)
 
 # =======================================
 # get molecules from files
