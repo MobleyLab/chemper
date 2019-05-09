@@ -82,7 +82,7 @@ install:
   - conda list
 
 script:
-  - py.test -v -s --nbval-lax --cov=chemper/ chemper/tests/ 
+  - py.test -vv -s --nbval-lax --cov=chemper/ chemper/tests/ 
 
 notifications:
   email: false
