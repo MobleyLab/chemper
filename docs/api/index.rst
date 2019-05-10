@@ -37,7 +37,7 @@ single_mol_smirks_.
 
 .. _single_mol_smirks: ../../examples/single_mol_smirks.ipynb
 
-Here is a brief usage example for using ``ChemPerGraph`` to create a SMIRKS pattern.
+Here is a brief usage example for using ``SingleGraph`` to create a SMIRKS pattern.
 In this case, we want to create a pattern for the carbon-carbon bond in ethene.
 The carbon atoms have the indices 0 and 1 in the molecule, specified using the tuple `(0,1)`.
 These atoms are assigned to SMIRKS indices `:1` and `:2` respectively.

@@ -128,7 +128,7 @@ In pentane (mol2) however atom1 can be a terminal or middle of the chain carbon 
 hydrogen atoms (`Hn` decorator) on the carbon, thus there are two possible SMIRKS patterns for atom `:1`
 `#6AH2X4x0r0+0` or (indicated by the "`,`") `#6AH3X4x0r0+0`. But, atom `:2` only has one possibility `#6AH2X4x0r0+0`.
 
-### ChemPerGraph
+### SingleGraph
 
 The goal of this tool was to create an example of how you could create a SMIRKS pattern from a
 molecule and set of atom indices.
@@ -143,11 +143,11 @@ atoms at indices 0 and 1 in the molecule are assigned to SMIRKS indices `:1` and
 
 ```python
 from chemper.mol_toolkits import mol_toolkit
-from chemper.graphs.fragment_graph import  ChemPerGraphFromMol
+from chemper.graphs.fragment_graph import  SingleGraph
 
 mol = mol_toolkit.Mol.from_smiles('C=C') # note this adds explicit hydrogens to your molecule
 smirks_atoms = (0,1)
-graph = ChemPerGraphFromMol(mol, smirks_atoms, layers=1)
+graph = SingleGraph(mol, smirks_atoms, layers=1)
 print(graph.as_smirks())
 # [#6AH2X3x0r0+0:1](-!@[#1AH0X1x0r0+0])(-!@[#1AH0X1x0r0+0])=!@[#6AH2X3x0r0+0:2](-!@[#1AH0X1x0r0+0])-!@[#1AH0X1x0r0+0]
 ```

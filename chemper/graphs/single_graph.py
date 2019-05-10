@@ -1,5 +1,5 @@
 """
-fragment_graph.py
+single_graph.py
 
 ChemPerGraph is a class for storing smirks decorators for a molecular fragment.
 These can be used to convert a molecular sub-graph or an entire molecule into a SMIRKS
@@ -32,13 +32,13 @@ from chemper.mol_toolkits import mol_toolkit
 
 
 @total_ordering
-class ChemPerGraph(object):
+class SingleGraph:
     """
     ChemPerGraphs are a graph based class for storing atom and bond information.
     They use the chemper.mol_toolkits Atoms, Bonds, and Mols
     """
     @total_ordering
-    class AtomStorage(object):
+    class AtomStorage:
         """
         AtomStorage tracks information about an atom
         """
@@ -158,7 +158,7 @@ class ChemPerGraph(object):
             return '[%s:%i]' % (base_smirks, self.label)
 
     @total_ordering
-    class BondStorage(object):
+    class BondStorage:
         """
         BondStorage tracks information about a bond
         """
@@ -213,13 +213,40 @@ class ChemPerGraph(object):
 
             return order+ring
 
-    def __init__(self):
+    def __init__(self, mol=None, smirks_atoms=None, layers=0):
         """
-        Initialize empty ChemPerGraph
+        Parameters
+        ----------
+        mol: Mol
+            this can be a chemper mol or a molecule from any supported toolkit
+            (currently OpenEye or RDKit)
+        smirks_atoms: tuple of integers
+            This is a tuple of the atom indices which will have SMIRKS indices.
+            For example, if (1,2) is provided then the atom in molecule with indices
+            1 and 2 will be used to create a SMIRKS with two indexed atoms.
+        layers: int or 'all'
+            how many atoms out from the smirks indexed atoms do you wish save (default=0)
+            'all' will lead to all atoms in the molecule being specified
         """
         self._graph = nx.Graph()
         self.atom_by_label = dict() # stores a dictionary of atoms by label
         self.bond_by_label = dict() # stores a dictionary of bonds by label
+        self.atom_by_index = dict()
+
+        if mol is None:
+            self.mol = None
+            if smirks_atoms is not None:
+                raise TypeError("Must provide a molecule if smirks_atoms are specified/")
+
+        else:
+            self.mol = mol_toolkit.Mol(mol)
+            if smirks_atoms is None:
+                raise TypeError("Must provide smirks_atoms when a molecule is given")
+
+            self._add_smirks_atoms(smirks_atoms)
+            for smirks_key in self.atom_by_label.keys():
+                atom_storage = self.atom_by_label[smirks_key]
+                self._add_layers(atom_storage, layers)
 
     def __str__(self): return self.as_smirks()
 
@@ -408,40 +435,6 @@ class ChemPerGraph(object):
         self._graph.add_edge(bond_to_atom, new_atom_storage, bond = new_bond_storage)
         return new_atom_storage
 
-
-# ==============================================================================
-# TODO: Isn't this the same thing as starting with a ChemPerGraph with mols=None
-# and smirks_atoms=None as the default?
-# ==============================================================================
-class ChemPerGraphFromMol(ChemPerGraph):
-    """
-    Creates a ChemPerGraph from a chemper Mol object
-    """
-    def __init__(self, mol, smirks_atoms, layers=0):
-        """
-        Parameters
-        ----------
-        mol: Mol
-            this can be a chemper mol or a molecule from any supported toolkit
-            (currently OpenEye or RDKit)
-        smirks_atoms: tuple of integers
-            This is a tuple of the atom indices which will have SMIRKS indices.
-            For example, if (1,2) is provided then the atom in molecule with indices
-            1 and 2 will be used to create a SMIRKS with two indexed atoms.
-        layers: int or 'all'
-            how many atoms out from the smirks indexed atoms do you wish save (default=0)
-            'all' will lead to all atoms in the molecule being specified
-        """
-        ChemPerGraph.__init__(self)
-
-        self.mol = mol_toolkit.Mol(mol)
-        self.atom_by_index = dict()
-        self._add_smirks_atoms(smirks_atoms)
-        keys = list(self.atom_by_label.keys())
-        for smirks_key in keys:
-            atom_storage = self.atom_by_label[smirks_key]
-            self._add_layers(atom_storage, layers)
-
     def _add_smirks_atoms(self, smirks_atoms):
         """
         private function for adding atoms to the graph
@@ -480,7 +473,6 @@ class ChemPerGraphFromMol(ChemPerGraph):
                                          self.atom_by_label[neighbor_key],
                                          bond=bond_storage)
 
-    # TODO: I could probably do this with a while loop, is that better?
     def _add_layers(self, atom_storage, add_layer):
         """
         private function for expanding beyond the initial SMIRKS atoms.

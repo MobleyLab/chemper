@@ -15,13 +15,13 @@ Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvi
 
 import networkx as nx
 from functools import total_ordering
-from chemper.graphs.fragment_graph import ChemPerGraph
+from chemper.graphs.single_graph import SingleGraph
 from chemper.graphs.environment import ChemicalEnvironment as CE
 from chemper.mol_toolkits import mol_toolkit
 
 
 @total_ordering
-class ClusterGraph(ChemPerGraph):
+class ClusterGraph(SingleGraph):
     """
     ChemPerGraphs are a graph based class for storing atom and bond information.
     They use the chemper.mol_toolkits Atoms, Bonds, and Mols
@@ -376,7 +376,7 @@ class ClusterGraph(ChemPerGraph):
     # Initiate ClusterGraph
     def __init__(self, mols=None, smirks_atoms_lists=None, layers=0):
         """
-        Initialize a ChemPerGraph from a molecule and list of indexed atoms
+        Initialize a SingleGraph from a molecule and list of indexed atoms
 
         For the example, imagine we wanted to get a SMIRKS that
         would match the carbon-carbon bonds in ethane and propane.
@@ -403,7 +403,7 @@ class ClusterGraph(ChemPerGraph):
             Instead of an int, the string 'all' would lead to all atoms in the molecules
             being included in the SMIRKS (not recommended)
         """
-        ChemPerGraph.__init__(self)
+        SingleGraph.__init__(self)
 
         self.mols = list()
         self.smirks_atoms_lists = list()
@@ -434,7 +434,7 @@ class ClusterGraph(ChemPerGraph):
         SMIRKS: str
             a SMIRKS string matching the exact atom and bond information stored
         """
-        return ChemPerGraph.as_smirks(self, compress)
+        return SingleGraph.as_smirks(self, compress)
 
     def get_symmetry_funct(self, sym_label):
         """

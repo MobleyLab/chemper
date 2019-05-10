@@ -4,12 +4,12 @@ cluster_graph.py and fragment_graph.py run without failures.
 """
 
 from chemper.graphs.cluster_graph import ClusterGraph
-from chemper.graphs.fragment_graph import ChemPerGraphFromMol, ChemPerGraph
+from chemper.graphs.single_graph import SingleGraph, SingleGraph
 from chemper.mol_toolkits import mol_toolkit
 import pytest
 
 
-@pytest.mark.parametrize('graph_method', [ClusterGraph, ChemPerGraph])
+@pytest.mark.parametrize('graph_method', [ClusterGraph, SingleGraph])
 def test_empty_graph(graph_method):
     """
     Test basic function of empty graphs
@@ -38,10 +38,10 @@ frag_combos = [(s, l) for s in smiles_set for l in layers_options]
 def test_no_fail_fragment(smile, layers):
     mol = mol_toolkit.Mol.from_smiles(smile)
     smirks_atoms = (0, 1)
-    c = ChemPerGraphFromMol(mol, smirks_atoms, layers)
+    c = SingleGraph(mol, smirks_atoms, layers)
     assert c.add_atom(None) is None
     smirks_atoms = (0,)
-    c = ChemPerGraphFromMol(mol, smirks_atoms, layers)
+    c = SingleGraph(mol, smirks_atoms, layers)
 
 
 cluster_combos = [([smiles_set[i], smiles_set[i+1]], l)
