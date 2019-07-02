@@ -37,12 +37,9 @@ For example, if you know you want to assign certain group of angles (sets of thr
 the same equilibrium bond angle and force constant,
 then chemper should generate SMIRKS patterns that maintain that clustering.
 
-**Warning**
-This repository is still under active development. While an initial [version](#versions) is available changes are still expected in the API and the underlying code.
-
 ## Prerequisites
 
-We test with Python 3.6 and 3.7 and expect any verion above 3.5 to behave well.
+We test with Python 3.6 and 3.7 and expect any version above 3.5 to behave well.
 
 This is a python tool kit with a few dependencies. We recommend installing
 [miniconda](http://conda.pydata.org/miniconda.html). Then you can create an
@@ -143,7 +140,7 @@ atoms at indices 0 and 1 in the molecule are assigned to SMIRKS indices `:1` and
 
 ```python
 from chemper.mol_toolkits import mol_toolkit
-from chemper.graphs.fragment_graph import  SingleGraph
+from chemper.graphs.single_graph import  SingleGraph
 
 mol = mol_toolkit.Mol.from_smiles('C=C') # note this adds explicit hydrogens to your molecule
 smirks_atoms = (0,1)
