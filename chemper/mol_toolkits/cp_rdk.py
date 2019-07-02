@@ -40,7 +40,7 @@ class Mol(MolAdapter):
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             raise ValueError('Could not parse SMILES %s' % smiles)
-        cls(Chem.AddHs(mol))
+        return cls(Chem.AddHs(mol))
 
     def set_aromaticity_mdl(self):
         Chem.SanitizeMol(self.mol, Chem.SANITIZE_ALL^Chem.SANITIZE_SETAROMATICITY)
