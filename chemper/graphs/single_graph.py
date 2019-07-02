@@ -244,7 +244,11 @@ class SingleGraph:
                 raise TypeError("Must provide smirks_atoms when a molecule is given")
 
             self._add_smirks_atoms(smirks_atoms)
-            for smirks_key in self.atom_by_label.keys():
+            # loop over indexed atoms and then add layers to each
+            # note: the keys must be pulled out first because the
+            #       atom_by_label dictionary is updated when layers are added
+            keys = list(self.atom_by_label.keys())
+            for smirks_key in keys:
                 atom_storage = self.atom_by_label[smirks_key]
                 self._add_layers(atom_storage, layers)
 
