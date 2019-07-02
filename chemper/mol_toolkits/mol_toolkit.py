@@ -79,6 +79,7 @@ class Mol:
             return cp_openeye.Mol.from_smiles(smiles)
         return cp_rdk.Mol.from_smiles(smiles)
 
+
 class Atom:
     def __init__(self, atom):
 
