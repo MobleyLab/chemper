@@ -19,20 +19,15 @@ input_SMIRKS = [
     ('[#6X4:1]-[#6X4:2]-[#6X4:3]', 'Angle'),
     ('[#6X4:1]-[#6X4:2]-[#6X4:3]-[#6X4:4]', 'ProperTorsion'),
     ('[#6X4:1]-[#6X4:2](-[#6X4:3])-[#6X4:4]', 'ImproperTorsion'),
-    ("[#6](-[#1])-[#8]", None),
     ("[#6&X4&H0:1](-[#1])-[#6&X4]", 'Atom'),
     ("[#6&X4&H0:1](-[#1])-[#6&X4:2]", 'Bond'),
     ("[*:1]-[*:2](-[#6&X4])-[*:3]", 'Angle'),
     ("[#6&X4&H0:1](-[#1])-[#6&X4:2]-[#6&X4&H0:3](-[#1])-[#6&X4:4]", 'ProperTorsion'),
     ("[#1:1]-[#6&X4:2](-[#8:3])-[#1:4]", 'ImproperTorsion'),
     ("[#1:1]-[#6&X4:2](-[#8:3])-[*:4](-[#6&H1])-[#8:5]", None),
-    ("CCC", None),
     ("[#6:1]1(-;!@[#1,#6])=;@[#6]-;@[#6]1", 'Atom'),
-    ("C(O-[#7,#8])CC=[*]", None),
     ("[*:1]-[#7X3:2](-[#6a$(*1ccc(-[#8-1X1])cc1):3])-[*:4]", 'ImproperTorsion'),
     ("[#6X4:1]1~[*:2]~[*$(*~[#1]):3]1", 'Angle'),
-    ("[$([#7]1~[#6]-CC1)]", None),
-    ("[$(c1ccccc1)]", None),
     ("[#1$(*-[#6](-[#7,#8,#9,#16,#17,#35])-[#7,#8,#9,#16,#17,#35]):1]~[$([#1]~[#6])]", 'Atom')
 ]
 
@@ -79,13 +74,15 @@ def test_complicated_torsion():
     atom3alpha1.add_and_type('+0')
 
     # Call get_atoms and get_bonds just to make sure they work
-    torsion.get_atoms()
-    torsion.get_bonds()
+    atoms = torsion.get_atoms()
+    assert len(atoms) == 8
+    bonds = torsion.get_bonds()
+    assert len(bonds) == 7
 
     # get smarts and smirks for the large torsion
     smarts = torsion.as_smirks(smarts=True)
-    assert is_valid_smirks(smarts)
     smirks = torsion.as_smirks()
+    # check SMIRKS is a valid SMIRKS
     assert is_valid_smirks(smirks)
 
 
