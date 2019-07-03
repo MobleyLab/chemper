@@ -21,6 +21,7 @@ if mol_toolkit.HAS_OE:
 if mol_toolkit.HAS_RDK or mol_toolkit.HAS_OE:
     mts.append(mol_toolkit)
 
+
 @pytest.mark.parametrize('toolkit', mts)
 def test_molecule(toolkit):
     """
@@ -63,6 +64,7 @@ def test_smirks_search(toolkit):
         assert 1 in match
         assert 2 in match
 
+
 @pytest.mark.parametrize('toolkit', mts)
 def test_bad_smirks(toolkit):
     """
@@ -73,6 +75,7 @@ def test_bad_smirks(toolkit):
     with pytest.raises(ValueError):
         mol.smirks_search(']X[')
 
+
 @pytest.mark.parametrize('toolkit', mts)
 def test_bad_smiles(toolkit):
     """
@@ -80,6 +83,7 @@ def test_bad_smiles(toolkit):
     """
     with pytest.raises(ValueError):
         mol = toolkit.Mol.from_smiles('ZZZ')
+
 
 @pytest.mark.parametrize('toolkit', mts)
 def test_bond(toolkit):
@@ -149,19 +153,22 @@ def test_atom(toolkit):
     smiles = mol.get_smiles()
     assert smiles == "C"
 
+
 @pytest.mark.parametrize('toolkit', mts)
 def test_atom_exception(toolkit):
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         toolkit.Atom(None)
+
 
 @pytest.mark.parametrize('toolkit', mts)
 def test_bond_exception(toolkit):
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         toolkit.Bond(None)
+
 
 @pytest.mark.parametrize('toolkit', mts)
 def test_mol_exception(toolkit):
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         toolkit.Mol(None)
 
 
@@ -173,6 +180,7 @@ mol2_abs_file = chemper_utils.get_data_path('molecules/MiniDrugBank_tripos.mol2'
 mol2_rel_path = 'MiniDrugBank_tripos.mol2'
 paths = [mol2_abs_file, mol2_rel_path]
 
+
 # For the following functions, we will test default behavior and
 # look for exceptions based on the available mol toolkit
 
@@ -180,6 +188,7 @@ paths = [mol2_abs_file, mol2_rel_path]
 def test_file_parsing(toolkit,path):
     mols = toolkit.mols_from_mol2(path)
     assert len(mols) == 363
+
 
 @pytest.mark.parametrize('path', paths)
 def test_mols_specified_toolkit(path):
@@ -207,10 +216,12 @@ if not mol_toolkit.HAS_OE:
 if not mol_toolkit.HAS_RDK:
     tk_fails.append('rdkit')
 
+
 @pytest.mark.parametrize('tks', tk_fails)
 def test_fake_toolkit(tks):
     with pytest.raises(ImportError):
         mol_toolkit.check_toolkit(tks)
+
 
 def test_default_toolkit():
     tk = mol_toolkit.check_toolkit(None)
