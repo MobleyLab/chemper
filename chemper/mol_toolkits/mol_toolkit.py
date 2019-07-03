@@ -49,15 +49,20 @@ if not HAS_OE and not HAS_RDK:
 
 class Mol:
     def __init__(self, mol):
-        # if it is already a chemper molecule return as is
-        if isinstance(mol, MolAdapter):
+        # check if its a ChemPer Mol with OE wrapper
+        if HAS_OE and isinstance(mol, cp_openeye.Mol):
             self.mol = mol.mol
-            self.__class__ = mol.__class__
+            self.__class__ = cp_openeye.Mol
 
         # check if this is an Openeye molecule
         elif HAS_OE and isinstance(mol, oechem.OEMolBase):
             self.__class__ = cp_openeye.Mol
             self.__class__.__init__(self,mol)
+
+        # check if its a ChemPer Mol with RDK wrapper
+        elif HAS_RDK and isinstance(mol, cp_rdk.Mol):
+            self.mol = mol.mol
+            self.__class__ = cp_rdk.Mol
 
         # check if it is an RDK molecule
         elif HAS_RDK and isinstance(mol, Chem.rdchem.Mol):
@@ -83,13 +88,17 @@ class Mol:
 class Atom:
     def __init__(self, atom):
 
-        if isinstance(atom, AtomAdapter):
+        if HAS_OE and isinstance(atom, cp_openeye.Atom):
             self.atom = atom.atom
-            self.__class__ = atom.__class__
+            self.__class__ = cp_openeye.Atom
 
         elif HAS_OE and isinstance(atom, oechem.OEAtomBase):
             self.__class__ = cp_openeye.Atom
             self.__class__.__init__(self, atom)
+
+        elif HAS_RDK and isinstance(atom, cp_rdk.Atom):
+            self.atom = atom.atom
+            self.__class__ = cp_rdk.Atom
 
         elif HAS_RDK and isinstance(atom, Chem.rdchem.Atom):
             self.__class__ = cp_rdk.Atom
@@ -107,13 +116,17 @@ class Atom:
 
 class Bond:
     def __init__(self, bond):
-        if isinstance(bond, BondAdapter):
+        if HAS_OE and isinstance(bond, cp_openeye.Bond):
             self.bond = bond.bond
-            self.__class__ = bond.__class__
+            self.__class__ = cp_openeye.Bond
 
         elif HAS_OE and isinstance(bond, oechem.OEBondBase):
             self.__class__ = cp_openeye.Bond
             self.__class__.__init__(self,bond)
+
+        elif HAS_RDK and isinstance(bond, cp_rdk.Bond):
+            self.__class__ = cp_rdk.Bond
+            self.bond = bond.bond
 
         elif HAS_RDK and isinstance(bond, Chem.rdchem.Bond):
             self.__class__ = cp_rdk.Bond
@@ -128,6 +141,7 @@ class Bond:
             """
             raise TypeError(err_msg % type(bond))
 
+
 # =======================================
 # check user specifications
 # =======================================
@@ -137,7 +151,7 @@ def check_toolkit(toolkit=None):
 
     Parameters
     ----------
-    toolkit : str
+    toolkit : str or None
               'openeye', 'rdkit', or None
               if None then the toolkit will be picked automatically
 
@@ -165,9 +179,10 @@ def check_toolkit(toolkit=None):
         raise ImportError("Toolkit (%s) was not importable" % toolkit)
 
     else:
-        raise ImportError("The provided toolkit (%s) isn't supported,"\
+        raise ImportError("The provided toolkit (%s) is not supported,"\
                           " ChemPer only supports 'openeye' and 'rdkit'" \
                           % toolkit)
+
 
 def check_mol_file(file_name):
     """
@@ -193,6 +208,7 @@ def check_mol_file(file_name):
         raise IOError("Molecule file (%s) was not found locally or in chemper/data/molecules" % file_name)
 
     return path
+
 
 # =======================================
 # get molecules from files
@@ -225,6 +241,3 @@ def mols_from_mol2(mol2_file, toolkit=None):
         return cp_openeye.mols_from_mol2(mol2_path)
 
     return cp_rdk.mols_from_mol2(mol2_path)
-
-
-
