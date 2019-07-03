@@ -65,6 +65,7 @@ def get_full_path(relative_path, package="chemper"):
         return os.path.abspath(relative_path)
     return get_data_path(relative_path, package)
 
+
 # =======================================
 # Check SMIRKS validity
 # =======================================
@@ -81,6 +82,22 @@ def is_valid_smirks(smirks):
     -------
     is_valid : boolean
     """
+    # ChemPer only works with SMIRKS that match the
+    # SMIRNOFF parameter format that is it has to be a
+    # valid substructure search pattern and meet the
+    # following three restrictions:
+    # 1) only for one molecule (no '.' character)
+    if '.' in smirks:
+        return False
+    # 2) not for a reaction (no '>' character)
+    if '>' in smirks:
+        return False
+    # 3) it must have at least one indexed (:n) atom
+    import re
+    if not re.findall(r'([:]\d+)', smirks):
+        return False
+
+    # now check this is a valid substructure search pattern
     from chemper.mol_toolkits.mol_toolkit import Mol
     mol = Mol.from_smiles('C')
     try:
