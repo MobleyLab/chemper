@@ -8,20 +8,17 @@
 environment.py
 this is adapted from the openforcefield ChemicalEnvironments class.
 
-There have been some on going debates over where chemper should live,
+There have been some on going debates over where environment.py should live,
 here or in the base openforcefield toolkit. Due to the want to update
-this module for use in chemper amidst the openforcefield 0.2.0 overall,
-environment.py has been updated independently in this repository.
+this module for use in chemper amidst the openforcefield API overall,
+this environment.py has been updated independently in this repository.
+These updates have been fairly substantial, specifically the getter
+and setter functions for decorators were removed and replaced with more
+pythonic @property and @[property].setter functions instead.
+All methods have also been renamed to use snake case.
 
 The only function of real use in openforcefield.py is the `get_type` function,
 which has also been updated here.
-
-AUTHORS
-
-Caitlin Bannan <bannanc@uci.edu>, Mobley Lab, University of California Irvine,
-with contributions from John Chodera, Memorial Sloan Kettering Cancer Center
-and David Mobley, UC Irvine.
-
 """
 
 #==============================================================================
@@ -44,13 +41,28 @@ def _find_embedded_brackets(string, in_char, out_char):
     Finds the substring surrounded by the in_char and out_char
     intended use is to identify embedded bracketed sequences
 
-    string - a string you want separated
-    in_char - regular expression for the character you're looking for '\(' for '('
-    out_char - regular expression for the closing character such as '\)' for ')'
-
+    For example, if you have the input
     string = "[#1$(*-C(-[#7,#8,F,#16,Cl,Br])-[#7,#8,F,#16,Cl,Br]):1]"
     sub_string, in_idx, out_idx = _find_embedded_brackets(string, '\(','\)')
     # sub_string = (*-C(-[#7,#8,F,#16,Cl,Br])-[#7,#8,F,#16,Cl,Br])  in_idx = 4, out_idx = 50
+
+    Parameters
+    -----------
+    string : str
+        a string you want separated
+    in_char : str
+        regular expression for the character you're looking for '\(' for '('
+    out_char : str
+        regular expression for the closing character such as '\)' for ')'
+
+    Returns
+    --------
+    substring : str
+        string between the first occurances of the in_char and out_char
+    in_idx : int
+        index from initial string with the first in_char
+    out_idx : int
+        index from initial string with the first out_char
     """
     in_list = [m.start() for m in re.finditer(in_char, string)]
     out_list = [m.start() for m in re.finditer(out_char, string)]
@@ -71,16 +83,25 @@ def _find_embedded_brackets(string, in_char, out_char):
     out_idx = out_list[list_idx]
     return string[in_idx:out_idx+1], in_idx, out_idx
 
+
 def _convert_embedded_smirks(smirks):
     """
     Converts a SMIRKS string with the $(...) in an atom to the
     form expected by the environment parser
 
-    smirks = any smirks string, if no $(...) then the original smirks is returned
+    For example, if you provide initial_smirks = "[#1$(*~[#6]):1]"
+    then new_smirks = _convert_embedded_smirks(initial_smirks)
+    will return new_smirks = [#1:1]~[#6]
 
-    initial_smirks = "[#1$(*~[#6]):1]"
-    new_smirks = _convert_embedded_smirks(initial_smirks)
-    # new_smirks = [#1:1]~[#6]
+    Parameters
+    -----------
+    smirks : str
+        any smirks string, if no $(...) then the original smirks is returned
+
+    Returns
+    --------
+    updated_smirks: str
+        smirks string with no recursive smirks
     """
     a_out = 0
     while smirks.find('$(') != -1:
@@ -149,10 +170,27 @@ def _convert_embedded_smirks(smirks):
 
     return smirks
 
+
 def _remove_blanks_repeats(init_list, remove_list = ['']):
     """
     Returns the input list 'init_list'
     without any repeating entries or blank strings ''
+
+    Parameters
+    -----------
+    init_list : list
+        This is a list of anything, but intended for decorator strings
+    remove_list : list
+        List of things you want removed from the init_list
+        For decorators we don't need empty strings
+
+    Returns
+    --------
+    final_list : list
+        The init_list with no duplicates and nothing from the remove_list
+
+    TODO: this changes the order of inputs potentially so this function
+          will need to be updated if order of init_list is important.
     """
     final_list = [item for item in init_list if item not in remove_list]
     return list( set(final_list) )
@@ -167,6 +205,7 @@ class SMIRKSMismatchError(Exception):
         super(SMIRKSMismatchError, self).__init__(self,msg)
         self.msg = msg
 
+
 class SMIRKSParsingError(Exception):
     """
     Exception for when SMIRKS are not parseable for any environment
@@ -174,6 +213,7 @@ class SMIRKSParsingError(Exception):
     def __init__(self, msg):
         super(SMIRKSParsingError, self).__init__(self, msg)
         self.msg = msg
+
 
 class ChemicalEnvironment(object):
     """Chemical environment abstract base class that matches an atom, bond, angle, etc.
@@ -194,10 +234,10 @@ class ChemicalEnvironment(object):
 
             Parameters
             -----------
-            or_types: list of tuples for ORbases and ORdecorators,
+            or_types : list of tuples for ORbases and ORdecorators,
                 in the form (base, [list of decorators])
                 optional, default = []
-            and_types: list of str
+            and_types : list of str
                 strings that will be AND'd together in a SMARTS
                 optional, default = None
             index : int
@@ -239,7 +279,7 @@ class ChemicalEnvironment(object):
             Returns
             --------
             smarts : str
-            The SMARTS string for this atom
+            The SMARTS string for this atom, meaning it has no :n index
             """
 
             smarts = '['
@@ -275,7 +315,7 @@ class ChemicalEnvironment(object):
             Returns
             --------
             smirks : str
-            The SMIRKS string for this atom
+            The SMIRKS string for this atom, same as SMARTS, but with :n index
             """
             smirks = self.as_smarts()
 
@@ -293,9 +333,9 @@ class ChemicalEnvironment(object):
             Adds ORtype to the set for this atom.
 
             Parameters
-            --------
-            or_base: string, such as '#6'
-            or_decorators: list of strings, such as ['X4','+0']
+            -----------
+            or_base : string, such as '#6'
+            or_decorators : list of strings, such as ['X4','+0']
             """
             or_decorators = _remove_blanks_repeats(or_decorators, ['', or_base])
             self._or_types.append((or_base, or_decorators))
@@ -306,7 +346,7 @@ class ChemicalEnvironment(object):
 
             Parameters
             --------
-            and_type: string
+            and_type : string
                 added to the list of and_types for this atom
             """
             self._and_types.append(and_type)
@@ -324,8 +364,8 @@ class ChemicalEnvironment(object):
 
             Parameters
             ----------
-            new_or_types: list of tuples in the form (base, [ORdecorators])
-                for example: ('#6', ['X4','H0','+0']) --> '#6X4H0+0'
+            new_or_types : list of tuples in the form (base, [ORdecorators])
+                for example : ('#6', ['X4','H0','+0']) --> '#6X4H0+0'
             """
             self._or_types = list()
             if new_or_types is not None:
@@ -347,7 +387,7 @@ class ChemicalEnvironment(object):
 
             Parameters
             ----------
-            new_and_types: list of strings
+            new_and_types : list of strings
                 strings that will be AND'd together in a SMARTS
             """
             if new_and_types is None:
@@ -373,12 +413,12 @@ class ChemicalEnvironment(object):
             """
             Parameters
             -----------
-            or_types: list of tuples, optional, default = None
+            or_types : list of tuples, optional, default = None
                 tuples have form (base, [ORdecorators])
                 bond descriptors that will be OR'd together in a SMARTS
-            and_types: list of str, optional, default = None
+            and_types : list of str, optional, default = None
                 strings that will be AND'd together in a SMARTS
-            index: integer, default = 0
+            index : integer, default = 0
                 This is for book keeping inside environments and will not be shown in SMARTS or SMIRKS
                 example: bond1 in a Bond is the bond between atom1 and atom2
             """
@@ -396,8 +436,8 @@ class ChemicalEnvironment(object):
             """
             if self._or_types:
                 or_combos = list()
-                for (ORbase, ORdecorators) in self._or_types:
-                    or_combos.append(ORbase + ''.join(ORdecorators))
+                for (OR_base, OR_decorators) in self._or_types:
+                    or_combos.append(OR_base + ''.join(OR_decorators))
                 smarts = ','.join(or_combos)
             else:
                 smarts = '~'
@@ -414,8 +454,8 @@ class ChemicalEnvironment(object):
             smarts : str
                 The SMIRKS string for just this bond
             """
-            #the same as asSMARTS()
-            #    for consistency asSMARTS() or asSMIRKS() can be called
+            # the same as as_smarts()
+            #    for consistency as_smarts() or as_smirks() can be called
             #    for all environment objects
             return self.as_smarts()
 
@@ -424,6 +464,11 @@ class ChemicalEnvironment(object):
             Returns a float for the order of this bond
             for multiple or_types or ~ it returns the minimum possible order
             the intended application is for checking valence around a given atom
+
+            Returns
+            --------
+            min_order : float
+                minimum order for this bond (i.e. 1 for a '-' decorator)
             """
             # Minimum order for empty or_types is 1:
             if not self._or_types:
@@ -438,13 +483,15 @@ class ChemicalEnvironment(object):
     def __init__(self, smirks = None, label = None, replacements = None):
         """Initialize a chemical environment abstract base class.
 
-        smirks = string, optional
+        Parameters
+        -----------
+        smirks : string, optional
             if smirks is not None, a chemical environment is built
             from the provided SMIRKS string
-        label = anything, optional
+        label : anything, optional
             intended to be used to label this chemical environment
             could be a string, int, or float, or anything
-        replacements = list of lists, optional,
+        replacements : list of lists, optional,
             [substitution, smarts] form for parsing SMIRKS
         """
         # Define the regular expressions used for all SMIRKS decorators
@@ -517,6 +564,21 @@ into ChemicalEnvironments." % smirks)
         return
 
     def _graph_remove_node(self, node):
+        """
+        removes a node from the graph, kept separate from other
+        functions so if (when) networkx has an API change we only
+        have to change one place.
+
+        Parameters
+        -----------
+        node : node in self._graph
+
+        Returns
+        --------
+        node_removed : bool
+        """
+        if node not in self._graph:
+            return False
         self._graph.remove_node(node)
         return True
 
@@ -524,6 +586,19 @@ into ChemicalEnvironments." % smirks)
         """
         When data is False returns a list of nodes in graph
         otherwise returns a dictionary in the form {node: data}
+
+        Parameters
+        -----------
+        data : bool
+            include data for each node
+
+        Returns
+        --------
+        nodes : list or dict
+            if data is False, returns a list in the form:
+                [node1, node2, ...]
+            if data is True, returns a dictionary in the form:
+                {node: {data_key: data, ...}, ... }
         """
         if data:
             return dict(self._graph.nodes(data=True))
@@ -531,10 +606,27 @@ into ChemicalEnvironments." % smirks)
 
     def _graph_edges(self, data=False, node=None):
         """
-        returns a list of tuples,
-        If data is False it has the form [(node1, node2)]
-        Otherwise it includes the data [(node1, node2, data_dictionary)]
-        If node is not None then the list includes only edges connected to that node
+        Returns all edges (node=None) or edges associated
+        with a specific node. We use a custom internal function
+        so that if (when) networkx changes their API we only
+        have to change one place in the script.
+
+        Parameters
+        -----------
+        data : bool
+            include data on edges (bonds)?
+        node : graph node
+            get only edges connected to that edge
+
+        Returns
+        --------
+        edges : list of edges
+            Returns all edges (node=None)
+            or edges connected to the specified node.
+            If data is False then the list has the form:
+                [ (node1, node2), ... ]
+            otherwise, if data is True is has the form:
+                [ (node1, node2, {dictionary of data}), ...]
         """
         if node is None:
             return list(self._graph.edges(data=data))
@@ -542,21 +634,53 @@ into ChemicalEnvironments." % smirks)
 
     def _graph_neighbors(self, node):
         """
-        returns a list of neighbors for the given node
+        Returns a list of neighbors for the given node.
+        This is done in a custom function so we have only
+        one place to change if (when) networkx changes the API.
+
+        Parameters
+        -----------
+        node : graph node
+
+        Returns
+        --------
+        neighbors : list of neighboring nodes
         """
         return list(self._graph.neighbors(node))
 
     def _graph_get_edge_data(self, node1, node2):
         """
-        returns a dictionary for the data at the edged connecting
-        node1 and node2 in graph
+        Returns a dictionary for the data at the edged connecting
+        node1 and node2 in graph. We set this in a custom function
+        so we only have to change one place if (when) networkx
+        changes their API.
+
+        Parameters
+        -----------
+        node1 : graph node
+        node2 : a different graph node
+
+        Returns
+        --------
+        data_dict : dict
+            dictionary of the data stored on the edge between node1 and node2
         """
         return self._graph.get_edge_data(node1, node2)
 
-    def is_valid(self, smirks = None):
+    def is_valid(self, smirks=None):
         """
-        Returns if the environment is valid, that is if it
-        creates a parseable SMIRKS string.
+        Checks if the provided SMIRKS or the one created
+        by the environment is valid according to ChemPer rules.
+
+        Parameters
+        -----------
+        smirks : str or None
+            if None then we call self.as_smirks()
+
+        Returns
+        --------
+        is_valid : bool
+            True if this is a valid ChemPer SMIRKS
         """
         if smirks is None:
             smirks = self._as_smirks()
@@ -671,7 +795,19 @@ into ChemicalEnvironments." % smirks)
 
     def _get_atom_info(self, atom):
         """
-        given atom string, returns or_types, and_types, and index
+        Parses string for one atom
+
+        Parameters
+        -----------
+        atom : str
+            string for one atom (the part between brackets)
+
+        Returns
+        --------
+        or_types : list of tuples
+            OR decorators are in the form [ (base, [decorators]), ...]
+        and_types : list
+        index : int
         """
         # Find atom index
         colon = atom.find(':')
@@ -703,12 +839,24 @@ into ChemicalEnvironments." % smirks)
         """
         Separates ORtype (i.e. "#6X4R+0") into
         a base and decorators (i.e. '#6', ['X4','R','+0'] )
+
+        Parameters
+        -----------
+        or_type : str
+            string for one or_type
+
+        Returns
+        --------
+        base : str
+            #n, element symbol, or *
+        decs : list
+            list of decorators
         """
         # special case 1: wild card
         if or_type == '*':
             return None, []
 
-        # if ORbase is a wildcard
+        # if OR base is a wildcard
         if or_type[0] == '*':
             return '*', re.findall(self.atom_reg, or_type[1:])
 
@@ -723,7 +871,21 @@ into ChemicalEnvironments." % smirks)
 
     def _get_bond_info(self, bond):
         """
-        given bond strings returns or_types and and_types
+        Given bond strings returns or_types and and_types
+
+        Parameters
+        -----------
+        bond : str
+            string for one bond (i.e. '-,:;!@')
+
+        Returns
+        --------
+        or_types : list
+            list of or_type decorators, following atom tuple format
+            in the '-,:;!@' example you get [ ('-', []), (':', []) ]
+        and_types : list
+            list of and_type decorators
+            in this example you get ['!@']
         """
         # blank bond string is single or aromatic
         # empty or_types in Chemical Environments are treated as ~ bonds
@@ -756,24 +918,33 @@ into ChemicalEnvironments." % smirks)
 
         Parameters
         -----------
-        smarts: optional, boolean
+        smarts : optional, boolean
             if True, returns a SMARTS instead of SMIRKS without index labels
+
+        Returns
+        --------
+        smirks : str
+            SMIRKS string for this environment
         """
         init_atom = self.select_atom(1)
         return self._as_smirks(init_atom, None, smarts)
 
     def _as_smirks(self, initial_atom = None, neighbors = None, smarts = False):
-        """Return a SMIRKS representation of the chemical environment.
+        """
+        Return a SMIRKS representation of the chemical environment.
+        This uses a recursive structure to combine SMIRKS for every
+        atom in this environment.
+        TODO: figure out if this can be done with a while loop instead
 
         Parameters
         -----------
-        initalAtom = optional, atom object
+        inital_atom : optional, atom object
             This is randomly selected if not chosen.
-        neighbors = optional, list of atom objects
+        neighbors : optional, list of atom objects
             This is all of the initalAtom neighbors if not specified
             generally this is used only for the recursive calls
             so initial atoms are not reprinted
-        smarts = optional, boolean
+        smarts : optional, boolean
             if True, returns a SMARTS string instead of SMIRKS
         """
         # If empty chemical environment
@@ -819,23 +990,28 @@ into ChemicalEnvironments." % smirks)
 
         return smirks
 
-    def select_atom(self, descriptor = None):
-        """Select a random atom fitting the descriptor.
+    def select_atom(self, descriptor=None):
+        """
+        Select a random atom fitting the provided descriptor.
 
         Parameters
         ----------
-        descriptor: optional, None
-            None - returns any atom with equal probability
-            int - will return an atom with that index
-            'Indexed' - returns a random indexed atom
-            'Unindexed' - returns a random unindexed atom
-            'Alpha' - returns a random alpha atom
-            'Beta' - returns a random beta atom
+        descriptor : optional, None
+            describe what type of atom you want with the
+            follow options:
+                None - returns any atom with equal probability
+                int - will return an atom with that index
+                'Indexed' - returns a random indexed atom
+                'Unindexed' - returns a random unindexed atom
+                'Alpha' - returns a random alpha atom
+                'Beta' - returns a random beta atom
 
         Returns
         --------
-        a single Atom object fitting the description
-        or None if no such atom exists
+        atom : Atom
+            one atom from this chemical environment which
+            fits the provided description. If no atom matched
+            the description then None is returned.
         """
         if descriptor is None or isinstance(descriptor,str):
             atoms = self.get_component_list('atom', descriptor)
@@ -857,12 +1033,15 @@ into ChemicalEnvironments." % smirks)
 
         Parameters
         -----------
-        component_type: string: 'atom' or 'bond'
-        descriptor: string, optional
+        component_type : string: 'atom' or 'bond'
+        descriptor : string, optional
             'all', 'Indexed', 'Unindexed', 'Alpha', 'Beta'
 
         Returns
         -------
+        component_list : list
+            list of atoms or bonds (from component type)
+            which match the provided descriptor
         """
         des_list = ['indexed', 'unindexed', 'alpha', 'beta', 'all']
         if descriptor is not None:
@@ -907,18 +1086,22 @@ into ChemicalEnvironments." % smirks)
 
         Parameters
         ----------
-        descriptor: optional, None
-            None - returns any bond with equal probability
-            int - will return an bond with that index
-            'Indexed' - returns a random indexed bond
-            'Unindexed' - returns a random unindexed bond
-            'Alpha' - returns a random alpha bond
-            'Beta' - returns a random beta bond
+        descriptor : optional, None
+            describe what type of atom you want with the
+            follow options:
+                None - returns any bond with equal probability
+                int - will return an bond with that index
+                'Indexed' - returns a random indexed bond
+                'Unindexed' - returns a random unindexed bond
+                'Alpha' - returns a random alpha bond
+                'Beta' - returns a random beta bond
 
         Returns
         --------
-        a single Bond object fitting the description
-        or None if no such atom exists
+        bond : Bond
+            one bond from this chemical environment which
+            fits the provided description. If no bond matched
+            the description then None is returned.
         """
         if descriptor is None or isinstance(descriptor,str):
             bonds = self.get_component_list('bond', descriptor)
@@ -941,26 +1124,27 @@ into ChemicalEnvironments." % smirks)
 
         Parameters
         -----------
-        bond_to_atom: atom object, required
+        bond_to_atom : atom object, required
             atom the new atom will be bound to
-        bond_or_types: list of tuples, optional
+        bond_or_types : list of tuples, optional
             strings that will be used for the or_types for the new bond
-        bond_and_types: list of strings, optional
+        bond_and_types : list of strings, optional
             strings that will be used for the and_types for the new bond
-        new_or_types: list of strings, optional
+        new_or_types : list of strings, optional
             strings that will be used for the or_types for the new atom
-        new_and_types: list of strings, optional
+        new_and_types : list of strings, optional
             strings that will be used for the and_types for the new atom
-        new_atom_index: int, optional
+        new_atom_index : int, optional
             integer label that could be used to index the atom in a SMIRKS string
-        new_atom_ring: int, optional
+        new_atom_ring : int, optional
             integer used to track the openning and closing of rings in SMARTS/SMIRKS patterns
-        beyond_beta: boolean, optional
+        beyond_beta : boolean, optional
             if True, allows bonding beyond beta position
 
         Returns
         --------
-        new_atom: atom object for the newly created atom
+        new_atom : Atom
+            atom object for the newly created atom
         """
         if bond_to_atom is None:
             if len(self._graph_nodes()) > 0:
@@ -1011,14 +1195,15 @@ into ChemicalEnvironments." % smirks)
 
         Parameters
         ----------
-        atom: atom object, required
+        atom : atom object, required
             atom to be removed if it meets the conditions.
-        only_empty: boolean, optional
+        only_empty : boolean, optional
             True only an atom with no and_types and 1 ORtype can be removed
 
         Returns
         --------
-        Boolean True: atom was removed, False: atom was not removed
+        removed : bool
+            atom was removed, False: atom was not removed
         """
         # labeled atoms can't be removed
         if atom.index > 0:
@@ -1045,7 +1230,8 @@ into ChemicalEnvironments." % smirks)
         """
         Returns
         -------
-        list of atoms in the environment
+        atoms : list
+            list of Atoms in the environment
         """
         return self._graph_nodes()
 
@@ -1053,12 +1239,15 @@ into ChemicalEnvironments." % smirks)
         """
         Parameters
         ----------
-        atom: Atom object, optional, returns bonds connected to atom
-        returns all bonds in fragment if atom is None
+        atom : Atom, optional
+            returns bonds in the environment, if atom is not None
+            then it returns bonds connected to that atom.
 
         Returns
         --------
-        a complete list of bonds in the fragment
+        bonds : list
+            Bond objects in this environment or connected to
+            the specified atom (if atom is not None)
         """
         if atom is None:
             edge_list = self._graph_edges(data=True)
@@ -1072,15 +1261,18 @@ into ChemicalEnvironments." % smirks)
 
     def get_bond(self, atom1, atom2):
         """
-        Get bond betwen two atoms
+        Get bond between two atoms
 
         Parameters
         -----------
-        atom1 and atom2: atom objects
+        atom1 : Atom
+        atom2 : Atom
 
         Returns
         --------
-        bond object between the atoms or None if no bond there
+        bond : Bond
+            Bond between atoms 1 and 2, None if there
+            is no bond connecting these atoms.
         """
         if atom2 in self._graph_neighbors(atom1):
             return self._graph_get_edge_data(atom1, atom2)['bond']
@@ -1089,7 +1281,10 @@ into ChemicalEnvironments." % smirks)
 
     def get_indexed_atoms(self):
         """
-        returns the list of Atom objects with an index
+        Returns
+        --------
+        indexed_atoms : list
+            The list of indexed Atom objects in this environment
         """
         index_atoms = []
         for atom in self.get_atoms():
@@ -1099,7 +1294,10 @@ into ChemicalEnvironments." % smirks)
 
     def get_unindexed_atoms(self):
         """
-        returns a list of Atom objects that are not indexed
+        Returns
+        --------
+        unindexed_atoms : list
+            A list of unindexed Atom objects
         """
         unindexed_atoms = []
         for atom in self.get_atoms():
@@ -1109,8 +1307,10 @@ into ChemicalEnvironments." % smirks)
 
     def get_alpha_atoms(self):
         """
-        Returns a list of atoms alpha to any indexed atom
-            that are not also indexed
+        Returns
+        --------
+        alpha_atoms : list
+            A list atoms which are alpha to any indexed atom
         """
         alpha_atoms = []
         for atom in self.get_atoms():
@@ -1121,8 +1321,10 @@ into ChemicalEnvironments." % smirks)
 
     def get_beta_atoms(self):
         """
-        Returns a list of atoms beta to any indexed atom
-            that are not alpha or indexed atoms
+        Returns
+        --------
+        beta_atoms : list
+            A list of atoms which are beta to any indexed atom
         """
         beta_atoms = []
         for atom in self.get_atoms():
@@ -1132,7 +1334,10 @@ into ChemicalEnvironments." % smirks)
 
     def get_indexed_bonds(self):
         """
-        Returns a list of Bond objects that connect two indexed atoms
+        Returns
+        --------
+        indexed_bonds : list
+            A list of Bond objects that connect two indexed atoms
         """
         indexed_bonds = []
         for bond in self.get_bonds():
@@ -1142,7 +1347,10 @@ into ChemicalEnvironments." % smirks)
 
     def get_unindexed_bonds(self):
         """
-        Returns a list of Bond objects that connect
+        Returns
+        --------
+        unindexed_bonds : list
+            A list of Bond objects that connect
             an indexed atom to an unindexed atom
             two unindexed atoms
         """
@@ -1154,8 +1362,11 @@ into ChemicalEnvironments." % smirks)
 
     def get_alpha_bonds(self):
         """
-        Returns a list of Bond objects that connect
-            an indexed atom to alpha atoms
+        Returns
+        --------
+        alpha_bonds : list
+            A list of Bond objects that connect
+            an indexed atom to an alpha atom
         """
         alpha_bonds = []
         for bond in self.get_bonds():
@@ -1165,36 +1376,79 @@ into ChemicalEnvironments." % smirks)
 
     def get_beta_bonds(self):
         """
-        Returns a list of Bond objects that connect
-            alpha atoms to beta atoms
+        Returns
+        --------
+        beta_bonds : list
+            A list of Bond objects that connect
+            an alpha atom to a beta atom
         """
-        betaBonds = []
+        beta_bonds = []
         for bond in self.get_bonds():
             if bond.index == -1:
-                betaBonds.append(bond)
-        return betaBonds
+                beta_bonds.append(bond)
+        return beta_bonds
 
     def is_alpha(self, component):
         """
-        Takes an atom or bond are returns True if it is alpha to an indexed atom
+        Checks if the component is alpha
+
+        Parameters
+        -----------
+        component : Atom or Bond
+
+        Returns
+        --------
+        is_alpha : bool
+            True if this is an alpha atom or
+            a bond which connects an indexed atom and alpha atom
         """
         return component.index == 0
 
     def is_unindexed(self, component):
         """
-        returns True if the atom or bond is not indexed
+        Checks if component is not indexed
+
+        Parameters
+        -----------
+        component : Atom or Bond
+
+        Returns
+        --------
+        is_unindexed : bool
+            True if the atom is not indexed or it is a bond that does not
+            connect two indexed atoms.
         """
         return component.index < 1
 
     def is_indexed(self, component):
         """
-        returns True if the atom or bond is indexed
+        Checks if component is indexed
+
+        Parameters
+        -----------
+        component : Atom or Bond
+
+        Returns
+        --------
+        is_indexed : bool
+            True if the atom is indexed or the bond connects
+            two indexed atoms.
         """
         return component.index > 0
 
     def is_beta(self, component):
         """
-        Takes an atom or bond are returns True if it is beta to an indexed atom
+        Checks if the component is beta
+
+        Parameters
+        -----------
+        component : Atom or Bond
+
+        Returns
+        --------
+        is_beta : bool
+            True if the atom is beta to an indexed atom or
+            the bond connects an alpha and beta atom
         """
         return component.index == -1
 
@@ -1205,7 +1459,7 @@ into ChemicalEnvironments." % smirks)
 
         Returns
         -------
-        chemical environemnt type:
+        chemical_environment_type : str
             'Atom', 'Bond', 'Angle', 'ProperTorsion', 'ImproperTorsion'
             None if number of indexed atoms is 0 or > 4
         """
@@ -1246,24 +1500,53 @@ into ChemicalEnvironments." % smirks)
 
     def get_neighbors(self, atom):
         """
-        Returns atoms that are bound to the given atom
-        in the form of a list of Atom objects
+        Finds neighbors for the specified atom
+
+        Parameters
+        -----------
+        atom : Atom
+
+        Returns
+        --------
+        neighbors : list
+            A list of Atoms that are directly connected to the specified atom
         """
         return self._graph_neighbors(atom)
 
     def get_valence(self, atom):
         """
-        Returns the valence (number of neighboring atoms)
-        around the given atom
+        Calculated the valence (number of neighboring atoms)
+
+        Parameters
+        -----------
+        atom : Atom
+
+        Returns
+        --------
+        valence : int
+            Number of Atoms neighboring the specified atom
         """
         return len(self._graph_neighbors(atom))
 
     def get_bond_order(self, atom):
         """
-        Returns minimum bond order around a given atom
-        0 if atom has no neighbors
-        aromatic bonds count as 1.5
-        any bond counts as 1.0
+        Calculates the minimum bond order around a given atom.
+        This could be used to check if the atom has too many bonds.
+        For example, for a carbon atom you cannot have a
+        total bond order greater than 4, so if the minimum bond order
+        is greater than 4 you know there is a problem.
+
+        Parameters
+        -----------
+        atom : Atom
+
+        Returns
+        --------
+        bond_order : float
+            Minimum total bond order around the specified atom
+            0 if atom has no neighbors
+            aromatic bonds count as 1.5
+            any bond counts as 1.0
         """
         order = 0.
         for a1, a2, info in self._graph_edges(data=True, node=atom):
