@@ -1,10 +1,10 @@
 """
 cluster_graph.py
 
-ClusterGraph are a class for tracking all possible smirks decorators in a group (or cluster)
-of molecular fragments. Moving forward these will be used to find the minimum number of
-smirks decorators that are required to have a set of smirks patterns that maintain
-a given clustering of fragments.
+ClusterGraph are a class for tracking all possible smirks decorators in a group
+(or cluster) of molecular fragments. Moving forward these will be used to
+find the minimum number of smirks decorators that are required to have a
+set of smirks patterns that maintain a given clustering of fragments.
 """
 
 import networkx as nx
@@ -29,9 +29,9 @@ class ClusterGraph(SingleGraph):
             """
             Parameters
             ----------
-            atoms: chemper Atom or list of chemper Atoms
+            atoms : ChemPer Atom or list of ChemPer Atoms
                 this is one or more atoms whose information should be stored
-            label: int
+            label : int
                 SMIRKS index (:n) for writing SMIRKS
                 if the value is less than zero it is used for storage purposes
                 only as SMIRKS can only be written with positive integer indices
@@ -65,11 +65,11 @@ class ClusterGraph(SingleGraph):
 
             Parameters
             ----------
-            other: AtomStorage
+            other : AtomStorage
 
             Returns
             -------
-            is_less_than: boolean
+            is_less_than : boolean
                 self is less than other
             """
             # if either smirks index is None, then you can't directly compare
@@ -91,15 +91,15 @@ class ClusterGraph(SingleGraph):
 
         def make_atom_decorators(self, atom):
             """
-            extract information from a chemper atom that would be useful in a smirks
+            extract information from a ChemPer Atom that would be useful in a smirks
 
             parameters
             ----------
-            atom: chemper atom object
+            atom : ChemPer atom object
 
             returns
             -------
-            decorators: tuple of str
+            decorators : tuple of str
                 tuple of all possible decorators for this atom
             """
             aromatic = 'a' if atom.is_aromatic() else 'A'
@@ -128,12 +128,13 @@ class ClusterGraph(SingleGraph):
             """
             Parameters
             ----------
-            compress: boolean
+            compress : boolean
                 should decorators common to all sets be combined
+                for example '#6X4,#7X3;+0!r...'
 
             Returns
             -------
-            smirks: str
+            smirks : str
                 how this atom would be represented in a SMIRKS string
                 with the minimal combination of SMIRKS decorators
             """
@@ -156,14 +157,14 @@ class ClusterGraph(SingleGraph):
             """
             Parameters
             ----------
-            dec_set: list like
+            dec_set : list like
                 single set of atom decorators
-            wild: boolean
+            wild : boolean
                 insert * for decorator lists with no #n decorator
 
             Returns
             -------
-            sorted_dec_set: list
+            sorted_dec_set : list
                 same set of decorators sorted with atomic number or * first
             """
             temp_dec_set = list(dec_set)
@@ -182,7 +183,7 @@ class ClusterGraph(SingleGraph):
             """
             Returns
             -------
-            smirks: str
+            smirks : str
                 This SMIRKS is compressed with all common decorators and'd to
                 the end of the pattern
             """
@@ -214,34 +215,57 @@ class ClusterGraph(SingleGraph):
         def add_atom(self, atom):
             """
             Expand current AtomStorage by adding information about
-            a new chemper Atom
+            a new ChemPer Atom
 
             Parameters
             ----------
-            atom: chemper Atom
+            atom : ChemPer Atom
             """
             self.decorators.add(self.make_atom_decorators(atom))
 
         def compare_atom(self, atom):
             """
-            # TODO: add better description here
+            Compares decorators in this AtomStorage with the provided
+            ChemPer atom. The decorators are compared separately and
+            the highest score is returned. For example,
+            if this storage had two sets of decorators
+                - #7H1X3x0!r+0A
+                - #6H1X4x0!r+0A
+            and the input atom would have the decorators:
+                - #6H1X3x2!r+0a
+
+            The score is calculated by finding the number of decorators
+            in common which would be
+                - #7H1X3x0!r+0A and #6H1X3x2r6+0a
+                    have 3 decorators in common (H1,X3,+0)
+                - #6H1X4x0!r+0A and #6H1X3x2r6+0a
+                    also have 3 decorators in common (#6, H1, +0)
+            However, we weight atoms with the same atomic number as more
+            similar by dividing the score by 10 if the atomic numbers do
+            not agree. Therefore the final scores will be:
+                - 0.3 for #7H1X3x0!r+0A
+                - 3 for #6H1X4x0!r+0A
+
+            The highest score for any set of decorators is returned so
+            3 is the returned score in this example.
+
             Parameters
             ----------
-            atom: chemper Atom
+            atom : ChemPer Atom
 
             Returns
             -------
-            score: float
-                A score describing how similar the input atom is to any set of decorators currently
-                in this storage, based on its SMIRKS decorators.
+            score : float
+                A score describing how similar the input atom is to any set of
+                decorators currently in this storage, based on its SMIRKS decorators.
                 This score ranges from 0 to 7. 7 comes from the number of decorators
-                on any atom, if this atom matches perfectly with one of the current decorator sets
-                then 7 decorators agree.
-                However, if the atomic number doesn't agree, then that set of decorators is considered
-                less ideal, thus if the atomic numbers don't agree, then the score is given by
-                the number other decorators divided by 10.
-                If the current storage is empty, then the score is given as 7 any atom matches
-                a wildcard atom.
+                on any atom, if this atom matches perfectly with one of the
+                current decorator sets then 7 decorators agree.However, if the atomic
+                number doesn't agree, then that set of decorators is considered
+                less ideal, thus if the atomic numbers don't agree, then the score
+                is given by the number other decorators divided by 10.
+                If the current storage is empty, then the score is given as 7
+                since any atom matches a wildcard atom.
             """
             # If decorators is empty (no known atom information, return 7 (current max)
             if len(self.decorators) == 0:
@@ -274,9 +298,9 @@ class ClusterGraph(SingleGraph):
             """
             Parameters
             ----------
-            bonds: list of chemper Bond objects
+            bonds : list of ChemPer Bonds
                 this is one or more bonds whose information should be stored
-            label: a label for the object, it can be anything
+            label : a label for the object, it can be anything
                 unlike atoms, bonds in smirks don't have labels
                 so this is only used for labeling the object if wanted
             """
@@ -308,7 +332,7 @@ class ClusterGraph(SingleGraph):
             """
             Returns
             -------
-            smirks: str
+            smirks : str
                 how this bond would be represented in a SMIRKS string
                 using only the required number of
             """
@@ -330,11 +354,11 @@ class ClusterGraph(SingleGraph):
         def add_bond(self, bond):
             """
             Expand current BondStorage by adding information about
-            a new chemper Bond
+            a new ChemPer Bond
 
             Parameters
             ----------
-            bond: chemper Bond
+            bond : ChemPer Bond
             """
             self.order.add(bond.get_order())
             self.ring.add(bond.is_ring())
@@ -344,12 +368,12 @@ class ClusterGraph(SingleGraph):
 
             Parameters
             ----------
-            bond: chemper Bond
+            bond : ChemPer Bond
                 bond you want to compare to the current storage
 
             Returns
             -------
-            score: int (0,1,2)
+            score : int (0,1,2)
                 A score describing how similar the input bond is to any set of decorators currently
                 in this storage, based on its SMIRKS decorators.
 
@@ -380,18 +404,21 @@ class ClusterGraph(SingleGraph):
 
         Parameters
         ----------
-        mols: list of molecules (optional)
+        mols : list of molecules (optional)
+            default = None (makes an empty graph)
             these can be ChemPer Mols or molecule objects from
             any supported toolkit (currently OpenEye or RDKit)
 
-        smirks_atoms_lists: list of list of tuples (optional)
+        smirks_atoms_lists : list of list of tuples (optional)
+            default = None (must be paired with mols=None)
             There is a list of tuples for each molecule, where each tuple specifies
             a molecular fragment using the atoms' indices.
             In the ethane and propane example, the `smirks_atoms_lists` would be
                 [ [ (0,1) ], [ (0,1), (1,2) ] ]
             with one carbon-carbon bond in ethane and two carbon-carbon bonds in propane
 
-        layers: int (optional, default=0)
+        layers : int (optional)
+            default = 0
             layers specifies how many bonds away from the indexed atoms should be included in the
             the SMIRKS patterns.
             Instead of an int, the string 'all' would lead to all atoms in the molecules
@@ -416,31 +443,56 @@ class ClusterGraph(SingleGraph):
         """
         Parameters
         ----------
-        compress: boolean
-                  returns the shorter version of atom SMIRKS patterns
-                  that is atoms have decorators "anded" to the end rather than listed
-                  in each set that are OR'd together.
-                  For example "[#6AH2X3x0r0+0,#6AH1X3x0r0+0:1]-;!@[#1AH0X1x0r0+0]"
-                  compresses to: "[#6H2,#6H1;AX3x0r0+0:1]-;!@[#1AH0X1x0r0+0]"
+        compress : boolean
+            returns the shorter version of atom SMIRKS patterns
+            that is atoms have decorators "anded" to the end rather than listed
+            in each set that are OR'd together.
+            For example "[#6AH2X3x0!r+0,#6AH1X3x0!r+0:1]-;!@[#1AH0X1x0!r+0]"
+            compresses to: "[#6H2,#6H1;AX3x0!r+0:1]-;!@[#1AH0X1x0!r+0]"
 
         Returns
         -------
-        SMIRKS: str
+        SMIRKS : str
             a SMIRKS string matching the exact atom and bond information stored
         """
+        # The atom compression is different, but otherwise this is the
+        # same function as the parent class (SingleGraph)
         return SingleGraph.as_smirks(self, compress)
 
     def get_symmetry_funct(self, sym_label):
         """
+        Determine the symmetry function that should be used
+        when adding atoms to this graph.
+
+        For example, imagine a user is trying to make a
+        SMIRKS for all of the C-H bonds in methane. In most
+        toolkits the index for the carbon is 0 and the hydrogens are 1,2,3,4.
+        The final SMIRKS should have the form [#6AH4X4x0!r+0:1]-;!@[#1AH0X1x0!r+0]
+        no matter what order the atoms are input into ClusterGraph.
+        So if the user provides (0,1), (0,2), (3,0), (4,0) ClusterGraph
+        should figure out that the carbons in (3,0) and (4,0) should be in
+        the atom index :1 place like they were in the first set of atoms.
+
+        Bond atoms in (1,2) or (2,1) are symmetric, for angles its (1,2,3) or (3,2,1)
+        for proper torsions (1,2,3,4) or (4,3,2,1) and for
+        improper torsions (1,2,3,4), (3,2,1,4), (4,2,1,3).
+        For any other fragment type the atoms will be added to the graph in
+        the order they are provided since the symmetry function is unknown.
+
+        # TODO: In theory you could generalize this for generic linear fragments
+        # where those with an odd number of atoms behave like angles and an
+        # even number behave like proper torsions, however I think that is
+        # going to be outside the scope of ChemPer for the foreseeable future.
+
         Parameters
         ----------
-        sym_label: str or None
+        sym_label : str or None
             type of symmetry, options which will change the way symmetry is
             handled in the graph are "bond", "angle", "ProperTorsion", and "ImproperTorsion"
 
         Returns
         -------
-        symmetry_funct: function
+        symmetry_funct : function
             returns the function that should be used to handle the appropriate symmetry
         """
         if sym_label is None:
@@ -461,8 +513,8 @@ class ClusterGraph(SingleGraph):
 
         Parameters
         ----------
-        input_mol: chemper Mol object
-        smirks_atoms_list: list of tuples
+        input_mol : ChemPer Mol
+        smirks_atoms_list : list of tuples
             This is a list of tuples with atom indices [ (indices), ... ]
         """
         mol = mol_toolkit.Mol(input_mol)
@@ -487,8 +539,8 @@ class ClusterGraph(SingleGraph):
 
         Parameters
         ----------
-        mol: chemper Mol
-        smirks_atoms: tuple
+        mol : ChemPer Mol
+        smirks_atoms : tuple
             tuple of atom indices for the first atoms to add to the graph. i.e. (0, 1)
         """
         atom_dict = dict()
@@ -532,14 +584,14 @@ class ClusterGraph(SingleGraph):
         """
         Parameters
         ----------
-        mol: chemper Mol
+        mol : ChemPer Mol
             molecule containing provided atom
-        atom: chemper Atom
+        atom : ChemPer Atom
         storage: AtomStorage
-            corresponding to the chemper Atom provided
-        layers: int or 'all'
+            corresponding to the ChemPer Atom provided
+        layers : int or 'all'
             number of layers left to add (or all)
-        idx_dict: dict
+        idx_dict : dict
             form {atom index: label} for this smirks_list in this molecule
         """
         # if layers is 0 there are no more atoms to add so end the recursion
@@ -619,7 +671,7 @@ class ClusterGraph(SingleGraph):
 
         Parameters
         ----------
-        atoms_and_bonds: list of tuples in form (chemper Atom, chemper Bond, ...)
+        atoms_and_bonds : list of tuples in form (ChemPer Atom, ChemPer Bond, ...)
         storages: list of tuples in form (AtomStorage, BondStorage, ...)
 
         Tuples can be of any length as long as they are the same, so for example, in
@@ -632,7 +684,7 @@ class ClusterGraph(SingleGraph):
 
         Returns
         -------
-        pairs: list of lists
+        pairs : list of lists
             pairs of atoms and storage objects that are most similar,
             these lists always come in the form (all atom/bonds, all storage objects)
             for the bond example above you might get
@@ -728,8 +780,8 @@ class ClusterGraph(SingleGraph):
 
         Parameters
         ----------
-        mol: any Mol
-        smirks_atoms_list: list of dicts
+        mol : any Mol
+        smirks_atoms_list : list of dicts
             This is a list of dictionaries of the form [{smirks index: atom index}]
             each atom (by index) in the dictionary will be added the relevant
             AtomStorage by smirks index
@@ -756,12 +808,26 @@ class ClusterGraph(SingleGraph):
                 self._add_layers(mol, atom, storage, self.layers, atom_dict)
 
     def _no_symmetry(self, mol, smirks_atoms):
+        """
+        No change is made to the atom order for this molecule
+        """
         return smirks_atoms
 
     def _bond_symmetry(self, mol, smirks_atoms):
         """
         Returns a tuple of two atom indices in the order that
         leads to the atoms that match with previously stored atoms.
+
+        Parameters
+        -----------
+        mol : ChemPer Mol
+        smirks_atoms : two tuple
+            tuple of atom indices
+
+        Returns
+        --------
+        ordered_smirks_atoms : two tuple
+            tuple of atom indices as they should be added to the graph
         """
         # pair atoms and bonds
         atom1 = mol.get_atom_by_index(smirks_atoms[0])
@@ -780,6 +846,17 @@ class ClusterGraph(SingleGraph):
         """
         Returns a tuple of three atom indices in the order that
         leads to the atoms that match with previously stored atoms.
+
+        Parameters
+        -----------
+        mol : ChemPer Mol
+        smirks_atoms : three tuple
+            tuple of atom indices
+
+        Returns
+        --------
+        ordered_smirks_atoms : three tuple
+            tuple of atom indices as they should be added to the graph
         """
         # get all three atoms
         atom1 = mol.get_atom_by_index(smirks_atoms[0])
@@ -805,6 +882,17 @@ class ClusterGraph(SingleGraph):
         """
         Returns a tuple of four atom indices for a proper torsion
         reordered to match with previously stored atoms.
+
+        Parameters
+        -----------
+        mol : ChemPer Mol
+        smirks_atoms : four tuple
+            tuple of atom indices
+
+        Returns
+        --------
+        ordered_smirks_atoms : four tuple
+            tuple of atom indices as they should be added to the graph
         """
         # get all four atoms
         atom1 = mol.get_atom_by_index(smirks_atoms[0])
@@ -835,6 +923,17 @@ class ClusterGraph(SingleGraph):
         """
         Returns a tuple of four atom indices for an improper torsion
         reordered to match with previously stored atoms.
+
+        Parameters
+        -----------
+        mol : ChemPer Mol
+        smirks_atoms : four tuple
+            tuple of atom indices
+
+        Returns
+        --------
+        ordered_smirks_atoms : four tuple
+            tuple of atom indices as they should be added to the graph
         """
         # get all four atoms
         atom1 = mol.get_atom_by_index(smirks_atoms[0])
