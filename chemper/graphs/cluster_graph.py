@@ -5,12 +5,6 @@ ClusterGraph are a class for tracking all possible smirks decorators in a group 
 of molecular fragments. Moving forward these will be used to find the minimum number of
 smirks decorators that are required to have a set of smirks patterns that maintain
 a given clustering of fragments.
-
-# TODO: add specific example like the one at the top of fragment_graph
-
-AUTHORS:
-
-Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
 import networkx as nx

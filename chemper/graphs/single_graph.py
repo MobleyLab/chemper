@@ -20,10 +20,6 @@ x0: ring connectivity of 0, no ring bonds
 
 To the best of the authors knowledge, this is the first open source tool capable
 of converting a molecule (or sub-graph) into a detailed SMIRKS pattern.
-
-AUTHORS:
-
-Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
 import networkx as nx

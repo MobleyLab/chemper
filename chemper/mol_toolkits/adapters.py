@@ -6,10 +6,6 @@ molecules, atoms, and bonds.
 Our chemical perception code is designed to be independent of the users
 cheminformatics packages. For each cheminformatics package we support we
 will provide classes following the structure in these adapters.
-
-AUTHORS:
-
-Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
 from abc import ABC, abstractmethod, abstractclassmethod
