@@ -48,8 +48,8 @@ class SingleGraph:
 
             Parameters
             ----------
-            atom: chemper Atom object
-            label: int
+            atom : chemper Atom object
+            label : int
                 integer for labeling this atom in a SMIRKS
                 or if negative number just used to track the atom locally
             """
@@ -95,11 +95,11 @@ class SingleGraph:
 
             Parameters
             ----------
-            other: AtomStorage
+            other : AtomStorage
 
             Returns
             -------
-            is_less_than: boolean
+            is_less_than : boolean
                 self is less than other
             """
             # if either smirks index is None, then you can't directly compare
@@ -121,9 +121,15 @@ class SingleGraph:
 
         def as_smirks(self, compress=False):
             """
+            Parameters
+            -----------
+            compress : bool
+                Creates a compressed version of the SMIRKS with only
+                the atomic number and atom index no other decorators
+
             Returns
             -------
-            smirks: str
+            smirks : str
                 how this atom would be represented in a SMIRKS string
             """
             if self.atom is None:
@@ -166,8 +172,8 @@ class SingleGraph:
             """
             Parameters
             ----------
-            bond: chemper Bond object
-            label: int or float
+            bond : chemper Bond object
+            label : int or float
                 Bonds don't have SMIRKS indices so this is only used for internal
                 tracking of the object.
             """
@@ -199,7 +205,7 @@ class SingleGraph:
             """
             Returns
             -------
-            SMIRKS: str
+            SMIRKS : str
                 how this bond should appear in a SMIRKS string
             """
             if self.ring is None:
@@ -217,14 +223,14 @@ class SingleGraph:
         """
         Parameters
         ----------
-        mol: Mol
+        mol : Mol
             this can be a chemper mol or a molecule from any supported toolkit
             (currently OpenEye or RDKit)
-        smirks_atoms: tuple of integers
+        smirks_atoms : tuple of integers
             This is a tuple of the atom indices which will have SMIRKS indices.
             For example, if (1,2) is provided then the atom in molecule with indices
             1 and 2 will be used to create a SMIRKS with two indexed atoms.
-        layers: int or 'all'
+        layers : int or 'all'
             how many atoms out from the smirks indexed atoms do you wish save (default=0)
             'all' will lead to all atoms in the molecule being specified
         """
@@ -264,13 +270,14 @@ class SingleGraph:
         """
         Parameters
         ----------
-        compress: boolean
-                  returns the shorter version of atom SMIRKS patterns
-                  that is the atoms only include atomic numbers rather
-                  than the full list of decorators
+        compress : boolean
+            returns the shorter version of atom SMIRKS patterns
+            that is the atoms only include atomic numbers rather
+            than the full list of decorators
+
         Returns
         -------
-        SMIRKS: str
+        SMIRKS : str
             a SMIRKS string matching the exact atom and bond information stored
         """
 
@@ -300,14 +307,14 @@ class SingleGraph:
 
         Parameters
         ----------
-        init_atom: AtomStorage object
+        init_atom : AtomStorage object
             current atom
-        neighbors: list of AtomStorage objects
+        neighbors : list of AtomStorage objects
             list of neighbor atoms you wanted added to the SMIRKS pattern
 
         Returns
         -------
-        SMIRKS: str
+        SMIRKS : str
             This graph as a SMIRKS string
         """
         smirks = init_atom.as_smirks(compress)
@@ -331,7 +338,7 @@ class SingleGraph:
         """
         Returns
         -------
-        atoms: list of AtomStorage objects
+        atoms : list of AtomStorages
             all atoms stored in the graph
         """
         return list(self._graph.nodes())
@@ -340,12 +347,12 @@ class SingleGraph:
         """
         Parameters
         ----------
-        atom1: AtomStorage object
-        atom2: AtomStorage object
+        atom1 : AtomStorage
+        atom2 : AtomStorage
 
         Returns
         -------
-        bond: BondStorage object
+        bond : BondStorage or None
             bond between the two given atoms or None if not connected
         """
         bond = self._graph.get_edge_data(atom1, atom2)
@@ -357,7 +364,7 @@ class SingleGraph:
         """
         Returns
         -------
-        bonds: list of BondStorage objects
+        bonds : list of BondStorages
             all bonds stored as edges in this graph
         """
         return [data['bond'] for a1, a2, data in self._graph.edges(data=True)]
@@ -366,18 +373,30 @@ class SingleGraph:
         """
         Parameters
         ----------
-        atom: an AtomStorage object
+        atom : AtomStorage
 
         Returns
         -------
-        atoms: list of AtomStorage objects
+        atoms: list of AtomStorages
             list of atoms one bond (edge) away from the given atom
         """
         return list(self._graph.neighbors(atom))
 
     def remove_atom(self, atom):
         """
-        Removes the provided atom and all connected atoms
+        Removes the provided atom and all connected atoms.
+        Indexed atoms and atoms not in the current graph
+        cannot be removed
+
+        Parameters
+        -----------
+        atom : AtomStorage
+
+        Returns
+        --------
+        removed : bool
+            True if the atom was successfully removed.
+            False if not, meaning the graph is unchanged.
         """
         # if atom isn't in the graph, it can't be removed
         if atom not in self._graph.nodes():
@@ -406,18 +425,18 @@ class SingleGraph:
 
         Parameters
         ----------
-        new_atom: a chemper Atom object
-        new_bond: a chemper Bond object
-        bond_to_atom: AtomStorage object
+        new_atom : ChemPer Atom
+        new_bond : ChemPer Bond
+        bond_to_atom : SingleGraph AtomStorage
             This is where you want to connect the new atom, required if the graph isn't empty
-        new_label: int
+        new_label : int
             (optional) index for SMIRKS or internal storage if less than zero
-        new_bond_label: int or float
-            (optional) index used to track bond storage
+        new_bond_label : anything hashable
+            (optional) label used to track BondStorage in graph
 
         Returns
         -------
-        AtomStorage: AtomStorage object or None
+        AtomStorage : AtomStorage object or None
             If the atom was successfully added then the AtomStorage object is returned
             None is returned if the atom wasn't able to be added
         """
@@ -445,7 +464,7 @@ class SingleGraph:
 
         Parameters
         ----------
-        smirks_atoms: tuple of integers
+        smirks_atoms : tuple of integers
             This is a tuple of the atom indices which will have SMIRKS indices.
         """
         # add all smirks atoms to the graph
@@ -484,9 +503,9 @@ class SingleGraph:
 
         Parameters
         ----------
-        atom_storage: AtomStorage object
+        atom_storage : AtomStorage object
             atom whose's neighbors you currently need to add
-        add_layer: int
+        add_layer : int
             how many more layers need to be added
         """
         if add_layer == 0:
