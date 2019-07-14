@@ -497,21 +497,21 @@ class ChemicalEnvironment(object):
         # Define the regular expressions used for all SMIRKS decorators
         # There are a limited number of descriptors for smirks string they are:
         # That is a # followed by one or more ints w/or w/o at ! in front '!#16'
-        element_num = "!?[#]\d+"
+        element_num = r"!?[#]\d+"
         # covers element symbols, i.e. N,C,O,Br not followed by a number
         element_sym = "!?[A-Z][a-z]?"
         # covers element symbols that are aromatic:
         aro_sym = "!?[cnops]"
         # replacement strings
-        replace_str = "\$\w+"
+        replace_str = r"\$\w+"
         # a or A w/ or w/o a ! in front 'A'
         aro_ali = "!?[aA]"
         # the decorators (D,H,j,r,V,X,^) followed by one or more integers
-        needs_int = "!?[DjVX^]\d+"
+        needs_int = r"!?[DjVX^]\d+"
         # R(x), +, - do not need to be followed by a integer w/ or w/o a ! 'R2'
-        optional_int = "!?[RHhrx+-]\d*"
+        optional_int = r"!?[RHhrx+-]\d*"
         # chirality options, "@", "@@", "@int" w/ or w/o a ! in front
-        chirality = "!?[@]\d+|!?[@]@?"
+        chirality = r"!?[@]\d+|!?[@]@?"
 
         # Generate RegEx string for decorators:
         self.no_bracket_atom_reg = r'('+'|'.join([element_sym, aro_sym, replace_str])+')'
