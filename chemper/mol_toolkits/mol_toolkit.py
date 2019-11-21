@@ -47,7 +47,21 @@ if not HAS_OE and not HAS_RDK:
                         " currently ChemPer supports OpenEye and RDKit")
 
 
-class Mol:
+class Mol(MolAdapter):
+    # TODO: This is a really interesting implementation. It basically says "I inherit from MolAdapter, and -- trust me
+    #  -- whatever you get out of this will have all the MolAdapter functionality implemented". The class is basically
+    #  just a switchboard to figure out which OTHER MolAdapter subclass is appropriate to the input. This design pattern
+    #  makes me nervous because it would seem to break a contract with the user, where they call one class's __init__
+    #  function, but receive an object of a different class.
+    #  Alternatives to this would include
+    #       * Having each MolAdapter subclass have a `from_object` method, similar to OFFTK. Then, the MolAdapter
+    #         constructor could iterate over all subclasses (using something like an `all_subclasses` method) and
+    #         try creating each class from the input, until one succeeds.
+    #       * Just use the OFF Molecule class, which avoids this trouble by copying the data OUT of the OEMol or RDMol
+    #         into a toolkit-independent format (OFFMol). Then, when manipulation operations occur, the OFFMol is
+    #         converted back into the appropriate toolkit molecule, and the operation happens natively there. I think
+    #         that smirks_search is the only function that would need to be ported over if that was done.
+
     def __init__(self, mol):
         # check if its a ChemPer Mol with OE wrapper
         if HAS_OE and isinstance(mol, cp_openeye.Mol):
@@ -84,6 +98,101 @@ class Mol:
             return cp_openeye.Mol.from_smiles(smiles)
         return cp_rdk.Mol.from_smiles(smiles)
 
+
+    def set_aromaticity_mdl(self):
+        """
+        Sets the aromaticity flags in this molecule to use the MDL model
+        """
+        raise NotImplementedError()
+
+    def get_atoms(self):
+        """
+        Returns
+        -------
+        atom_list : list[ChemPer Atoms]
+            list of all atoms in the molecule
+        """
+        raise NotImplementedError()
+
+    def get_atom_by_index(self, idx):
+        """
+        Parameters
+        ----------
+        idx : int
+            atom index
+
+        Returns
+        -------
+        atom : ChemPer Atom
+            atom with index idx
+        """
+        raise NotImplementedError()
+
+    def get_bonds(self):
+        """
+        Returns
+        -------
+        bond_list : list[ChemPer Bonds]
+            list of all bonds in the molecule
+        """
+        raise NotImplementedError()
+
+    def get_bond_by_index(self, idx):
+        """
+        Parameters
+        ----------
+        idx: int
+            bond index
+
+        Returns
+        -------
+        bond: ChemPer Bond
+            bond with index idx
+        """
+        raise NotImplementedError()
+
+    def get_bond_by_atoms(self, atom1, atom2):
+        """
+        Finds a bond between two atoms
+
+        Parameters
+        ----------
+        atom1 : ChemPer Atom
+        atom2 : ChemPer Atom
+
+        Returns
+        -------
+        bond : ChemPer Bond or None
+            If atoms are connected returns bond otherwise None
+        """
+        raise NotImplementedError()
+
+    def smirks_search(self, smirks):
+        """
+        Performs a substructure search on the molecule with the provided
+        SMIRKS pattern. Note - this function expects SMIRKS patterns with indexed atoms
+        that is with :n for at least some atoms.
+
+        Parameters
+        ----------
+        smirks : str
+            SMIRKS pattern with indexed atoms (:n)
+
+        Returns
+        -------
+        matches : list[match dictionary]
+            match dictionaries have the form {smirks index: atom index}
+        """
+        raise NotImplementedError()
+
+    def get_smiles(self):
+        """
+        Returns
+        -------
+        smiles: str
+            SMILES string for the molecule
+        """
+        raise NotImplementedError()
 
 class Atom:
     def __init__(self, atom):
