@@ -27,7 +27,9 @@ class MolAdapter(ABC):
     mol : toolkit Mol
           Mol object from the reference cheminformatics toolkit
     """
-    @abstractclassmethod
+
+    @classmethod
+    @abstractmethod
     def from_smiles(cls, smiles):
         """
         Creates a ChemPer Mol form a SMILES string
