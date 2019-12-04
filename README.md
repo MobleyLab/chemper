@@ -15,27 +15,15 @@ This repository contains a variety of tools that will be useful in automating th
 of chemical perception for the new SMIRKS Native Open Force Field (SMIRNOFF) format
 as a part of the [Open Force Field Initiative](http://openforcefield.org) [1].
 
-This idea originated from the tools [SMARTY and SMIRKY](https://github.com/openforcefield/smarty) which
-were designed to use an automated monte carlo algorithm to sample the chemical perception used
-in existing force fields. SMARTY samples SMARTS patterns corresponding to traditional atom types and was
-tested compared to the parm99/parm@frosst force field. SMIRKY is an extension of SMARTY created to sample SMIRKS
-patterns corresponding to SMIRNOFF parameter types (nonbonded, bond, angle, and proper and improper torsions).
+`ChemPer` can be used to automatically generate SMIRKS patterns to match clustered molecular fragments.
+For example, you may have calculated bond lengths and force constants for a variety of bonds in one group of molecules.
+You could use that data to cluster those bonds and then use `ChemPer` to generate SMIRKS patterns which would allow
+you to apply those lengths and force constants to a new set of molecules.
+The algorithms implemented here were inspired by
+[SMARTY and SMIRKY](https://github.com/openforcefield/smarty) which were proven to be too inefficient for
+practical use in force field parameterization [2].
 
-One of the most important lessons learned while testing SMARTY and SMIRKY is that the combinatorial problem
-in SMIRKS space is very large. These tools currently use very naive moves in SMIRKS space chosing atom or
-bond decorators to add to a pattern at complete random. This wastes a signficant amount of time making
-chemically insensible moves. One of the take away conclusions on that project was that future chemical perception
-sampling tools would need to take atom and bond information from input molecules in order to be feasible [2].
-
-We developed `chemper` based on the knowledge of the SMARTY project outcomes.
-The goal here is to take clustered molecular subgraphs and generate SMIRKS patterns.
-These tools will use information stored in the atoms and bonds of a molecule to drive
-choices about SMIRKS decorators. Then will automatically generate reasonable SMIRKS patterns
-matching clustering of molecular subgraphs.
-
-For example, if you know you want to assign certain group of angles (sets of three atoms)
-the same equilibrium bond angle and force constant,
-then chemper should generate SMIRKS patterns that maintain that clustering.
+For a more extensive history and explanation, see our [preprint](http://doi.org/10.26434/chemrxiv.8304578.v1) [3].
 
 ## Prerequisites
 
@@ -80,7 +68,7 @@ pip install -e .
 # Documentation
 
 Below are some details on the tools provided in `chemper` see
-[examples](https://github.com/MobleyLab/chemper/tree/master/examples) 
+[examples](https://github.com/MobleyLab/chemper/tree/master/examples)
 and [documentation](https://chemper.readthedocs.io/en/latest/)
 for more detailed usage examples
 
@@ -175,5 +163,6 @@ CCB is funded by a fellowship from [The Molecular Sciences Software Institute](h
 
 ## References
 
-1. D. Mobley et al. _JCTC,_ **2018**, _14_(11), pp 6076-6092. ([JCTC](http://doi.org/10.1021/acs.jctc.8b00640) or [bioRxiv](http://doi.org/10.1101/286542))
+1. D.L. Mobley et al. _JCTC,_ **2018**, _14_(11), pp 6076-6092. ([JCTC](http://doi.org/10.1021/acs.jctc.8b00640) or [bioRxiv](http://doi.org/10.1101/286542))
 2. C. Zanette and C.C. Bannan et al. _JCTC_ **2019** _15_(1), pp 402-423. ([JCTC](https://doi.org/10.1021/acs.jctc.8b00821) or [ChemRxiv](https://doi.org/10.26434/chemrxiv.6230627.v1))
+3. C.C. Bannan and D.L. Mobley _ChemRxiv_ **2019** [doi:10.26434/chemrxiv.8304578.v1](http://doi.org/10.26434/chemrxiv.8304578.v1)
