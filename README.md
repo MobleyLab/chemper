@@ -151,6 +151,11 @@ This is a first release of the Alpha testing version of `chemper`. As you can fo
 on going problems to resolve. This first release will allow for reference to the concepts and algorithms included here
 for automated chemical perception. However, the API is still in flux and nothing should be considered permanent at this time.
 
+### Version 1.0.0
+This release matches the work published in our [preprint](http://doi.org/10.26434/chemrxiv.8304578.v1).
+While the code is stable and there are tests showing how it should work the science it represents is still in the early stages and big changes to the algorithms and API should be expected in future releases.
+
+
 ## Contributors
 
 * [Caitlin C. Bannan (UCI)](https://github.com/bannanc)
