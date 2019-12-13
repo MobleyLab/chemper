@@ -12,15 +12,15 @@ Lastly, these SMIRKS patterns are made more general by removing unncessary decor
 
 ### SMIRKS from Molecules 
 
-`ClusterGraph`s are an expansion of the initial `ChemPerGraph`. 
+`ClusterGraph`s are an expansion of the initial `SingleGraph`. 
 They can store information about multiple atoms and bonds simultaneously.
 This is a starting example for how to use ChemPer's `ClusterGraph` class 
 to create SMIRKS patterns from clusters of molecular graphs. 
 
 ### Single Mol SMIRKS
 
-`ChemPerGraph`s convert a molecule into a SMIRKS pattern by 
+`SingleGraph`s convert a molecule into a SMIRKS pattern by 
 converting information about the atoms and bonds. 
-The `ChemPerGraph` stores only one molecule. It can convert only certain atoms or
+The `SingleGraph` stores only one molecule. It can convert only certain atoms or
 the *entire* molecule into a SMIRKS pattern. 
 This direction of molecule to SMIRKS string is new as far as the authors know with chemper. 

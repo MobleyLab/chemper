@@ -5,7 +5,7 @@ These SMIRKS patterns are VERY complicated and NOT human readable.
 """
 
 from chemper.graphs.cluster_graph import ClusterGraph
-from chemper.graphs.fragment_graph import ChemPerGraphFromMol, ChemPerGraph
+from chemper.graphs.single_graph import SingleGraph, SingleGraph
 from chemper.mol_toolkits import mol_toolkit
 from chemper.chemper_utils import is_valid_smirks
 import pytest
@@ -14,7 +14,7 @@ import pytest
 def make_frag_graph(smiles, layers):
     """
     Generates a chemper Mol from the provided smiles and then
-    uses that Mol to build a ChemPerGraph where atom 0 is assigned SMIRKS index 1
+    uses that Mol to build a SingleGraph where atom 0 is assigned SMIRKS index 1
     and atom 1 is assigned SMIRKS index 2.
 
     The variable layers is used to set the number of atoms away from the indexed atoms to include.
@@ -22,9 +22,9 @@ def make_frag_graph(smiles, layers):
     and if layers is 1 then atoms 1 bond away from the indexed atoms are included, and so forth.
     Layers can also be "all" which will lead to all atoms in the molecule being added to the graph.
     """
-    mol = mol_toolkit.MolFromSmiles(smiles)
+    mol = mol_toolkit.Mol.from_smiles(smiles)
     smirks_atoms = (0,1)
-    return ChemPerGraphFromMol(mol, smirks_atoms, layers)
+    return SingleGraph(mol, smirks_atoms, layers)
 
 def make_cluster_graph(smiles_list, layers=0):
     """
@@ -38,7 +38,7 @@ def make_cluster_graph(smiles_list, layers=0):
     Layers can also be "all" which will lead to all atoms in the molecule being added to the graph.
     """
     smirks_atom_lists = [ [(0,1)] ] * len(smiles_list)
-    mols_list = [mol_toolkit.MolFromSmiles(smiles) for smiles in smiles_list]
+    mols_list = [mol_toolkit.Mol.from_smiles(smiles) for smiles in smiles_list]
     return ClusterGraph(mols_list, smirks_atom_lists, layers=layers)
 
 

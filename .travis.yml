@@ -15,6 +15,12 @@ matrix:
       python: 3.6
       env: PYTHON_VER=3.6 RDK=true OE=false
 
+    # Test osx with OE and without RDK
+    - os: osx
+      language: generic
+      python: 3.6
+      env: PYTHON_VER=3.6 RDK=false OE=true
+
     # test one python 3.7 per platform (RDK not OE due to conda)
     - os: osx
       language: generic
@@ -30,12 +36,6 @@ matrix:
       python: 3.6
       sudo: required
       env: PYTHON_VER=3.6 RDK=true OE=false
-
-    # Test osx with OE and without RDK
-    - os: osx
-      language: generic
-      python: 3.6
-      env: PYTHON_VER=3.6 RDK=false OE=true
 
     # Test linux with OE and no RDK
     - os: linux
@@ -80,9 +80,10 @@ install:
   - conda build --python=$PYTHON_VER devtools/conda-recipe
   - conda install --use-local chemper
   - conda list
+  - if [[ "$OE" == true ]]; then python -c "import openeye; print(openeye.__version__)"; fi
 
 script:
-  - py.test -v -s --nbval-lax --cov=chemper/ chemper/tests/ 
+  - py.test -vv -s --nbval-lax --cov=chemper/ chemper/tests/ 
 
 notifications:
   email: false

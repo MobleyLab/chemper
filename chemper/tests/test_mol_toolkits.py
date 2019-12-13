@@ -21,12 +21,13 @@ if mol_toolkit.HAS_OE:
 if mol_toolkit.HAS_RDK or mol_toolkit.HAS_OE:
     mts.append(mol_toolkit)
 
+
 @pytest.mark.parametrize('toolkit', mts)
 def test_molecule(toolkit):
     """
     Test MolOE functions
     """
-    mol = toolkit.MolFromSmiles('C')
+    mol = toolkit.Mol.from_smiles('C')
 
     atoms = 0
     for a in mol.get_atoms():
@@ -50,7 +51,7 @@ def test_smirks_search(toolkit):
     """
     test SMIRKS searching
     """
-    mol = toolkit.MolFromSmiles('C')
+    mol = toolkit.Mol.from_smiles('C')
 
     # smirks for C-H bond
     smirks = "[#6:1]-[#1:2]"
@@ -63,15 +64,17 @@ def test_smirks_search(toolkit):
         assert 1 in match
         assert 2 in match
 
+
 @pytest.mark.parametrize('toolkit', mts)
 def test_bad_smirks(toolkit):
     """
     Check a ValueError is raised with improper SMIRKS
     """
-    mol = toolkit.MolFromSmiles('C')
+    mol = toolkit.Mol.from_smiles('C')
 
     with pytest.raises(ValueError):
         mol.smirks_search(']X[')
+
 
 @pytest.mark.parametrize('toolkit', mts)
 def test_bad_smiles(toolkit):
@@ -79,11 +82,12 @@ def test_bad_smiles(toolkit):
     Check a ValueError is raised with a bad SMILES
     """
     with pytest.raises(ValueError):
-        mol = toolkit.MolFromSmiles('ZZZ')
+        mol = toolkit.Mol.from_smiles('ZZZ')
+
 
 @pytest.mark.parametrize('toolkit', mts)
 def test_bond(toolkit):
-    mol = toolkit.MolFromSmiles('C')
+    mol = toolkit.Mol.from_smiles('C')
     print('made molecule')
     bond = mol.get_bond_by_index(0)
 
@@ -113,7 +117,7 @@ def test_bond(toolkit):
 
 @pytest.mark.parametrize('toolkit', mts)
 def test_atom(toolkit):
-    mol = toolkit.MolFromSmiles('C')
+    mol = toolkit.Mol.from_smiles('C')
     atom = mol.get_atom_by_index(0)
 
     assert atom.atomic_number() == 6
@@ -149,19 +153,22 @@ def test_atom(toolkit):
     smiles = mol.get_smiles()
     assert smiles == "C"
 
+
 @pytest.mark.parametrize('toolkit', mts)
 def test_atom_exception(toolkit):
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         toolkit.Atom(None)
+
 
 @pytest.mark.parametrize('toolkit', mts)
 def test_bond_exception(toolkit):
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         toolkit.Bond(None)
+
 
 @pytest.mark.parametrize('toolkit', mts)
 def test_mol_exception(toolkit):
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         toolkit.Mol(None)
 
 
@@ -173,6 +180,7 @@ mol2_abs_file = chemper_utils.get_data_path('molecules/MiniDrugBank_tripos.mol2'
 mol2_rel_path = 'MiniDrugBank_tripos.mol2'
 paths = [mol2_abs_file, mol2_rel_path]
 
+
 # For the following functions, we will test default behavior and
 # look for exceptions based on the available mol toolkit
 
@@ -180,6 +188,7 @@ paths = [mol2_abs_file, mol2_rel_path]
 def test_file_parsing(toolkit,path):
     mols = toolkit.mols_from_mol2(path)
     assert len(mols) == 363
+
 
 @pytest.mark.parametrize('path', paths)
 def test_mols_specified_toolkit(path):
@@ -207,10 +216,12 @@ if not mol_toolkit.HAS_OE:
 if not mol_toolkit.HAS_RDK:
     tk_fails.append('rdkit')
 
+
 @pytest.mark.parametrize('tks', tk_fails)
 def test_fake_toolkit(tks):
     with pytest.raises(ImportError):
         mol_toolkit.check_toolkit(tks)
+
 
 def test_default_toolkit():
     tk = mol_toolkit.check_toolkit(None)

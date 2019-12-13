@@ -23,10 +23,6 @@ systematic/deterministic, however this is a first approach to see
 if extracted SMIRKS patterns can do better than SMIRKY.
 Also, this approach will be more general since the input clusters do not
 rely on a reference force field.
-
-AUTHORS
-
-Caitlin Bannan <bannanc@uci.edu>, UC Irvine, Mobley Group
 """
 #=============================================================================================
 # GLOBAL IMPORTS
@@ -49,8 +45,13 @@ import numpy as np
 
 def print_smirks(smirks_list):
     """
-    Prints out the current or provided smirks list
-    in a table like format
+    Prints out the provided smirks list
+    in a table like format with label | SMIRKS
+
+    Parameters
+    -----------
+    smirks_list : list of tuples
+        list in the form [ (label, SMIRKS), ...]
     """
     str_form = " {0:<20} | {1:} "
 
@@ -65,12 +66,13 @@ def print_smirks(smirks_list):
 
 class ClusteringError(Exception):
     """
-    Exception for cases where smirks are inappropriate
-    for the environment type they are being parsed into
+    Exception for when the SMIRKSifier is unable to create
+    a list of SMIRKS to maintain the input clusters.
     """
     def __init__(self, msg):
         Exception.__init__(self, msg)
         self.msg = msg
+
 
 # =============================================================================================
 # SMIRKSifier
@@ -86,11 +88,11 @@ class SMIRKSifier(object):
         """
         Parameters
         ----------
-        molecules: list of Mols
+        molecules : list of Mols
             These can be chemper Mols or molecules from any supported toolkit
             (currently OpenEye or RDKit)
 
-        cluster_list: list of labels and smirks_atom_lists
+        cluster_list : list of labels and smirks_atom_lists
             For each label the user should provide a list tuples for atom indices
             in each molecule you want included in that cluster.
 
@@ -103,22 +105,28 @@ class SMIRKSifier(object):
             To see an example of this in action checkout
             https://github.com/MobleyLab/chemper/tree/master/examples
 
-        max_layers: int (optional)
-            how many atoms away from the indexed atoms should we consider at the maximum
+        max_layers : int (optional)
             default = 5
+            how many atoms away from the indexed atoms should
+            we consider at the maximum
 
-        verbose: boolean (optional)
-            If true information is printed to the command line during reducing
+        verbose : boolean (optional)
             default = True
+            If true information is printed to the command line during reducing
 
-        strict_smirks: boolean (optional)
-            If False it will not raise an error when incapable of making SMIRKS letting
-            a master user trouble shoot
+        strict_smirks : boolean (optional)
+            default = True
+            If False it will not raise an error when incapable of making SMIRKS
+            This setting is not recommended unless you are a master user
+            or developer trying to test current behavior.
+            The variable SMIRKSifier.checks will tell you if the SMIRKS
+            generation failed when strict_smirks = False
         """
         self.molecules = [mol_toolkit.Mol(m) for m in molecules]
         self.intermediate_smirks = dict()
         self.cluster_list = cluster_list
         self.verbose = verbose
+        self.max_layers = max_layers
         self.strict_smirks = strict_smirks
 
         # determine the type of SMIRKS for symmetry in indices purposes
@@ -126,10 +134,10 @@ class SMIRKSifier(object):
         graph = ClusterGraph(self.molecules, cluster_list[0][1], 0)
         test_smirks = graph.as_smirks(compress=True)
         env = CE(test_smirks)
-        if env.getType() is None:
+        if env.get_type() is None:
             # corresponds to an unknown chemical pattern
             self.dict_type = dict
-        elif env.getType().lower() == 'impropertorsion':
+        elif env.get_type().lower() == 'impropertorsion':
             self.dict_type = ImproperDict
         else:
             self.dict_type = ValenceDict
@@ -151,7 +159,7 @@ class SMIRKSifier(object):
                     self.cluster_dict[mol_idx][atom_tuple] = label
 
         # make SMIRKS patterns for input clusters
-        self.current_smirks, self.layers = self.make_smirks(max_layers)
+        self.current_smirks, self.layers = self.make_smirks()
         if self.verbose: print_smirks(self.current_smirks)
         # check SMIRKS and save the matches to input clusters
         self.type_matches, self.checks = self.types_match_reference()
@@ -161,28 +169,23 @@ class SMIRKSifier(object):
                       SMIRKSifier was not able to create SMIRKS for the provided
                       clusters with %i layers. Try increasing the number of layers
                       or changing your clusters
-                      """ % max_layers
+                      """ % self.max_layers
             if self.strict_smirks:
                 raise ClusteringError(msg)
             else:
                 print("WARNING!", msg)
 
-    def make_smirks(self, max_layers):
+    def make_smirks(self):
         """
         Create a list of SMIRKS patterns for the input clusters.
         This includes a determining how far away from the indexed atom should
-        be included in the SMIRKS (or the number of layers
-
-        Parameters
-        ----------
-        max_layers: int
-            maximum number of bonds away from the indexed atoms should be included
+        be included in the SMIRKS (or the number of max_layers is reached)
 
         Returns
         -------
-        smirks_list: list of tuples
+        smirks_list : list of tuples
             list of tuples in the form (label, smirks)
-        layers: int
+        layers : int
             number of layers actually used to specify the set clusters
         """
         layers = 0
@@ -192,7 +195,7 @@ class SMIRKSifier(object):
         self.intermediate_smirks[layers] = smirks_list
         _, checks = self.types_match_reference(current_types=smirks_list)
 
-        while not checks and (layers < max_layers):
+        while not checks and (layers < self.max_layers):
             layers += 1
             smirks_list = self._make_cluster_graphs(layers)
             # store intermediate smirks
@@ -204,9 +207,20 @@ class SMIRKSifier(object):
 
     def _make_cluster_graphs(self, layers):
         """
-        Creates a list of SMIRKS with the form
-        [ (label: SMIRKS), ]
-        using the stored molecules and cluster_list
+        Creates a list of SMIRKS using the stored
+        molecules and clusters with the specified number
+        of layers (atoms away from the indexed atoms)
+
+        Parameters
+        -----------
+        layers : int
+            number of layers (atoms away from indexed atoms) to
+            include in this round of graphs
+
+        Returns
+        --------
+        smirks_list : list of two tuples
+            SMIRKS list in the form [ (label: SMIRKS), ...]
         """
         smirks_list = list()
 
@@ -252,14 +266,16 @@ class SMIRKSifier(object):
         Parameters
         ----------
         max_its : int
+            default = 1000
             The specified number of iterations
-        verbose: boolean
+        verbose : boolean
+            default = None
             will set the verboseness while running
             (if None, the current verbose variable will be used)
 
         Returns
         ----------
-        final_smirks: list of tuples
+        final_smirks : list of tuples
             list of final smirks patterns after reducing in the form
             [(label, smirks)]
         """
@@ -278,16 +294,31 @@ class SMIRKSifier(object):
 
 class Reducer():
     """
-    # TODO: add a description
+    Reducer starts with any list of SMIRKS and removes unnecessary decorators
+    while maintaining typing on input molecules.
+    This was created to be used as a part of the SMIRKSifier.reduce function.
+    However, if you have complex SMIRKS and a list of molecules you can
+    also reduce those patterns independently.
+
+    Attributes
+    ----------
+    current_smirks : list of tuples
+                    current SMIRKS patterns in the form (label, smirks)
+    mols : list of chemper molecules
+          molecules being used to reduce the input SMIRKS
+    cluster_dict : dictionary
+                  Dictionary specifying typing using current SMIRKS in the form:
+                  {mol_idx:
+                        { (tuple of atom indices): label } }
     """
     def __init__(self, smirks_list, mols, verbose=False):
         """
         Parameters
         ----------
-        smirks_list: list of tuples
+        smirks_list : list of tuples
             set of SMIRKS patterns in the form (label, smirks)
-        mols: list of molecules
-            Any chemper compatible molecules accepted
+        mols : list of molecules
+            Any chemper compatible molecules accepted (ChemPer, OpenEye, or RDKit)
         """
         self.verbose = verbose
         self.current_smirks = copy.deepcopy(smirks_list)
@@ -299,43 +330,93 @@ class Reducer():
 
     def remove_one_sub_dec(self, input_ors, ref_idx):
         """
-        Remove one ORdecorator from the specified index
+        Remove one OR decorator from the specified index
         # i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#6, [+0]), (#7, [X3]) ]
+
+        Parameters
+        -----------
+        input_ors : list of two tuples
+            OR decorators in the form from ChemicalEnvironments
+            that is [ (base, [decorators, ]), ... ]
+        ref_idx : int
+            The index from this list to use when removing one sub-decorator
+
+        Returns
+        --------
+        new_ors : list of two tuples
+            New OR decorators
         """
-        ors = copy.deepcopy(input_ors)
+        new_ors = copy.deepcopy(input_ors)
         # remove one or decorator from a single type
-        ref_or = ors[ref_idx]
+        ref_or = new_ors[ref_idx]
         decs = ref_or[1]
         decs.remove(np.random.choice(decs))
-        ors[ref_idx] = (ref_or[0], decs)
-        return ors
+        new_ors[ref_idx] = (ref_or[0], decs)
+        return new_ors
 
     def remove_ref_sub_decs(self, input_ors, ref_idx):
         """
         Remove all of the ORdecorators at the specified index
         i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#6, []), (#7, [X3]) ]
-        """
-        ors = copy.deepcopy(input_ors)
-        # remove all decorators on one OR type
-        ref_or = ors[ref_idx]
-        ors[ref_idx] = (ref_or[0], list())
-        return ors
 
-    def remove_ref(self, input_decs, ref_idx):
+        Parameters
+        -----------
+        input_ors : list of two tuples
+            OR decorators in the form from ChemicalEnvironments
+            that is [ (base, [decorators, ]), ... ]
+        ref_idx : int
+            The index from this list to use when removing one set of sub-decorators
+
+        Returns
+        --------
+        new_ors : list of two tuples
+            New OR decorators
+        """
+        new_ors = copy.deepcopy(input_ors)
+        # remove all decorators on one OR type
+        ref_or = new_ors[ref_idx]
+        new_ors[ref_idx] = (ref_or[0], list())
+        return new_ors
+
+    def remove_ref(self, input_ors, ref_idx):
         """
         Remove the decorator at the referenced index
         i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#7, [X3])]
+
+        Parameters
+        -----------
+        input_ors : list of two tuples
+            OR decorators in the form from ChemicalEnvironments
+            that is [ (base, [decorators, ]), ... ]
+        ref_idx : int
+            The OR decorators at ref_idx will be removed entirely
+
+        Returns
+        --------
+        new_ors : list of two tuples
+            New OR decorators
         """
-        decs = copy.deepcopy(input_decs)
+        new_ors = copy.deepcopy(input_ors)
         # remove the single OR type at or_idx
-        ref = decs[ref_idx]
-        decs.remove(ref)
-        return decs
+        ref = new_ors[ref_idx]
+        new_ors.remove(ref)
+        return new_ors
 
     def remove_all_bases(self, input_ors):
         """
         convert all bases to [*]
         i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(*, [X4, +0]), (*, [X3]) ]
+
+        Parameters
+        -----------
+        input_ors : list of two tuples
+            OR decorators in the form from ChemicalEnvironments
+            that is [ (base, [decorators, ]), ... ]
+
+        Returns
+        --------
+        new_ors : list of two tuples
+            New OR decorators
         """
         new_all_ors = [('*', d) for b, d in input_ors]
         return new_all_ors
@@ -344,6 +425,17 @@ class Reducer():
         """
         remove all decorators of the same type, like all 'X' decorators
         i.e. [(#6, [X4, +0]), (#7, [X3]) ] --> [(#6, [+0]), (#7, []) ]
+
+        Parameters
+        -----------
+        input_ors : list of two tuples
+            OR decorators in the form from ChemicalEnvironments
+            that is [ (base, [decorators, ]), ... ]
+
+        Returns
+        --------
+        new_ors : list of two tuples
+            New OR decorators
         """
         all_decs = set([d for b,decs in input_ors for d in decs])
         remove_dec = np.random.choice(list(all_decs))
@@ -374,8 +466,17 @@ class Reducer():
         input_all_ors: list of OR decorators
             [ (base, [decs]), ...]
         or_idx: index that should be used to guide changes
+
+        Returns
+        --------
+        new_ors : list of two tuples
+            new or decorators
         """
         ref_or = input_all_ors[or_idx]
+
+        # Start by checking what removal choices are available with the
+        # current list of OR decorators
+        # ---------------------------------------------------------------------
         # one choice is to remove all decorators (0)
         # it is always an option
         choices = ['all']
@@ -398,9 +499,12 @@ class Reducer():
             if len(all_decs) > 0:
                 # you can remove 1 type of decorator, i.e. all 'Xn' decorators
                 choices.append('all_one_dec')
+        # ---------------------------------------------------------------------
 
+        # Make a random choice from the available change options
         change = np.random.choice(choices)
 
+        # Based on the option chosen call the appropriate method
         if change == 'all':
             # remove ALL OR decorators
             # i.e.[(  # 6, [X4, +0]), (#7, [X3]) ] --> []
@@ -427,10 +531,16 @@ class Reducer():
 
         Parameters
         -----------
-        input_all_ors: list of tuples
-            these are the ORdecorators from a ChemicalEnvironment
-        is_bond: boolean
+        input_all_ors : list of tuples
+            these are the OR decorators for an atom or bond
+            from a ChemicalEnvironment
+        is_bond : boolean
             are these decorators from from a bond (False for atom)
+
+        Returns
+        --------
+        new_ors : list of two tuples
+            new OR decorators
         """
         if len(input_all_ors) == 0:
             return input_all_ors, False
@@ -440,12 +550,12 @@ class Reducer():
         all_ors = copy.deepcopy(input_all_ors)
         or_idx = np.random.randint(len(all_ors))
 
-        # atoms have more ORdecorators and therefore more options for
+        # atoms have more OR decorators and therefore more options for
         # how they can be removed
         if not is_bond:
             return self.remove_or_atom(all_ors, or_idx), True
 
-        # For a bond, either one ORtype is removed
+        # For a bond, either one OR type is removed
         # or they are all removed.
         if np.random.rand() > 0.5:
             # remove just one or type
@@ -455,7 +565,17 @@ class Reducer():
 
     def remove_and(self, input_all_ands):
         """
-        removes a decorated that is AND'd in the original SMIRKS
+        removes a decorator that is AND'd in the original SMIRKS
+
+        Parameters
+        -----------
+        input_all_ands : list
+            List of AND decorators
+
+        Returns
+        --------
+        new_ands : list
+            List of new AND decorators
         """
         # if there are no ands return with no changes
         if len(input_all_ands) == 0:
@@ -471,6 +591,11 @@ class Reducer():
 
     def _get_item_and_remove_options(self, env):
         """
+        This function chooses and Atom or Bond
+        which will then have some of its decorators removed.
+        It also determines what part of the component can be
+        removed: OR decorators(0), AND decorators(1), the whole atom(2)
+
         Parameters
         ----------
         env: ChemicalEnvironment
@@ -485,16 +610,16 @@ class Reducer():
         """
         items = list()
         odds = list()
-        for a_b in env.getAtoms() + env.getBonds():
-            count = len(a_b.getANDtypes())
-            for o in a_b.getORtypes():
+        for a_b in env.get_atoms() + env.get_bonds():
+            count = len(a_b.and_types)
+            for o in a_b.or_types:
                 if o[0] != '*':
                     count += 1
                 count += len(o[1])
 
             # a wild card, atom with no index should be considered ([*])
             # should also be on this list so it can be removed
-            if isinstance(a_b, CE.Atom) and not isinstance(a_b, CE.Bond) and env.isUnindexed(a_b):
+            if isinstance(a_b, CE.Atom) and not isinstance(a_b, CE.Bond) and env.is_unindexed(a_b):
                 count += 1
 
             items.append(a_b)
@@ -512,13 +637,13 @@ class Reducer():
         # choose an atom or bond with the probabilities:
         item = np.random.choice(items, p=weights)
         dec_opts = list()
-        if len(item.getORtypes()) > 0:
+        if len(item.or_types) > 0:
             dec_opts.append('remove_ors')
-        if len(item.getANDtypes()) > 0:
+        if len(item.and_types) > 0:
             dec_opts.append('remove_ands')
 
         if not isinstance(item, CE.Bond): # then it is an atom
-            if env.getValence(item) == 1 and env.isUnindexed(item):
+            if env.get_valence(item) == 1 and env.is_unindexed(item):
                 dec_opts.append('remove_atom')
 
         return item, dec_opts
@@ -527,6 +652,18 @@ class Reducer():
         """
         Chose an atom or bond in the input smirks pattern
         and then remove one decorator from it.
+
+        Parameters
+        -----------
+        smirks : str
+            A SMIRKS string which should be reduced
+
+        Returns
+        --------
+        new_smirks : str
+            A new SMIRKS pattern
+        is_changed : bool
+            True if some of the decorators were successfully removed
         """
         env = CE(smirks)
         sub, dec_opts = self._get_item_and_remove_options(env)
@@ -537,21 +674,21 @@ class Reducer():
 
         change = np.random.choice(dec_opts)
         if change == 'remove_ors':
-            new_or_types, changed = self.remove_or(sub.getORtypes(), isinstance(sub, CE.Bond))
+            new_or_types, changed = self.remove_or(sub.or_types, isinstance(sub, CE.Bond))
             if not changed:
                 return smirks, False
-            sub.setORtypes(new_or_types)
+            sub.or_types = new_or_types
         elif change == 'remove_ands':
-            new_and_types, changed = self.remove_and(sub.getANDtypes())
+            new_and_types, changed = self.remove_and(sub.and_types)
             if not changed:
                 return smirks, False
-            sub.setANDtypes(new_and_types)
+            sub.and_types = new_and_types
         else: # change == 'remove_atom'
-            remove = env.removeAtom(sub)
+            remove = env.remove_atom(sub)
             if not remove:
                 return smirks, False
 
-        return env.asSMIRKS(), True
+        return env.as_smirks(), True
 
     def run(self, max_its=1000, verbose=None):
         """
@@ -561,13 +698,13 @@ class Reducer():
         ----------
         max_its : int
             The specified number of iterations
-        verbose: boolean
+        verbose : boolean
             will set the verboseness while running
             (if None, the current verbose variable will be used)
 
         Returns
         ----------
-        final_smirks: list of tuples
+        final_smirks : list of tuples
             list of final smirks patterns after reducing in the form
             [(label, smirks)]
         """

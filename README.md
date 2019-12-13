@@ -1,51 +1,40 @@
-[![Build Status](https://travis-ci.org/MobleyLab/chemper.svg?branch=master)](https://travis-ci.org/MobleyLab/chemper)
+# <img src="https://github.com/mobleylab/chemper/blob/master/chemper_logo.svg" height=150>
+
+[![Travis build](https://img.shields.io/travis/MobleyLab/chemper/master.svg?logo=linux&logoColor=white)](https://travis-ci.org/MobleyLab/chemper)
+[![Travis build](https://img.shields.io/travis/MobleyLab/chemper/master.svg?logo=apple&logoColor=white)](https://travis-ci.org/MobleyLab/chemper)
+[![AppVeyor build](https://img.shields.io/travis/MobleyLab/chemper/master.svg?logo=windows&logoColor=white)](https://ci.appveyor.com/project/bannanc/chemper)
+
 [![Documentation Status](https://readthedocs.org/projects/chemper/badge/?version=latest)](http://chemper.readthedocs.io/en/latest/?badge=latest)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/MobleyLab/chemper.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/MobleyLab/chemper/context:python)
 [![codecov](https://codecov.io/gh/MobleyLab/chemper/branch/master/graph/badge.svg)](https://codecov.io/gh/MobleyLab/chemper)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![DOI](https://zenodo.org/badge/120546688.svg)](https://zenodo.org/badge/latestdoi/120546688)
 
-# ChemPer
+[![DOI](https://zenodo.org/badge/120546688.svg)](https://zenodo.org/badge/latestdoi/120546688)
 
 This repository contains a variety of tools that will be useful in automating the process
 of chemical perception for the new SMIRKS Native Open Force Field (SMIRNOFF) format
 as a part of the [Open Force Field Initiative](http://openforcefield.org) [1].
 
-This idea originated from the tools [SMARTY and SMIRKY](https://github.com/openforcefield/smarty) which
-were designed to use an automated monte carlo algorithm to sample the chemical perception used
-in existing force fields. SMARTY samples SMARTS patterns corresponding to traditional atom types and was
-tested compared to the parm99/parm@frosst force field. SMIRKY is an extension of SMARTY created to sample SMIRKS
-patterns corresponding to SMIRNOFF parameter types (nonbonded, bond, angle, and proper and improper torsions).
+`ChemPer` can be used to automatically generate SMIRKS patterns to match clustered molecular fragments.
+For example, you may have calculated bond lengths and force constants for a variety of bonds in one group of molecules.
+You could use that data to cluster those bonds and then use `ChemPer` to generate SMIRKS patterns which would allow
+you to apply those lengths and force constants to a new set of molecules.
+The algorithms implemented here were inspired by
+[SMARTY and SMIRKY](https://github.com/openforcefield/smarty) which were proven to be too inefficient for
+practical use in force field parameterization [2].
 
-One of the most important lessons learned while testing SMARTY and SMIRKY is that the combinatorial problem
-in SMIRKS space is very large. These tools currently use very naive moves in SMIRKS space chosing atom or
-bond decorators to add to a pattern at complete random. This wastes a signficant amount of time making
-chemically insensible moves. One of the take away conclusions on that project was that future chemical perception
-sampling tools would need to take atom and bond information from input molecules in order to be feasible [2].
-
-We developed `chemper` based on the knowledge of the SMARTY project outcomes.
-The goal here is to take clustered molecular subgraphs and generate SMIRKS patterns.
-These tools will use information stored in the atoms and bonds of a molecule to drive
-choices about SMIRKS decorators. Then will automatically generate reasonable SMIRKS patterns
-matching clustering of molecular subgraphs.
-
-For example, if you know you want to assign certain group of angles (sets of three atoms)
-the same equilibrium bond angle and force constant,
-then chemper should generate SMIRKS patterns that maintain that clustering.
-
-**Warning**
-This repository is still under active development. While an initial [version](#versions) is available changes are still expected in the API and the underlying code.
+For a more extensive history and explanation, see our [preprint](http://doi.org/10.26434/chemrxiv.8304578.v1) [3].
 
 ## Prerequisites
 
-We currently test with Python 3.5, though we expect anything 3.5+ should work.
+We test with Python 3.6 and 3.7 and expect any version above 3.5 to behave well.
 
 This is a python tool kit with a few dependencies. We recommend installing
 [miniconda](http://conda.pydata.org/miniconda.html). Then you can create an
 environment with the following commands:
 
 ```bash
-conda create -n [my env name] python=3.5 numpy networkx pytest
+conda create -n [my env name] python=3.6 numpy networkx pytest
 source activate [my env name]
 ```
 
@@ -79,7 +68,9 @@ pip install -e .
 # Documentation
 
 Below are some details on the tools provided in `chemper` see
-[examples](https://github.com/MobleyLab/chemper/tree/master/examples) for more detailed usage examples
+[examples](https://github.com/MobleyLab/chemper/tree/master/examples)
+and [documentation](https://chemper.readthedocs.io/en/latest/)
+for more detailed usage examples
 
 ### SMIRKSifier
 
@@ -91,37 +82,6 @@ a hierarchical list of SMIRKS in just a few lines of code.
 In the example, [general_smirks_for_clusters](https://chemper.readthedocs.io/en/latest/examples/general_smirks_for_clusters.html)
 we cluster bonds in a set of simple hydrocarbons based on order. Then `SMIRKSifer` turns these clusters into a list of SMIRKS patterns.
 The following functionalities are used to make the `SMIRKSifier` possible, but may be useful on their own.
-
-### `mol_toolkits`
-
-As noted [above](#installation), we seek to keep `chemper` independent of the cheminformatics toolkit.
-`mol_toolkits` is created to keep all code dependent on the toolkit installed. It can create molecules from
-an RDK or OE molecule object or from a SMILES string. It includes a variety of functions for extracting information
-about atoms, bonds, and molecules. Also included here are SMIRKS pattern searches.
-
-### ChemPerGraph
-
-The goal of this tool was to create an example of how you could create a SMIRKS pattern from a
-molecule and set of atom indices.
-While this isn't ultimately useful in sampling chemical perception as they
-only work for a single molecule, however it is a tool that did not exist to the best of the authors knowledge before.
-For a detailed example see the [single_mol_smirks](examples/using_fragment_graph/single_mol_smirks.ipynb)
-jupyter notebook.
-
-Here is a brief usage example for creating the SMIRKS pattern for the bond between the two carbon
-atoms in ethene including atoms one bond away from the indexed atoms. The indexed atoms are the two carbon
-atoms at indices 0 and 1 in the molecule are assigned to SMIRKS indices `:1` and `:2` respectively
-
-```python
-from chemper.mol_toolkits import mol_toolkit
-from chemper.graphs.fragment_graph import  ChemPerGraphFromMol
-
-mol = mol_toolkit.MolFromSmiles('C=C') # note this adds explicit hydrogens to your molecule
-smirks_dict = {1:0, 2: 1}
-graph = ChemPerGraphFromMol(mol, smirks_dict, layers=1)
-print(graph.as_smirks)
-# [#6AH2X3x0r0+0:1](-!@[#1AH0X1x0r0+0])(-!@[#1AH0X1x0r0+0])=!@[#6AH2X3x0r0+0:2](-!@[#1AH0X1x0r0+0])-!@[#1AH0X1x0r0+0]
-```
 
 ### ClusterGraph
 
@@ -139,10 +99,10 @@ Below is a brief example showing the SMIRKS for the bond between two carbon atom
 from chemper.mol_toolkits import mol_toolkit
 from chemper.graphs.cluster_graph import ClusterGraph
 
-mol1 = mol_toolkit.MolFromSmiles('CCC')
-mol2 = mol_toolkit.MolFromSmiles('CCCCC')
-smirks_dicts = [[{1:0, 2:1}], [{1:0,2:1}, {1:1, 2:2}]]
-graph = ClusterGraph([mol1, mol2], smirks_dicts)
+mol1 = mol_toolkit.Mol.from_smiles('CCC')
+mol2 = mol_toolkit.Mol.from_smiles('CCCCC')
+smirks_atom_lists = [[(0,1)], [(0,1), (1,2)]]
+graph = ClusterGraph([mol1, mol2], smirks_atom_lists)
 print(graph.as_smirks())
 # '[#6AH2X4x0r0+0,#6AH3X4x0r0+0:1]-;!@[#6AH2X4x0r0+0:2]'
 ```
@@ -152,6 +112,37 @@ In this case the SMIRKS indexed atoms for propane (mol1) are one of the terminal
 In pentane (mol2) however atom1 can be a terminal or middle of the chain carbon atom. This changes the number of
 hydrogen atoms (`Hn` decorator) on the carbon, thus there are two possible SMIRKS patterns for atom `:1`
 `#6AH2X4x0r0+0` or (indicated by the "`,`") `#6AH3X4x0r0+0`. But, atom `:2` only has one possibility `#6AH2X4x0r0+0`.
+
+### SingleGraph
+
+The goal of this tool was to create an example of how you could create a SMIRKS pattern from a
+molecule and set of atom indices.
+While this isn't ultimately useful in sampling chemical perception as they
+only work for a single molecule, however it is a tool that did not exist to the best of the authors knowledge before.
+For a detailed example see the [single_mol_smirks](examples/using_fragment_graph/single_mol_smirks.ipynb)
+jupyter notebook.
+
+Here is a brief usage example for creating the SMIRKS pattern for the bond between the two carbon
+atoms in ethene including atoms one bond away from the indexed atoms. The indexed atoms are the two carbon
+atoms at indices 0 and 1 in the molecule are assigned to SMIRKS indices `:1` and `:2` respectively
+
+```python
+from chemper.mol_toolkits import mol_toolkit
+from chemper.graphs.single_graph import  SingleGraph
+
+mol = mol_toolkit.Mol.from_smiles('C=C') # note this adds explicit hydrogens to your molecule
+smirks_atoms = (0,1)
+graph = SingleGraph(mol, smirks_atoms, layers=1)
+print(graph.as_smirks())
+# [#6AH2X3x0r0+0:1](-!@[#1AH0X1x0r0+0])(-!@[#1AH0X1x0r0+0])=!@[#6AH2X3x0r0+0:2](-!@[#1AH0X1x0r0+0])-!@[#1AH0X1x0r0+0]
+```
+
+### mol\_toolkits
+
+As noted [above](#installation), we seek to keep `chemper` independent of the underlying cheminformatics toolkits.
+`mol_toolkits` was created to keep all code dependent on the toolkit isolated. It can create molecules from
+an RDK or OE molecule object or from a SMILES string. It includes a variety of functions for extracting information
+about atoms, bonds, and molecules. Also included here are subsearchs using indexed SMARTS (or SMIRKS) patterns.
 
 ## Versions
 
@@ -172,5 +163,6 @@ CCB is funded by a fellowship from [The Molecular Sciences Software Institute](h
 
 ## References
 
-1. D. Mobley et al. bioRxiv 2018, 286542. [doi.org/10.1101/286542](http://doi.org/10.1101/286542)
-2. C. Zanette and C.C. Bannan et al. chemRxiv 2018, [doi.org/10.26434/chemrxiv.6230627.v1](https://doi.org/10.26434/chemrxiv.6230627.v1)
+1. D.L. Mobley et al. _JCTC,_ **2018**, _14_(11), pp 6076-6092. ([JCTC](http://doi.org/10.1021/acs.jctc.8b00640) or [bioRxiv](http://doi.org/10.1101/286542))
+2. C. Zanette and C.C. Bannan et al. _JCTC_ **2019** _15_(1), pp 402-423. ([JCTC](https://doi.org/10.1021/acs.jctc.8b00821) or [ChemRxiv](https://doi.org/10.26434/chemrxiv.6230627.v1))
+3. C.C. Bannan and D.L. Mobley _ChemRxiv_ **2019** [doi:10.26434/chemrxiv.8304578.v1](http://doi.org/10.26434/chemrxiv.8304578.v1)

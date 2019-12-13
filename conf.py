@@ -13,6 +13,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import chemper
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
@@ -24,9 +25,9 @@ copyright = '2018, Caitlin C. Bannan'
 author = 'Caitlin C. Bannan'
 
 # The short X.Y version
-version = '0.1.0'
+version = chemper.__version__
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+release = chemper.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -82,6 +83,7 @@ pygments_style = 'sphinx'
 #
 # html_theme = 'alabaster'
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+html_logo='chemper_logo.svg'
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme

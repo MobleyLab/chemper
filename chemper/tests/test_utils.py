@@ -11,10 +11,13 @@ import pytest
 # -----------------------
 smirks_checks = [
     ("[#6AH3X4x0!r+0:1]-;!@[#6AH3X4x0!r+0:2]", True),
-    ("C1CC1", True),
-    ("[#6AH3X4x0!r+0]-;!@[#6AH3X4x0!r+0]", True),
+    ("[C:1]1CC1", True),
+    ("[#6AH3X4x0!r+0:1]-;!@[#6AH3X4x0!r+0]", True),
+    ("[#6AH3X4x0!r+0]-;!@[#6AH3X4x0!r+0]", False),
     ("#6X4H3", False),
     ("]-;=[", False),
+    ("[C:1]-[N]>>[N:1]-[N]", False),
+    ("[C:1](=O)[O-1].[Na+1]", False)
 ]
 
 @pytest.mark.parametrize('smirks, is_valid', smirks_checks)

@@ -1,32 +1,36 @@
 """
 utils.py
 
-This file provides simple functions that might be of use to people using the chemper package
+This file provides simple functions that might be of use to people using the ChemPer package
 
 """
 
 import os
+import collections
 
 def get_data_path(relative_path, package='chemper'):
     """
     Returns the absolute path to a specified relative path inside data directory of a given package
-    there for this will find a file at:
+    For example,
+        get_data_path('molecules', package='chemper')
+    will find this path:
+        [absolute path to Python packages]/chemper/data/molecules/
 
-    [absolute path to Python packages]/[package(chemper]/data/[filename]
+    If the final path does not exist it will raise an IOError
 
     Parameters
     ----------
-    relative_path: str
-              filename or relative path to a file stored in the data/ directory
-              of a given package
-    package: str
-             name of the Python package that should contain the specified file
-             default: "chemper"
+    relative_path : str
+                    filename or relative path to a file stored in the data/ directory
+                    of a given package
+    package : str
+              name of the Python package that should contain the specified file
+              default="chemper"
 
     Returns
     -------
-    path: str
-          absolute path to filename in specified package
+    path : str
+           absolute path to filename in specified package
     """
     from pkg_resources import resource_filename
     fn = resource_filename(package, os.path.join('data', relative_path))
@@ -39,27 +43,28 @@ def get_data_path(relative_path, package='chemper'):
 
 def get_full_path(relative_path, package="chemper"):
     """
-    This function checks to see if a file/path at this relative path is available locally
+    This function checks to see if this relative path is available locally
     if it is it returns the absolute path to that file.
     Otherwise it checks if that relative path is located at [package location]/data/relative path
     it will raise an IOError if neither location exists.
 
     Parameters
     ----------
-    relative_path: str
-                   relative path to a file available locally or in package/data
-    package: str
-             package name with a data directory the file might be located in
+    relative_path : str
+                    relative path to a file available locally or in package/data
+    package : str
+              package name with a data directory the file might be located in
 
     Returns
     -------
-    abs_path: str
-              The absolute path to a local file if available, otherwise the abolsute path
-              to [package]/data/[relative_path]
+    abs_path : str
+               The absolute path to a local file if available, otherwise the abolsute path
+               to [package]/data/[relative_path]
     """
     if os.path.exists(relative_path):
         return os.path.abspath(relative_path)
     return get_data_path(relative_path, package)
+
 
 # =======================================
 # Check SMIRKS validity
@@ -71,15 +76,30 @@ def is_valid_smirks(smirks):
 
     Parameters
     ----------
-    smirks: SMIRKS (or SMARTS) string
+    smirks : SMIRKS (or SMARTS) string
 
     Returns
     -------
-    is_valid: boolean
-              is the provided SMIRKS a valid pattern
+    is_valid : boolean
     """
-    from chemper.mol_toolkits.mol_toolkit import MolFromSmiles
-    mol = MolFromSmiles('C')
+    # ChemPer only works with SMIRKS that match the
+    # SMIRNOFF parameter format that is it has to be a
+    # valid substructure search pattern and meet the
+    # following three restrictions:
+    # 1) only for one molecule (no '.' character)
+    if '.' in smirks:
+        return False
+    # 2) not for a reaction (no '>' character)
+    if '>' in smirks:
+        return False
+    # 3) it must have at least one indexed (:n) atom
+    import re
+    if not re.findall(r'([:]\d+)', smirks):
+        return False
+
+    # now check this is a valid substructure search pattern
+    from chemper.mol_toolkits.mol_toolkit import Mol
+    mol = Mol.from_smiles('C')
     try:
         mol.smirks_search(smirks)
         return True
@@ -90,18 +110,16 @@ def is_valid_smirks(smirks):
 # custom classes and functions for matching sets of SMIRKS to molecules
 # ===================================================================
 """
-custom_dicts
+custom dictionaries
 
-This custom dictionaries are taken from
-openforcefield.typing.engines.smirnoff.forcefield
-Like other openforcefield typing tools, I wanted to be
-able to test ideas for chemper without adding dependencies
-assuming things work and openforcefield all gets
-merged to support OE/RDK I will just import these from there.
+These custom dictionaries are taken from
+openforcefield.typing.engines.smirnoff.forcefield.
+They allow tracking of symmetrically equivalent parameters.
+For example the bonds (1,2) and (2,1), and  
+the impropers (1,2,3,4) and (1,2,4,3) are equivalent 
 """
 
 
-import collections
 class TransformedDict(collections.MutableMapping):
     """A dictionary that applies an arbitrary key-altering
        function before accessing the keys"""
@@ -162,18 +180,20 @@ def get_typed_molecules(smirks_list, input_molecules):
     """
     Creates a dictionary assigning a typename
     for each set of atom indices in each molecule
+    based on the provided smirks patterns.
 
     Parameters
     ----------
-    smirks_list: list of tuples in the form (label, smirks)
-    input_molecules: list of Mols
-        These can be molecules from OpenEye, RDKit, or ChemPer
+    smirks_list : list[smirks tuples]
+                  SMIRKS tuples come in the form (label, smirks)
+    input_molecules : list[Mol]
+                      Molecules from any supported toolkit (ChemPer, OpenEye, RDKit)
 
     Returns
     -------
-    typeDict: embedded dictionary
-        keys: SMILES string for each molecule
-            keys: tuple of indices assigned a parameter type
+    typeDict : embedded dictionary
+               { index of input_molecule:
+                    {(tuple of indices): assigned parameter type } }
     """
     from chemper.mol_toolkits.mol_toolkit import Mol
     molecules = [Mol(m) for m in input_molecules]
@@ -209,16 +229,21 @@ def create_tuples_for_clusters(smirks_list, molecules):
 
     Parameters
     ----------
-    smirks_list: list of tuples
-        This is a list of tuples with the form (label, SMIRKS)
-    molecules: list of Mols
-        This is a list of molecules you want to type with this list of SMIRKS
-        They can be from any toolkit chemper supports (currently OpenEye and RDKit)
+    smirks_list : list[smirks tuples]
+                  This is a list of tuples with the form (label, SMIRKS)
+    molecules : list[Mols]
+                This is a list of molecules you want to type with this list of SMIRKS
+                They can be from any supported toolkit (ChemPer, OpenEye, RDKit)
 
     Returns
     -------
-    type_list: list of atom index tuples for each molecule for each type
-        These are a list of tuples with the form (label, [ [ (atom indices by molecule)], ]),...
+    type_list : list[typing tuples]
+                These are a list of typing tuples that could be used as input for
+                the SMIRKSifier with the form shown above:
+                (label, [
+                        [ (atom indices), ...], # atoms in mol0 with label
+                        [ (atom indices), ... ], # atoms in mol1 with label
+                        ... ] )
 
     """
     ordered_labels = [l for l, s in smirks_list]
@@ -244,19 +269,19 @@ def get_smirks_matches(mol, smirks):
 
     Parameters
     ----------
-    mol : a chemper Mol
+    mol : ChemPer Mol
     smirks : str
              SMIRKS pattern being matched to the molecule
 
     Returns
     --------
-    matches: list of tuples
-        atom indices for labeled atom in the smirks
+    matches : list[atom tuples]
+              Atom indices where this smirks matches in this atom
     """
     from chemper.graphs.environment import ChemicalEnvironment
 
     env = ChemicalEnvironment(smirks)
-    if env.getType().lower() == 'impropertorsion':
+    if env.get_type().lower() == 'impropertorsion':
         matches = ImproperDict()
     else:
         matches = ValenceDict()
@@ -275,11 +300,36 @@ def get_smirks_matches(mol, smirks):
 
 def score_match_reference(current_assignments, ref_assignments):
     """
+    This function is intended to score two sets of SMIRKS patterns or other
+    typing rules to see how similar they are.
 
-    Acknowledgement:
-    Josh Fass <josh.fass@choderalab.org>
-    created this scoring algorithm using the bipartite graph for smarty,
-    which has been published (doi: ...) # TODO: add DOI
+    Typing assignments are provided in the form of embedded dictionaries:
+        { molecule index:
+            { (atom indices tuple): assigned label }
+            }
+
+    The assigned types do not (and should not) have the same name, rather
+    this checks that the assignments types atoms into the same "groups."
+
+    Parameters
+    ----------
+    current_assignments : dict
+                          typing rules being assessed
+    ref_assignments : dict
+                      typing that is considered the reference or ideal
+
+    Returns
+    -------
+    type_matches : list[match tuples]
+                   match tuples have the form
+                   (current_label, ref_label, count matched, count in reference label)
+    score : float
+            Score as a fraction of how well the current typing matches the reference.
+            A score of 1.0 is a perfect match
+
+    We would like to acknowledge Josh Fass <josh.fass@choderalab.org>
+    who created this scoring algorithm using the bipartite graph for
+    smarty (github.com/openforcefield/smarty and doi: 10.1021/acs.jctc.8b00821)
     """
     import networkx as nx
     total_counts = dict()
@@ -392,9 +442,10 @@ def match_reference(current_assignments, ref_assignments):
     Returns
     -------
     type_matches : set of tuples (current_label, reference_label)
-        pair of current and reference labels, None if the sets don't match
+                   pair of current and reference labels
+                   None if the sets don't match
     is_match : boolean
-        Does the current assignment exactly match the reference?
+               Does the current assignment exactly match the reference?
     """
     import networkx as nx
 
@@ -440,23 +491,26 @@ def match_reference(current_assignments, ref_assignments):
 
 def check_smirks_to_reference(current_types, reference_assignments, molecules):
     """
+    Checks that the current SMIRKS assign types to this set of molecules
+    to match the reference assignments.
 
     Parameters
     ----------
-    current_types: list of tuples
-        SMIRKS types in the form (label, smirks)
-    reference_assignments: dictionary of tuples and labels
-        This could be the output from get_typed_molecules
-        the dictionary has the form:
-        {mol_idx: {(atom indices tuple): label}, mol_idx2: {} }
-    molecules: list of molecules
-        These can be OpenEye, RDKit, or ChemPer molecules
+    current_types : list[smirks tuples]
+                    SMIRKS types in the form (label, smirks)
+    reference_assignments : embedded dictionary
+                            This could be the output from get_typed_molecules
+                            the dictionary has the form:
+                            {mol_idx: {(atom indices tuple): label}, ... }
+    molecules : list[Mol]
+                These can be ChemPer Mols or
+                Mols form a supported toolkit (currently OpenEye or RDKit)
 
     Returns
     -------
-    agree: boolean
-        Returns True if the SMIRKS type the molecules in the same way
-        as the reference assignments
+    agree : boolean
+            Returns True if the SMIRKS type the molecules in the same way
+            as the reference assignments
     """
     r_labs = [l for m,d in reference_assignments.items() for a,l in d.items()]
     if len(current_types) != len(set(r_labs)):
@@ -473,18 +527,18 @@ def check_smirks_agree(current_types, reference_types, molecules):
 
     Parameters
     ----------
-    current_types: list of tuples
-        SMIRKS types in the form (label, smirks)
-    reference_types: list of tuples
-        SMIRKS types in the form (label, smirks)
-    molecules: list of molecules
-        molecules to be typed with this patterns
-        Can be any molecule type chemper supports (OpenEye, RDKit, or Chemper)
+    current_types : list[smirks tuples]
+                    SMIRKS types in the form (label, smirks)
+    reference_types : list[smirks tuples]
+                      SMIRKS types in the form (label, smirks)
+    molecules : list[Mol]
+                ChemPer Mols or Mols form a supported toolkit (currently OpenEye or RDKit)
 
     Returns
     -------
-    match: boolean
-        True if the two sets of SMIRKS match the set of molecules in the exact same way
+    match : boolean
+            True if the two sets of SMIRKS type
+            the set of molecules in exactly the same way
     """
     if len(current_types) != len(reference_types):
         return False

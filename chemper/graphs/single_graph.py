@@ -1,5 +1,5 @@
 """
-fragment_graph.py
+single_graph.py
 
 ChemPerGraph is a class for storing smirks decorators for a molecular fragment.
 These can be used to convert a molecular sub-graph or an entire molecule into a SMIRKS
@@ -20,10 +20,6 @@ x0: ring connectivity of 0, no ring bonds
 
 To the best of the authors knowledge, this is the first open source tool capable
 of converting a molecule (or sub-graph) into a detailed SMIRKS pattern.
-
-AUTHORS:
-
-Caitlin C. Bannan <bannanc@uci.edu>, Mobley Group, University of California Irvine
 """
 
 import networkx as nx
@@ -32,13 +28,13 @@ from chemper.mol_toolkits import mol_toolkit
 
 
 @total_ordering
-class ChemPerGraph(object):
+class SingleGraph:
     """
     ChemPerGraphs are a graph based class for storing atom and bond information.
     They use the chemper.mol_toolkits Atoms, Bonds, and Mols
     """
     @total_ordering
-    class AtomStorage(object):
+    class AtomStorage:
         """
         AtomStorage tracks information about an atom
         """
@@ -48,8 +44,8 @@ class ChemPerGraph(object):
 
             Parameters
             ----------
-            atom: chemper Atom object
-            label: int
+            atom : chemper Atom object
+            label : int
                 integer for labeling this atom in a SMIRKS
                 or if negative number just used to track the atom locally
             """
@@ -95,11 +91,11 @@ class ChemPerGraph(object):
 
             Parameters
             ----------
-            other: AtomStorage
+            other : AtomStorage
 
             Returns
             -------
-            is_less_than: boolean
+            is_less_than : boolean
                 self is less than other
             """
             # if either smirks index is None, then you can't directly compare
@@ -121,9 +117,15 @@ class ChemPerGraph(object):
 
         def as_smirks(self, compress=False):
             """
+            Parameters
+            -----------
+            compress : bool
+                Creates a compressed version of the SMIRKS with only
+                the atomic number and atom index no other decorators
+
             Returns
             -------
-            smirks: str
+            smirks : str
                 how this atom would be represented in a SMIRKS string
             """
             if self.atom is None:
@@ -158,7 +160,7 @@ class ChemPerGraph(object):
             return '[%s:%i]' % (base_smirks, self.label)
 
     @total_ordering
-    class BondStorage(object):
+    class BondStorage:
         """
         BondStorage tracks information about a bond
         """
@@ -166,8 +168,8 @@ class ChemPerGraph(object):
             """
             Parameters
             ----------
-            bond: chemper Bond object
-            label: int or float
+            bond : chemper Bond object
+            label : int or float
                 Bonds don't have SMIRKS indices so this is only used for internal
                 tracking of the object.
             """
@@ -199,7 +201,7 @@ class ChemPerGraph(object):
             """
             Returns
             -------
-            SMIRKS: str
+            SMIRKS : str
                 how this bond should appear in a SMIRKS string
             """
             if self.ring is None:
@@ -213,13 +215,44 @@ class ChemPerGraph(object):
 
             return order+ring
 
-    def __init__(self):
+    def __init__(self, mol=None, smirks_atoms=None, layers=0):
         """
-        Initialize empty ChemPerGraph
+        Parameters
+        ----------
+        mol : Mol
+            this can be a chemper mol or a molecule from any supported toolkit
+            (currently OpenEye or RDKit)
+        smirks_atoms : tuple of integers
+            This is a tuple of the atom indices which will have SMIRKS indices.
+            For example, if (1,2) is provided then the atom in molecule with indices
+            1 and 2 will be used to create a SMIRKS with two indexed atoms.
+        layers : int or 'all'
+            how many atoms out from the smirks indexed atoms do you wish save (default=0)
+            'all' will lead to all atoms in the molecule being specified
         """
         self._graph = nx.Graph()
         self.atom_by_label = dict() # stores a dictionary of atoms by label
         self.bond_by_label = dict() # stores a dictionary of bonds by label
+        self.atom_by_index = dict()
+
+        if mol is None:
+            self.mol = None
+            if smirks_atoms is not None:
+                raise TypeError("Must provide a molecule if smirks_atoms are specified/")
+
+        else:
+            self.mol = mol_toolkit.Mol(mol)
+            if smirks_atoms is None:
+                raise TypeError("Must provide smirks_atoms when a molecule is given")
+
+            self._add_smirks_atoms(smirks_atoms)
+            # loop over indexed atoms and then add layers to each
+            # note: the keys must be pulled out first because the
+            #       atom_by_label dictionary is updated when layers are added
+            keys = list(self.atom_by_label.keys())
+            for smirks_key in keys:
+                atom_storage = self.atom_by_label[smirks_key]
+                self._add_layers(atom_storage, layers)
 
     def __str__(self): return self.as_smirks()
 
@@ -233,13 +266,14 @@ class ChemPerGraph(object):
         """
         Parameters
         ----------
-        compress: boolean
-                  returns the shorter version of atom SMIRKS patterns
-                  that is the atoms only include atomic numbers rather
-                  than the full list of decorators
+        compress : boolean
+            returns the shorter version of atom SMIRKS patterns
+            that is the atoms only include atomic numbers rather
+            than the full list of decorators
+
         Returns
         -------
-        SMIRKS: str
+        SMIRKS : str
             a SMIRKS string matching the exact atom and bond information stored
         """
 
@@ -269,14 +303,14 @@ class ChemPerGraph(object):
 
         Parameters
         ----------
-        init_atom: AtomStorage object
+        init_atom : AtomStorage object
             current atom
-        neighbors: list of AtomStorage objects
+        neighbors : list of AtomStorage objects
             list of neighbor atoms you wanted added to the SMIRKS pattern
 
         Returns
         -------
-        SMIRKS: str
+        SMIRKS : str
             This graph as a SMIRKS string
         """
         smirks = init_atom.as_smirks(compress)
@@ -300,7 +334,7 @@ class ChemPerGraph(object):
         """
         Returns
         -------
-        atoms: list of AtomStorage objects
+        atoms : list of AtomStorages
             all atoms stored in the graph
         """
         return list(self._graph.nodes())
@@ -309,12 +343,12 @@ class ChemPerGraph(object):
         """
         Parameters
         ----------
-        atom1: AtomStorage object
-        atom2: AtomStorage object
+        atom1 : AtomStorage
+        atom2 : AtomStorage
 
         Returns
         -------
-        bond: BondStorage object
+        bond : BondStorage or None
             bond between the two given atoms or None if not connected
         """
         bond = self._graph.get_edge_data(atom1, atom2)
@@ -326,7 +360,7 @@ class ChemPerGraph(object):
         """
         Returns
         -------
-        bonds: list of BondStorage objects
+        bonds : list of BondStorages
             all bonds stored as edges in this graph
         """
         return [data['bond'] for a1, a2, data in self._graph.edges(data=True)]
@@ -335,18 +369,30 @@ class ChemPerGraph(object):
         """
         Parameters
         ----------
-        atom: an AtomStorage object
+        atom : AtomStorage
 
         Returns
         -------
-        atoms: list of AtomStorage objects
+        atoms: list of AtomStorages
             list of atoms one bond (edge) away from the given atom
         """
         return list(self._graph.neighbors(atom))
 
     def remove_atom(self, atom):
         """
-        Removes the provided atom and all connected atoms
+        Removes the provided atom and all connected atoms.
+        Indexed atoms and atoms not in the current graph
+        cannot be removed
+
+        Parameters
+        -----------
+        atom : AtomStorage
+
+        Returns
+        --------
+        removed : bool
+            True if the atom was successfully removed.
+            False if not, meaning the graph is unchanged.
         """
         # if atom isn't in the graph, it can't be removed
         if atom not in self._graph.nodes():
@@ -375,18 +421,18 @@ class ChemPerGraph(object):
 
         Parameters
         ----------
-        new_atom: a chemper Atom object
-        new_bond: a chemper Bond object
-        bond_to_atom: AtomStorage object
+        new_atom : ChemPer Atom
+        new_bond : ChemPer Bond
+        bond_to_atom : SingleGraph AtomStorage
             This is where you want to connect the new atom, required if the graph isn't empty
-        new_label: int
+        new_label : int
             (optional) index for SMIRKS or internal storage if less than zero
-        new_bond_label: int or float
-            (optional) index used to track bond storage
+        new_bond_label : anything hashable
+            (optional) label used to track BondStorage in graph
 
         Returns
         -------
-        AtomStorage: AtomStorage object or None
+        AtomStorage : AtomStorage object or None
             If the atom was successfully added then the AtomStorage object is returned
             None is returned if the atom wasn't able to be added
         """
@@ -408,43 +454,13 @@ class ChemPerGraph(object):
         self._graph.add_edge(bond_to_atom, new_atom_storage, bond = new_bond_storage)
         return new_atom_storage
 
-
-class ChemPerGraphFromMol(ChemPerGraph):
-    """
-    Creates a ChemPerGraph from a chemper Mol object
-    """
-    def __init__(self, mol, smirks_atoms, layers=0):
-        """
-        Parameters
-        ----------
-        mol: Mol
-            this can be a chemper mol or a molecule from any supported toolkit
-            (currently OpenEye or RDKit)
-        smirks_atoms: tuple of integers
-            This is a tuple of the atom indices which will have SMIRKS indices.
-            For example, if (1,2) is provided then the atom in molecule with indices
-            1 and 2 will be used to create a SMIRKS with two indexed atoms.
-        layers: int or 'all'
-            how many atoms out from the smirks indexed atoms do you wish save (default=0)
-            'all' will lead to all atoms in the molecule being specified
-        """
-        ChemPerGraph.__init__(self)
-
-        self.mol = mol_toolkit.Mol(mol)
-        self.atom_by_index = dict()
-        self._add_smirks_atoms(smirks_atoms)
-        keys = list(self.atom_by_label.keys())
-        for smirks_key in keys:
-            atom_storage = self.atom_by_label[smirks_key]
-            self._add_layers(atom_storage, layers)
-
     def _add_smirks_atoms(self, smirks_atoms):
         """
         private function for adding atoms to the graph
 
         Parameters
         ----------
-        smirks_atoms: tuple of integers
+        smirks_atoms : tuple of integers
             This is a tuple of the atom indices which will have SMIRKS indices.
         """
         # add all smirks atoms to the graph
@@ -476,7 +492,6 @@ class ChemPerGraphFromMol(ChemPerGraph):
                                          self.atom_by_label[neighbor_key],
                                          bond=bond_storage)
 
-    # TODO: I could probably do this with a while loop, is that better?
     def _add_layers(self, atom_storage, add_layer):
         """
         private function for expanding beyond the initial SMIRKS atoms.
@@ -484,9 +499,9 @@ class ChemPerGraphFromMol(ChemPerGraph):
 
         Parameters
         ----------
-        atom_storage: AtomStorage object
+        atom_storage : AtomStorage object
             atom whose's neighbors you currently need to add
-        add_layer: int
+        add_layer : int
             how many more layers need to be added
         """
         if add_layer == 0:

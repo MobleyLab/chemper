@@ -37,14 +37,14 @@ single_mol_smirks_.
 
 .. _single_mol_smirks: ../../examples/single_mol_smirks.ipynb
 
-Here is a brief usage example for using ``ChemPerGraph`` to create a SMIRKS pattern.
+Here is a brief usage example for using ``SingleGraph`` to create a SMIRKS pattern.
 In this case, we want to create a pattern for the carbon-carbon bond in ethene.
 The carbon atoms have the indices 0 and 1 in the molecule, specified using the tuple `(0,1)`.
 These atoms are assigned to SMIRKS indices `:1` and `:2` respectively.
 In this example, we also include atoms up to one bond away from the indexed atoms by specifying
 the variable ``layers`` be set to `1`.
 
-.. literalinclude:: fragment_example.py
+.. literalinclude:: ../../examples/single_graph_demo.py
     :language: python
 
 .. toctree::
@@ -74,7 +74,7 @@ between two carbon atoms in propane and pentane.
 
 .. _smirks_from_molecules: ../../examples/smirks_from_molecules.ipynb
 
-.. literalinclude:: cluster_example.py
+.. literalinclude:: ../../examples/cluster_graph_demo.py
     :language: python
 
 The idea with ClusterGraph objects is that they store all
@@ -106,6 +106,9 @@ See the general_smirks_for_clusters_ example for how this process could
 be applied to different bonding parameters.
 
 .. _general_smirks_for_clusters: ../../examples/general_smirks_for_clusters.ipynb
+
+.. literalinclude:: ../../examples/smirksify_demo.py
+:language: python
 
 .. toctree::
     :maxdepth: 2

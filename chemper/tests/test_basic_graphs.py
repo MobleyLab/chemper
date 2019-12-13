@@ -4,12 +4,12 @@ cluster_graph.py and fragment_graph.py run without failures.
 """
 
 from chemper.graphs.cluster_graph import ClusterGraph
-from chemper.graphs.fragment_graph import ChemPerGraphFromMol, ChemPerGraph
+from chemper.graphs.single_graph import SingleGraph, SingleGraph
 from chemper.mol_toolkits import mol_toolkit
 import pytest
 
 
-@pytest.mark.parametrize('graph_method', [ClusterGraph, ChemPerGraph])
+@pytest.mark.parametrize('graph_method', [ClusterGraph, SingleGraph])
 def test_empty_graph(graph_method):
     """
     Test basic function of empty graphs
@@ -36,12 +36,12 @@ layers_options = [1,3,'all']
 frag_combos = [(s, l) for s in smiles_set for l in layers_options]
 @pytest.mark.parametrize('smile,layers',frag_combos)
 def test_no_fail_fragment(smile, layers):
-    mol = mol_toolkit.MolFromSmiles(smile)
+    mol = mol_toolkit.Mol.from_smiles(smile)
     smirks_atoms = (0, 1)
-    c = ChemPerGraphFromMol(mol, smirks_atoms, layers)
+    c = SingleGraph(mol, smirks_atoms, layers)
     assert c.add_atom(None) is None
     smirks_atoms = (0,)
-    c = ChemPerGraphFromMol(mol, smirks_atoms, layers)
+    c = SingleGraph(mol, smirks_atoms, layers)
 
 
 cluster_combos = [([smiles_set[i], smiles_set[i+1]], l)
@@ -50,7 +50,7 @@ cluster_combos = [([smiles_set[i], smiles_set[i+1]], l)
 def test_no_fail_cluster(smiles_list, layers):
     smirks_atom_lists1 = [ [(0,1), (1,2)] ] * len(smiles_list)
     smirks_atom_lists2 = [ [(0,), (1,), (2,) ] ] * len(smiles_list)
-    mols_list = [mol_toolkit.MolFromSmiles(s) for s in smiles_list]
+    mols_list = [mol_toolkit.Mol.from_smiles(s) for s in smiles_list]
     c1 = ClusterGraph(mols_list, smirks_atom_lists1, layers=layers)
     c2 = ClusterGraph(mols_list, smirks_atom_lists2, layers=layers)
     assert c1.add_atom(None) is None
@@ -61,7 +61,7 @@ def test_mols_mismatch():
     tests that an exception is raised when the number of molecules
     and the number of smirks dictionaries is not equal
     """
-    mols_list = [mol_toolkit.MolFromSmiles('CC')]
+    mols_list = [mol_toolkit.Mol.from_smiles('CC')]
     smirks_atom_lists = [[ (0, 1) ], [(1, 2)]]
     with pytest.raises(Exception):
         ClusterGraph(mols_list, smirks_atom_lists)
