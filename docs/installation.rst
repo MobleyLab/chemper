@@ -41,7 +41,7 @@ Conda installation according to `OpenEye documentation <https://docs.eyesopen.co
 
 .. code-block:: bash
 
-    cond install -c openeye openeye-toolkits
+    conda install -c openeye openeye-toolkits
 
 Installation
 ------------
