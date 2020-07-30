@@ -1,7 +1,7 @@
 SingleGraph
 ============
 
-``SingleGraph``s convert a molecule into a SMIRKS pattern by
+``SingleGraph``\'s convert a molecule into a SMIRKS pattern by
 converting information about the atoms and bonds.
 The ``SingleGraph`` stores only one molecule. It can convert only certain atoms or
 the *entire* molecule into a SMIRKS pattern.
