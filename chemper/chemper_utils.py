@@ -6,7 +6,7 @@ This file provides simple functions that might be of use to people using the Che
 """
 
 import os
-import collections
+from collections.abc import MutableMapping
 
 def get_data_path(relative_path, package='chemper'):
     """
@@ -120,7 +120,7 @@ the impropers (1,2,3,4) and (1,2,4,3) are equivalent
 """
 
 
-class TransformedDict(collections.MutableMapping):
+class TransformedDict(MutableMapping):
     """A dictionary that applies an arbitrary key-altering
        function before accessing the keys"""
 
