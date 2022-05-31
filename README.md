@@ -1,9 +1,5 @@
 # <img src="https://github.com/mobleylab/chemper/blob/master/chemper_logo.svg" height=150>
 
-[![Travis build](https://img.shields.io/travis/MobleyLab/chemper/master.svg?logo=linux&logoColor=white)](https://travis-ci.org/MobleyLab/chemper)
-[![Travis build](https://img.shields.io/travis/MobleyLab/chemper/master.svg?logo=apple&logoColor=white)](https://travis-ci.org/MobleyLab/chemper)
-[![AppVeyor build](https://img.shields.io/travis/MobleyLab/chemper/master.svg?logo=windows&logoColor=white)](https://ci.appveyor.com/project/bannanc/chemper)
-
 [![Documentation Status](https://readthedocs.org/projects/chemper/badge/?version=latest)](http://chemper.readthedocs.io/en/latest/?badge=latest)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/MobleyLab/chemper.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/MobleyLab/chemper/context:python)
 [![codecov](https://codecov.io/gh/MobleyLab/chemper/branch/master/graph/badge.svg)](https://codecov.io/gh/MobleyLab/chemper)
@@ -25,45 +21,41 @@ practical use in force field parameterization [2].
 
 For a more extensive history and explanation, see our [preprint](http://doi.org/10.26434/chemrxiv.8304578.v1) [3].
 
-## Prerequisites
+## Installation
 
-We test with Python 3.6 and 3.7 and expect any version above 3.5 to behave well.
+Chemper is available via `conda-forge`:
 
-This is a python tool kit with a few dependencies. We recommend installing
-[miniconda](http://conda.pydata.org/miniconda.html). Then you can create an
-environment with the following commands:
-
-```bash
-conda create -n [my env name] python=3.6 numpy networkx pytest
-source activate [my env name]
+```shell
+conda install -c conda-forge chemper
 ```
 
 This command will install all dependencies besides a toolkit for cheminformatics or storing of molecule
-information. We seek to keep this tool independent of cheminformatics toolkit, but currently only support
-[RDKit](http://www.rdkit.org/docs/index.html) and [OpenEye Toolkits](https://www.eyesopen.com/).
-If you wish to add support please feel free to submit a pull request.
-Make sure one of these tool kits is installed in your environment before installing chemper.
+information. Also install [RDKit](http://www.rdkit.org/docs/Install.html) and/or
+[OpenEye toolkits](https://docs.eyesopen.com/toolkits/python/quickstart-python/linuxosx.html) by
+running:
 
-#### RDKit environment
-
-Conda installation according to [RDKit documentation](http://www.rdkit.org/docs/Install.html):
 ```bash
-conda install -c rdkit rdkit
+conda install -c conda-forge rdkit
 ```
 
-#### OpenEye environment
-Conda installation according to [OpenEye documentation](https://docs.eyesopen.com/toolkits/python/quickstart-python/linuxosx.html)
+and/or
+
 ```bash
 conda install -c openeye openeye-toolkits
 ```
 
-## Installation
 
-Hopefully chemper will be conda installable in the near future, but for now the best option
-is to download or clone this repository and then install `chemper` from inside the `chemper` directory with:
-```bash
-pip install -e .
-```
+## Supported Python versions
+
+We test with whatever Python versions are found in `.github/workflows/ci.yaml`. Chemper may function
+on some older and/or newer versions as well.
+
+## Supported chemiformatics toolkits
+
+We seek to keep this tool independent of cheminformatics toolkit, but currently only support
+[RDKit](http://www.rdkit.org/docs/index.html) and [OpenEye Toolkits](https://www.eyesopen.com/).
+If you wish to add support please feel free to submit a pull request.
+Make sure one of these toolkits is installed in your environment before installing chemper.
 
 # Documentation
 
@@ -155,6 +147,8 @@ for automated chemical perception. However, the API is still in flux and nothing
 This release matches the work published in our [preprint](http://doi.org/10.26434/chemrxiv.8304578.v1).
 While the code is stable and there are tests showing how it should work the science it represents is still in the early stages and big changes to the algorithms and API should be expected in future releases.
 
+### Version 1.0.1
+This release includes non-behavior-breaking changes to support distribution on Python 3.10.
 
 ## Contributors
 
