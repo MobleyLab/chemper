@@ -10,6 +10,7 @@ dependencies:
 
   - rdkit
   - numpy
+  - networkx
 
     # Testing
   - pytest
